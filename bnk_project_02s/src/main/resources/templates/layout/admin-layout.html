@@ -6,10 +6,10 @@
   <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-  <header th:replace="~{templates.fragments.adminheader :: adminheader}"></header>
+    <header th:replace="~{fragments/adminheader :: adminheader}"></header>
 
   <div class="container">
-    <aside th:replace="~{templates.fragments.aside :: aside}"></aside>
+     <aside th:replace="~{fragments/aside :: aside}"></aside>
 
     <main>
       <div th:replace="${content}"></div>
