@@ -1,0 +1,16 @@
+<th:block th:fragment="adminheader">
+  <header class="admin-header">
+    <nav class="top-nav">
+      <ul>
+        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">퇴직연금</button></li>
+        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">카드</button></li>
+        <li><a th:href="@{/admin/dashboard}" class="nav-link">외환</a></li>
+        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">예/적금</button></li>
+      </ul>
+      <div class="admin-info">
+        <span>관리자</span>
+        <a th:href="@{/logout}">로그아웃</a>
+      </div>
+    </nav>
+  </header>
+</th:block>

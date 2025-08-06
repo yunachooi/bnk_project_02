@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>관리자 페이지</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <header th:replace="~{templates.fragments.adminheader :: adminheader}"></header>
+
+  <div class="container">
+    <aside th:replace="~{templates.fragments.aside :: aside}"></aside>
+
+    <main>
+      <div th:replace="${content}"></div>
+    </main>
+  </div>
+</body>
+</html>
