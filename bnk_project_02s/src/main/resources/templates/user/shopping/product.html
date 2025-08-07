@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>상품 상세</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${message}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card shadow">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img th:src="${product.spurl}" class="img-fluid rounded-start" alt="product image" 
+                     onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h3 class="card-title" th:text="${product.spname}">상품명</h3>
+                    <p class="card-text" th:text="${product.spdescription}">상품 설명</p>
+                    <p class="card-text">
+                        <strong>가격:</strong> 
+                        <span th:text="${product.spprice}">가격</span> 
+                        <span th:text="${product.spcurrency}">USD</span>
+                    </p>
+                    <p class="card-text">
+                        <strong>평점:</strong> 
+                        <span th:text="${product.sprating}">4.7</span> / 5
+                    </p>
+                    <p class="card-text">
+                        <strong>리뷰 수:</strong> 
+                        <span th:text="${product.spreviews}">3807</span>
+                    </p>
+                    <p class="card-text">
+                        <small class="text-muted" th:text="'ASIN: ' + ${product.spno}">ASIN</small>
+                    </p>
+                    <p class="card-text" th:if="${product.spat}">
+                        <small class="text-success" th:text="'DB 저장됨: ' + ${product.spat}">저장 시간</small>
+                    </p>
+                    <p class="card-text" th:unless="${product.spat}">
+                        <small class="text-warning">API에서 가져온 데이터 (DB 미저장)</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
