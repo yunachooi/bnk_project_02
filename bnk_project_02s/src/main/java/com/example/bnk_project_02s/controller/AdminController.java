@@ -22,6 +22,7 @@ public class AdminController {
 
     @GetMapping("/customer-info")
     public String customerInfo(Model model) {
-        return "admin/customerInfo";
+    	model.addAttribute("content", "admin/customerInfo");
+        return "layout/adminLayout"; 
     }
 }
