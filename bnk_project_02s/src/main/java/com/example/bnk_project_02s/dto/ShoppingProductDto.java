@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-public class ShippingProductDto {
-	private Long spno;
+public class ShoppingProductDto {
+	private String spno;
     private String spname;
     private String spdescription;
     private Double spprice;
