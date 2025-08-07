@@ -1,0 +1,119 @@
+/* static/css/admin.css */
+
+/* 1. 레이아웃 ---------------------------------------------------------------- */
+body {
+  margin: 0;
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "aside  main";
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 64px 1fr;
+  height: 100vh;
+  font-family: "Noto Sans KR", sans-serif;
+}
+
+.admin-header   { grid-area: header; }
+.admin-aside    { grid-area: aside;  }
+main            { grid-area: main;   overflow-y: auto; padding: 32px; }
+
+/* 2. 헤더 -------------------------------------------------------------------- */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: #004e8c;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+}
+
+.admin-header .logo {
+  margin: 0;
+  font-size: 20px;
+}
+
+.gnb ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 24px;
+}
+
+.gnb a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  padding-bottom: 3px;
+  transition: opacity .2s;
+}
+
+.gnb a:hover        { opacity: .7; }
+.gnb a.active       { border-bottom: 2px solid #ffd400; }
+.gnb a.disabled     { opacity: .35; cursor: default; }
+
+/* 3. 사이드바 ---------------------------------------------------------------- */
+.admin-aside {
+  background: #f7f9fc;
+  border-right: 1px solid #e1e6ef;
+  padding: 24px 16px;
+}
+
+.aside-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #004e8c;
+}
+
+.aside-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #2f3b52;
+  text-decoration: none;
+  transition: background .2s;
+}
+
+.menu-link:hover {
+  background: #e8eef6;
+}
+
+.menu-link.active {
+  background: #004e8c;
+  color: #fff;
+}
+
+/* 4. 메인 컨텐츠 기본 스타일 -------------------------------------------------- */
+main h2 {
+  margin-top: 0;
+  font-size: 24px;
+  color: #004e8c;
+}
+
+/* ----------------------------------------------------------------------------------------------------------------------------------- */
+/* 차트 관련 css */
+/* chart 크기 & 카드 레이아웃 */
+.chart-lg { height: 320px; }
+.chart-md { height: 260px; }
+.chart-sm { height: 200px; }
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.grid-2 { display: grid; gap: 24px; grid-template-columns: 1fr 1fr; }
+.grid-3 { display: grid; gap: 24px; grid-template-columns: repeat(3,1fr); }
+
+.review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.review-table th, .review-table td { border-bottom: 1px solid #e5e8ef; padding: 8px 6px; }
+.review-table th { text-align: left; background: #f7f9fc; }

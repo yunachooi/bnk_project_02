@@ -1,16 +1,21 @@
+<!-- templates/fragments/adminheader.html -->
 <th:block th:fragment="adminheader">
   <header class="admin-header">
-    <nav class="top-nav">
+    <h1 class="logo">관리자 포털</h1>
+
+    <nav class="gnb">
       <ul>
-        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">퇴직연금</button></li>
-        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">카드</button></li>
-        <li><a th:href="@{/admin/dashboard}" class="nav-link">외환</a></li>
-        <li><button class="nav-btn" onclick="alert('준비 중입니다.')">예/적금</button></li>
+        <!-- 비활성 메뉴는 href="#" 로 두고 class="disabled" -->
+        <li><a href="#" class="disabled" aria-disabled="true">예금</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">펀드</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">대출</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">카드</a></li>
+
+        <!-- ❗ 유일하게 활성화된 메뉴 (외환) -->
+        <li><a th:href="@{/admin/fx}" class="active">외환</a></li>
+
+        <li><a href="#" class="disabled" aria-disabled="true">퇴직연금</a></li>
       </ul>
-      <div class="admin-info">
-        <span>관리자</span>
-        <a th:href="@{/logout}">로그아웃</a>
-      </div>
     </nav>
   </header>
 </th:block>

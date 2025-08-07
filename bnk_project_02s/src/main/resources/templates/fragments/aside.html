@@ -1,8 +1,11 @@
+<!-- templates/fragments/aside.html -->
 <th:block th:fragment="aside">
-  <aside class="admin-sidebar">
-    <ul>
-      <li><a th:href="@{/admin/dashboard}">대시보드</a></li>
-      <li><a th:href="@{/admin/customers}">고객정보관리</a></li>
+  <aside class="admin-aside">
+    <h2 class="aside-title">외환 관리</h2>
+    <ul class="aside-menu">
+      <!-- 대시보드가 기본 → controller에서 /admin/fx 또는 /admin/dashboard 로 매핑 -->
+      <li><a th:href="@{/admin/dashboard}"     class="menu-link">대시보드</a></li>
+      <li><a th:href="@{/admin/customer-info}" class="menu-link">고객정보관리</a></li>
     </ul>
   </aside>
 </th:block>

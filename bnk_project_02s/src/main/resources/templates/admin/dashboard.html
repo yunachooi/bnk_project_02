@@ -1,12 +1,68 @@
-<div th:fragment="content">
-  <h2>외환 대시보드</h2>
-  <p>환율 요약, 인기 통화, 외화 상품 요약 등의 콘텐츠를 여기에 넣을 수 있습니다.</p>
+<!-- templates/admin/dashboard.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+  <h2>외환 상품 대시보드</h2>
 
-  <button onclick="showAlert()">예시 버튼</button>
+  <!-- ① 가입자수 (일·월·분기) ------------------------------------------- -->
+  <section class="card">
+    <h3>가입자수 추이</h3>
+    <div id="subscribers-line" class="chart-lg"></div>
+  </section>
 
-  <script>
-    function showAlert() {
-      alert("외환 대시보드 클릭 테스트");
-    }
-  </script>
-</div>
+  <!-- ② 가입자 연령/성별 분포 ------------------------------------------- -->
+  <section class="card grid-2">
+    <div>
+      <h3>연령대별 분포</h3>
+      <div id="age-bar" class="chart-md"></div>
+    </div>
+    <div>
+      <h3>성별 비율</h3>
+      <div id="gender-pie" class="chart-md"></div>
+    </div>
+  </section>
+
+  <!-- ③ 리뷰 지표 -------------------------------------------------------- -->
+  <section class="card grid-3">
+    <div>
+      <h3>월별 리뷰 수</h3>
+      <div id="review-count-bar" class="chart-sm"></div>
+    </div>
+    <div>
+      <h3>평점 평균 (최근 6 개월)</h3>
+      <div id="rating-line" class="chart-sm"></div>
+    </div>
+    <div>
+      <h3>긍·부정 키워드</h3>
+      <div id="sentiment-wordcloud" class="chart-sm"></div>
+    </div>
+  </section>
+
+  <!-- ④ 누적 원화 사용액 & 추천 클릭 -------------------------------------- -->
+  <section class="card grid-2">
+    <div>
+      <h3>누적 사용액(₩)</h3>
+      <div id="krw-area" class="chart-md"></div>
+    </div>
+    <div>
+      <h3>추천(공유) 클릭 수</h3>
+      <div id="share-gauge" class="chart-md"></div>
+    </div>
+  </section>
+
+  <!-- ⑤ 최근 리뷰 리스트 -------------------------------------------------- -->
+  <section class="card">
+    <h3>최근 리뷰</h3>
+    <table class="review-table">
+      <thead><tr><th>일자</th><th>닉네임</th><th>평점</th><th>내용</th></tr></thead>
+      <tbody id="review-list">
+        <!-- 더미 → JS에서 주입, 추후 서버수신 데이터 적용 -->
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ECharts & 초기화 스크립트 ------------------------------------------ -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script th:src="@{/js/echarts-dashboard.js}"></script>
+</th:block>
+</html>

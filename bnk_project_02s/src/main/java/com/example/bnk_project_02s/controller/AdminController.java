@@ -8,11 +8,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-	
-	@GetMapping("/dashboard")
-	public String dashboard(Model model) {
-	    model.addAttribute("content", "admin/dashboard :: content"); // ❌ templates. 빼야 함
-	    return "layout/admin-layout"; // ✅ layout/admin-layout.html 파일이 templates 폴더 아래에 있어야 함
-	}
-	
+
+    @GetMapping("/fx")            // 외환 최상위 → 대시보드 리다이렉트
+    public String fxRoot() {
+        return "redirect:/admin/dashboard";
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+    	model.addAttribute("content", "admin/dashboard");
+        return "layout/adminLayout"; 
+    }
+
+    @GetMapping("/customer-info")
+    public String customerInfo(Model model) {
+        return "admin/customerInfo";
+    }
 }
