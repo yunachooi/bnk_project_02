@@ -56,4 +56,9 @@ public class UserService {
                         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."))
         );
     }
+    
+    public boolean existsByUid(String uid) {
+        return userRepo.existsByUid(uid);
+    }
+    
 }

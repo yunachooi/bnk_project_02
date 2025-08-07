@@ -14,9 +14,11 @@
   <!-- ID -->
   <div>
     <label>ID :
-      <input th:field="*{uid}"/>
+      <input th:field="*{uid}" id="uid"/>
+      <button type="button" onclick="checkDuplicate()">중복확인</button>
     </label>
     <div th:if="${#fields.hasErrors('uid')}" th:errors="*{uid}"></div>
+    <div id="uidCheckMsg" style="margin-top:5px;"></div>
   </div>
 
   <!-- PW -->
@@ -82,7 +84,7 @@
     <div th:if="${#fields.hasErrors('ugender')}" th:errors="*{ugender}"></div>
   </div>
 
-  <!-- 관심통화 (다중 체크박스) -->
+  <!-- 관심통화 -->
   <div>
     <span>관심통화 :</span>
     <label><input type="checkbox" th:field="*{ucurrency}" value="USD"/> USD</label>
@@ -93,7 +95,7 @@
     <label><input type="checkbox" th:field="*{ucurrency}" value="VND"/> VND</label>
   </div>
 
-  <!-- 관심분야 (다중 체크박스) -->
+  <!-- 관심분야 -->
   <div>
     <span>관심분야 :</span>
     <label><input type="checkbox" th:field="*{uinterest}" value="여행"/> 여행</label>
@@ -108,6 +110,7 @@
 
 <p><a th:href="@{/user/login}">이미 계정이 있나요? 로그인</a></p>
 
+<!-- ✅ JavaScript -->
 <script>
 /* ---------- PW 일치 검증 ---------- */
 const pw  = document.getElementById('pw');
@@ -122,7 +125,7 @@ function validatePw() {
 pw.addEventListener('input', validatePw);
 pw2.addEventListener('input', validatePw);
 
-/* ---------- 폼 submit 전 처리 ---------- */
+/* ---------- 생년월일 처리 ---------- */
 document.getElementById('signForm').addEventListener('submit', e => {
   if (!validatePw()) { e.preventDefault(); pw2.focus(); return; }
 
@@ -131,6 +134,24 @@ document.getElementById('signForm').addEventListener('submit', e => {
         d=document.getElementById('day').value;
   if (y && m && d) document.getElementById('ubirth').value = y+m+d;
 });
+
+/* ---------- 아이디 중복확인 ---------- */
+function checkDuplicate() {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) {
+    document.getElementById('uidCheckMsg').innerText = '아이디를 입력하세요.';
+    document.getElementById('uidCheckMsg').style.color = 'red';
+    return;
+  }
+
+  fetch(`/user/check-uid?uid=${uid}`)
+    .then(res => res.text())
+    .then(msg => {
+      const msgDiv = document.getElementById('uidCheckMsg');
+      msgDiv.innerText = msg;
+      msgDiv.style.color = msg.includes('사용 가능') ? 'blue' : 'red';
+    });
+}
 </script>
 
 </body>
