@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>회원가입</title>
+</head>
+<body>
+
+<a th:href="@{/}">&lt;뒤로가기</a>
+<h2>회원가입</h2>
+
+<form id="signForm" th:action="@{/user/signup}" th:object="${userDto}" method="post">
+
+  <!-- ID -->
+  <div>
+    <label>ID :
+      <input th:field="*{uid}" id="uid"/>
+      <button type="button" onclick="checkDuplicate()">중복확인</button>
+    </label>
+    <div th:if="${#fields.hasErrors('uid')}" th:errors="*{uid}"></div>
+    <div id="uidCheckMsg" style="margin-top:5px;"></div>
+  </div>
+
+  <!-- PW -->
+  <div>
+    <label>PW :
+      <input type="password" th:field="*{upw}" id="pw"/>
+    </label>
+    <div th:if="${#fields.hasErrors('upw')}" th:errors="*{upw}"></div>
+  </div>
+
+  <!-- PW 확인 -->
+  <div>
+    <label>PW 확인 :
+      <input type="password" id="pw2"/>
+    </label>
+    <div id="pwErr" style="color:red;"></div>
+  </div>
+
+  <!-- 이름 -->
+  <div>
+    <label>이름 :
+      <input th:field="*{uname}"/>
+    </label>
+    <div th:if="${#fields.hasErrors('uname')}" th:errors="*{uname}"></div>
+  </div>
+
+  <!-- 생년월일 (드롭다운) -->
+  <div>
+    <span>생년월일 :</span>
+    <select id="year"><option value="">YYYY</option>
+      <th:block th:each="y : ${#numbers.sequence(1950, T(java.time.Year).now().value)}">
+        <option th:value="${y}" th:text="${y}"></option>
+      </th:block>
+    </select>
+    <select id="month"><option value="">MM</option>
+      <th:block th:each="m : ${#numbers.sequence(1,12)}">
+        <option th:value="${m < 10 ? '0'+m : m}" th:text="${m < 10 ? '0'+m : m}"></option>
+      </th:block>
+    </select>
+    <select id="day"><option value="">DD</option>
+      <th:block th:each="d : ${#numbers.sequence(1,31)}">
+        <option th:value="${d < 10 ? '0'+d : d}" th:text="${d < 10 ? '0'+d : d}"></option>
+      </th:block>
+    </select>
+
+    <input type="hidden" th:field="*{ubirth}" id="ubirth"/>
+    <div th:if="${#fields.hasErrors('ubirth')}" th:errors="*{ubirth}"></div>
+  </div>
+
+  <!-- 휴대폰 -->
+  <div>
+    <label>휴대폰 :
+      <input th:field="*{uphone}"/>
+    </label>
+    <div th:if="${#fields.hasErrors('uphone')}" th:errors="*{uphone}"></div>
+  </div>
+
+  <!-- 성별 -->
+  <div>
+    <span>성별 :</span>
+    <label><input type="radio" th:field="*{ugender}" value="M"/> Male</label>
+    <label><input type="radio" th:field="*{ugender}" value="F"/> Female</label>
+    <div th:if="${#fields.hasErrors('ugender')}" th:errors="*{ugender}"></div>
+  </div>
+
+  <!-- 관심통화 -->
+  <div>
+    <span>관심통화 :</span>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="USD"/> USD</label>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="EUR"/> EUR</label>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="JPY"/> JPY</label>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="CHF"/> CHF</label>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="CNY"/> CNY</label>
+    <label><input type="checkbox" th:field="*{ucurrency}" value="VND"/> VND</label>
+  </div>
+
+  <!-- 관심분야 -->
+  <div>
+    <span>관심분야 :</span>
+    <label><input type="checkbox" th:field="*{uinterest}" value="여행"/> 여행</label>
+    <label><input type="checkbox" th:field="*{uinterest}" value="재테크"/> 재테크</label>
+    <label><input type="checkbox" th:field="*{uinterest}" value="유학"/> 유학</label>
+    <label><input type="checkbox" th:field="*{uinterest}" value="쇼핑"/> 쇼핑</label>
+    <label><input type="checkbox" th:field="*{uinterest}" value="기타"/> 기타</label>
+  </div>
+
+  <button>가입하기</button>
+</form>
+
+<p><a th:href="@{/user/login}">이미 계정이 있나요? 로그인</a></p>
+
+<!-- ✅ JavaScript -->
+<script>
+/* ---------- PW 일치 검증 ---------- */
+const pw  = document.getElementById('pw');
+const pw2 = document.getElementById('pw2');
+const pwErr = document.getElementById('pwErr');
+
+function validatePw() {
+  if (!pw.value || !pw2.value) { pwErr.textContent=''; return false; }
+  if (pw.value === pw2.value)  { pwErr.textContent=''; return true; }
+  pwErr.textContent = '비밀번호가 일치하지 않습니다.'; return false;
+}
+pw.addEventListener('input', validatePw);
+pw2.addEventListener('input', validatePw);
+
+/* ---------- 생년월일 처리 ---------- */
+document.getElementById('signForm').addEventListener('submit', e => {
+  if (!validatePw()) { e.preventDefault(); pw2.focus(); return; }
+
+  const y=document.getElementById('year').value,
+        m=document.getElementById('month').value,
+        d=document.getElementById('day').value;
+  if (y && m && d) document.getElementById('ubirth').value = y+m+d;
+});
+
+/* ---------- 아이디 중복확인 ---------- */
+function checkDuplicate() {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) {
+    document.getElementById('uidCheckMsg').innerText = '아이디를 입력하세요.';
+    document.getElementById('uidCheckMsg').style.color = 'red';
+    return;
+  }
+
+  fetch(`/user/check-uid?uid=${uid}`)
+    .then(res => res.text())
+    .then(msg => {
+      const msgDiv = document.getElementById('uidCheckMsg');
+      msgDiv.innerText = msg;
+      msgDiv.style.color = msg.includes('사용 가능') ? 'blue' : 'red';
+    });
+}
+</script>
+
+</body>
+</html>

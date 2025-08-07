@@ -1,0 +1,21 @@
+<!-- templates/fragments/adminheader.html -->
+<th:block th:fragment="adminheader">
+  <header class="admin-header">
+    <h1 class="logo">관리자 포털</h1>
+
+    <nav class="gnb">
+      <ul>
+        <!-- 비활성 메뉴는 href="#" 로 두고 class="disabled" -->
+        <li><a href="#" class="disabled" aria-disabled="true">예금</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">펀드</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">대출</a></li>
+        <li><a href="#" class="disabled" aria-disabled="true">카드</a></li>
+
+        <!-- ❗ 유일하게 활성화된 메뉴 (외환) -->
+        <li><a th:href="@{/admin/fx}" class="active">외환</a></li>
+
+        <li><a href="#" class="disabled" aria-disabled="true">퇴직연금</a></li>
+      </ul>
+    </nav>
+  </header>
+</th:block>
