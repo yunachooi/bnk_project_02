@@ -7,10 +7,10 @@
 </head>
 <body>
   <header th:replace="~{fragments/adminheader :: adminheader}"></header>   <!-- ✅ -->
-
-  
-    <aside  th:replace="~{fragments/aside :: aside}"></aside>               <!-- ✅ -->
+  <aside  th:replace="~{fragments/aside :: aside}"></aside>               <!-- ✅ -->
+   <div class="layout-wrapper">
+    
     <main th:replace="~{${content}}"></main>
-  
+   </div>
 </body>
 </html>

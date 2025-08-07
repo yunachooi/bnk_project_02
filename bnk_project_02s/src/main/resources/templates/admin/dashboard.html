@@ -5,11 +5,24 @@
   <h2>외환 상품 대시보드</h2>
 
   <!-- ① 가입자수 (일·월·분기) ------------------------------------------- -->
-  <section class="card">
-    <h3>가입자수 추이</h3>
-    <div id="subscribers-line" class="chart-lg"></div>
-  </section>
+  <section class="chart-section">
+  <h3>가입자수 추이</h3>
 
+  <div class="chart-grid">
+    <div>
+      <h4>일별</h4>
+      <div id="chart-daily" class="chart-box"></div>
+    </div>
+    <div>
+      <h4>월별</h4>
+      <div id="chart-monthly" class="chart-box"></div>
+    </div>
+    <div>
+      <h4>분기별</h4>
+      <div id="chart-quarterly" class="chart-box"></div>
+    </div>
+  </div>
+</section>
   <!-- ② 가입자 연령/성별 분포 ------------------------------------------- -->
   <section class="card grid-2">
     <div>

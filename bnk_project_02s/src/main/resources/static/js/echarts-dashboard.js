@@ -1,27 +1,81 @@
 // static/js/echarts-dashboard.js
 document.addEventListener('DOMContentLoaded', () => {
+	
+	/* ───────────── 공통 날짜 유틸 ────────────────────────────── */
+  const today = new Date();
+  
+  // 최근 N 일(←오름차순) -- 'M/D' 형식
+  const lastNDays = (n) =>
+    Array.from({ length: n }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (n - 1 - i));
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+	
+	// 최근 N 분기(←오름차순)  -- 'YYYY Qn' 형식
+	const lastNQuarters = (n) =>
+	  Array.from({ length: n }, (_, i) => {
+	    const d = new Date(today);
+	    d.setMonth(today.getMonth() - 3 * (n - 1 - i));
+	    const q = Math.floor(d.getMonth() / 3) + 1;
+	    return `${d.getFullYear()} Q${q}`;
+	  }); 
+	
+	// 최근 N 개월(←오름차순) -- 'M월' 형식
+	const lastNMonths = (n) =>
+	  Array.from({ length: n }, (_, i) => {
+	    const d = new Date(today);
+	    d.setMonth(today.getMonth() - (n - 1 - i));
+	    return `${d.getMonth() + 1}월`;
+	  });
+	  
+	  /* ───────────── 1) 가입자수 라인 (일/월/분기) ───────────── */
+	  const dailyLabels     = lastNDays(7);
+	  const monthlyLabels   = lastNMonths(6);
+	  const quarterlyLabels = lastNQuarters(6);	    
+
 
   /* ------------------------------------------------------------------ */
   /* 1) 가입자수 라인 (일/월/분기)                                       */
   /* ------------------------------------------------------------------ */
 
-  const subChart = echarts.init(document.getElementById('subscribers-line'));
-  subChart.setOption({
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['일', '월', '분기'] },
-    xAxis: { type: 'category',
-             data: ['1월','2월','3월','4월','5월','6월','7월','8월'] },
-    yAxis: { type: 'value' },
-    series: [
-      { name: '일',  type: 'line', smooth: true,
-        data: [12,14,18,11,13,16,14,17] },
-      { name: '월',  type: 'line', areaStyle: {},
-        data: [320,402,550,600,690,750,820,900] },
-      { name: '분기',type: 'line',
-        data: [900,1300,1500,1780,2050,2300,2500,2700] }
-    ]
-  });
+  const dailyChart = echarts.init(document.getElementById('chart-daily'));
+    dailyChart.setOption({
+      xAxis: { type: 'category', data: dailyLabels },
+      yAxis: { type: 'value' },
+	  tooltip:{                     // ← 추가
+	        trigger:'axis',
+	        formatter: p =>             // p = params 배열
+	          `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`
+	      },
+      series: [{ data: [5, 9, 6, 7, 10], type: 'line', smooth: true }]
+    });
 
+    // 월별 가입자 수
+    const monthlyChart = echarts.init(document.getElementById('chart-monthly'));
+    monthlyChart.setOption({
+      xAxis: { type: 'category', data: monthlyLabels },
+      yAxis: { type: 'value' },
+	  tooltip:{                     // ← 추가
+	        trigger:'axis',
+	        formatter: p =>             // p = params 배열
+	          `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`
+	      },
+      series: [{ data: [30, 50, 60, 80, 120], type: 'line', smooth: true }]
+    });
+
+    // 분기별 가입자 수
+    const quarterlyChart = echarts.init(document.getElementById('chart-quarterly'));
+    quarterlyChart.setOption({
+      xAxis: { type: 'category', data: quarterlyLabels },
+      yAxis: { type: 'value' },
+	  tooltip:{                     // ← 추가
+	        trigger:'axis',
+	        formatter: p =>             // p = params 배열
+	          `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`
+	      },
+      series: [{ data: [100, 180, 240], type: 'line', smooth: true }]
+    });
   /* ------------------------------------------------------------------ */
   /* 2) 연령대 bar / 성별 pie                                            */
   /* ------------------------------------------------------------------ */
@@ -55,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   echarts.init(document.getElementById('review-count-bar')).setOption({
     tooltip:{ trigger:'axis' },
     xAxis:{ type:'category',
-            data:['3월','4월','5월','6월','7월','8월']},
+            data: monthlyLabels },
     yAxis:{ type:'value' },
     series:[{ type:'bar', data:[18,32,26,44,38,51],
               itemStyle:{ color:'#ffa940' }}]
@@ -64,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   echarts.init(document.getElementById('rating-line')).setOption({
     tooltip:{ trigger:'axis' },
     xAxis:{ type:'category',
-            data:['3월','4월','5월','6월','7월','8월']},
+            data: monthlyLabels},
     yAxis:{ type:'value', max:5, min:0 },
     series:[{ type:'line', data:[4.1,4.2,4.0,4.3,4.4,4.5],
               smooth:true, areaStyle:{} }]
@@ -106,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
   echarts.init(document.getElementById('krw-area')).setOption({
     tooltip:{ trigger:'axis' },
     xAxis:{ type:'category',
-            data:['2023Q1','Q2','Q3','Q4','2024Q1','Q2']},
+            data: quarterlyLabels},
     yAxis:{ type:'value',
             axisLabel: v => (v/1e8)+'억' },
     series:[{ type:'line', areaStyle:{},
@@ -114,11 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   echarts.init(document.getElementById('share-gauge')).setOption({
-    series:[{
-      type:'gauge',
-      min:0, max:10000,
-      detail:{ formatter:'{value}회' },
-      data:[{ value: 7240, name:'클릭 수' }]
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: dailyLabels },
+    yAxis: { type: 'value' },
+    series: [{
+      name: '클릭 수',
+      type: 'line',
+      smooth: true,
+      areaStyle: {},
+      data: [502, 640, 735, 812, 955, 1023, 982]  // 더미 데이터
     }]
   });
 
