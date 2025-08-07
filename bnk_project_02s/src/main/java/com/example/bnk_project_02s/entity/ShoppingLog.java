@@ -16,18 +16,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "bnk_shipping_log")
+@Table(name = "bnk_shopping_log")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ShippingLog {
+public class ShoppingLog {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long slno;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "spno")
-    private ShippingProduct product;
+    private ShoppingProduct product;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uno")

@@ -14,4 +14,5 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     /** 아이디 중복 여부 */
     boolean existsByUid(String uid);
+    
 }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.bnk_project_02s.dto.UserDto;
@@ -24,6 +25,14 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+    
+    /* ───────── 중복확인 ───────── */
+    @GetMapping("/check-uid")
+    @ResponseBody
+    public String checkUid(@RequestParam("uid") String uid) {
+        boolean exists = userService.existsByUid(uid);
+        return exists ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
+    }
 
     /* ───────── 회원가입 ───────── */
 

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <header th:replace="~{fragments/adminheader :: adminheader}"></header>   <!-- ✅ -->
+  <aside  th:replace="~{fragments/aside :: aside}"></aside>               <!-- ✅ -->
+   <div class="layout-wrapper">
+    
+    <main th:replace="~{${content}}"></main>
+   </div>
+</body>
+</html>
