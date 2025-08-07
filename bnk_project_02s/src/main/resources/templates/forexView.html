@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환율/환전</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+            padding: 10px 0;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .rate-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+
+        .rate-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .rate-left img {
+            width: 32px;
+            height: 22px;
+            margin-right: 10px;
+        }
+
+        .rate-code {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .rate-right {
+            font-size: 0.95rem;
+            text-align: right;
+            color: #333;
+        }
+
+        .exchange-button {
+            margin-top: 30px;
+            width: 100%;
+            padding: 12px;
+            background-color: #d84545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .exchange-button:hover {
+            background-color: #c03535;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div style="color: red;">&lt;뒤로가기</div>
+        <div>환율 / 환전</div>
+        <div></div>
+    </div>
+
+    <div class="title">
+        고시 환율 정보<br>
+        <span th:text="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy.MM.dd')} + ' 1회차 고시'"></span>
+    </div>
+
+    <div th:each="rate : ${rates}" class="rate-box">
+        <div class="rate-left">
+            <img th:src="@{'/images/flags/' + ${rate.rcode.toLowerCase().replace('(100)', '').trim()} + '.png'}" alt="flag">
+            <div class="rate-code" th:text="${rate.rcode}">USD</div>
+        </div>
+        <div class="rate-right">
+            <span th:text="${rate.rvalue}">1,389.50</span><br>
+            (전일 평균 비교)
+        </div>
+    </div>
+
+    <button class="exchange-button">환전 하기</button>
+</div>
+</body>
+</html>
