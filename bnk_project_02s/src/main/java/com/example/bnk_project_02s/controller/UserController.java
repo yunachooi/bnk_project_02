@@ -18,6 +18,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class UserController {
 
     private final UserService userService;
+    
+    /* ───────── 중복확인 ───────── */
+    @GetMapping("/check-uid")
+    @ResponseBody
+    public String checkUid(@RequestParam("uid") String uid) {
+        boolean exists = userService.existsByUid(uid);
+        return exists ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
+    }
 
     /* ───────── 회원가입 ───────── */
 
