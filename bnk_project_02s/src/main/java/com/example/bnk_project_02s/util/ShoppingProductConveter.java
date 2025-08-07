@@ -1,11 +1,11 @@
 package com.example.bnk_project_02s.util;
 
-import com.example.bnk_project_02s.dto.ShippingProductDto;
-import com.example.bnk_project_02s.entity.ShippingProduct;
+import com.example.bnk_project_02s.dto.ShoppingProductDto;
+import com.example.bnk_project_02s.entity.ShoppingProduct;
 
-public class ShippingProductConveter {
-	public static ShippingProductDto toDto(ShippingProduct entity) {
-        ShippingProductDto dto = new ShippingProductDto();
+public class ShoppingProductConveter {
+	public static ShoppingProductDto toDto(ShoppingProduct entity) {
+        ShoppingProductDto dto = new ShoppingProductDto();
         dto.setSpno(entity.getSpno());
         dto.setSpname(entity.getSpname());
         dto.setSpdescription(entity.getSpdescription());
@@ -18,8 +18,8 @@ public class ShippingProductConveter {
         return dto;
     }
 
-    public static ShippingProduct toEntity(ShippingProductDto dto) {
-        ShippingProduct entity = new ShippingProduct();
+    public static ShoppingProduct toEntity(ShoppingProductDto dto) {
+        ShoppingProduct entity = new ShoppingProduct();
         entity.setSpno(dto.getSpno());
         entity.setSpname(dto.getSpname());
         entity.setSpdescription(dto.getSpdescription());
