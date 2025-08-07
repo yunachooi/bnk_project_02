@@ -80,15 +80,24 @@ document.addEventListener('DOMContentLoaded', () => {
   /* 2) 연령대 bar / 성별 pie                                            */
   /* ------------------------------------------------------------------ */
 
-  echarts.init(document.getElementById('age-bar')).setOption({
-    xAxis: { type: 'category',
-             data: ['10대','20대','30대','40대','50대','60대+'] },
-    yAxis: { type: 'value' },
-    tooltip: { trigger: 'axis' },
-    series: [{ name: '가입자', type: 'bar',
-               itemStyle:{ color:'#4e81ff' },
-               data: [120, 340, 280, 220, 140, 60] }]
-  });
+  fetch('/api/ageStats')
+    .then(res => res.json())
+    .then(data => {
+      const labels = Object.keys(data);
+      const counts = Object.values(data);
+
+      echarts.init(document.getElementById('age-bar')).setOption({
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        tooltip: { trigger: 'axis' },
+        series: [{
+          name: '가입자',
+          type: 'bar',
+          itemStyle: { color: '#4e81ff' },
+          data: counts
+        }]
+      });
+    });
 
   echarts.init(document.getElementById('gender-pie')).setOption({
     tooltip: { trigger: 'item' },
