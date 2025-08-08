@@ -122,4 +122,27 @@ public class RateService {
                 .sorted(Comparator.comparingInt(r -> RCODE_ORDER.indexOf(r.getRcode())))
                 .collect(Collectors.toList());
     }
+ // ✅ 환율 상세 페이지용 메서드들 추가 --------------------------
+
+    public Rate getTodayRate(String currencyCode) {
+        return repository.findByRdateAndRcode(LocalDate.now(), currencyCode);
+    }
+
+    public Rate getYesterdayRate(String currencyCode) {
+        return repository.findByRdateAndRcode(LocalDate.now().minusDays(1), currencyCode);
+    }
+
+    public List<Rate> getPastWeekRates(String currencyCode) {
+        LocalDate today = LocalDate.now();
+        LocalDate fromDate = today.minusDays(6); // 오늘 포함 7일
+        return repository.findByRcodeAndRdateBetweenOrderByRdateAsc(currencyCode, fromDate, today);
+    }
+
+    public List<Rate> getPastMonthRates(String currencyCode) {
+        LocalDate today = LocalDate.now();
+        LocalDate fromDate = today.minusDays(29); // 오늘 포함 30일
+        return repository.findByRcodeAndRdateBetweenOrderByRdateAsc(currencyCode, fromDate, today);
+    }
+    
+    
 }

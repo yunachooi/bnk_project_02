@@ -15,5 +15,7 @@ public interface ForexFirstRepository extends JpaRepository<Rate, Long> {
     boolean existsByRdateAndRcode(LocalDate rdate, String rcode);
     
     Rate findByRdateAndRcode(LocalDate rdate, String rcode);  // 전일값 조회용
+    
+    List<Rate> findByRcodeAndRdateBetweenOrderByRdateAsc(String rcode, LocalDate start, LocalDate end);
 
 }

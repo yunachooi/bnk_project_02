@@ -228,7 +228,7 @@
     const btn = document.getElementById('exchangeBtn');
     btn.addEventListener('click', function () {
       if (selectedCurrency) {
-        window.location.href = `/exchange?currency=${selectedCurrency}`;
+        window.location.href = `/forex/detail?currency=${selectedCurrency}`;
       }
     });
   });
