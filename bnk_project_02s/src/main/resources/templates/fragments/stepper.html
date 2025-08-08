@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="stepper(current)">
+  <ol>
+    <li th:classappend="${current}==1 ? 'is-active'">1)기본정보</li>
+    <li th:classappend="${current}==2 ? 'is-active'">2)관심통화</li>
+    <li th:classappend="${current}==3 ? 'is-active'">3)확인</li>
+  </ol>
+</div>
+</body>
+</html>

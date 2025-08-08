@@ -6,7 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+
 import com.example.bnk_project_02s.entity.User;
+
+import java.util.Optional;
+
 
 /**
  * User 테이블 전용 JPA 리포지터리
@@ -18,19 +22,7 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     /** 아이디 중복 여부 */
     boolean existsByUid(String uid);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     @Query(value = """
     	    SELECT 
     	      CASE 
@@ -47,4 +39,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     	    GROUP BY ageGroup
     	""", nativeQuery = true)
     	List<Object[]> countByAgeGroup();
+
+
+    /** 로그인/조회 시 사용 */
+    Optional<User> findByUid(String uid);
+
 }

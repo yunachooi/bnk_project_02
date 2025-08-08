@@ -1,31 +1,28 @@
 package com.example.bnk_project_02s.controller;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import com.example.bnk_project_02s.dto.UserDto;
 import com.example.bnk_project_02s.entity.User;
 import com.example.bnk_project_02s.service.UserService;
-
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
 
+    private static final String LOGIN_USER = "LOGIN_USER";
+    private static final String RETURN_TO  = "RETURN_TO";
+    private static final String SIGNUP_DTO = "SIGNUP_DTO";
+
     private final UserService userService;
-    
+
     /* ───────── 중복확인 ───────── */
     @GetMapping("/check-uid")
     @ResponseBody
@@ -34,58 +31,132 @@ public class UserController {
         return exists ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
     }
 
-    /* ───────── 회원가입 ───────── */
-
+    /* ───────── 멀티스텝: step1 ───────── */
     @GetMapping("/signup")
-    public String signupForm(Model m) {
-        m.addAttribute("userDto", new UserDto());
-        return "user/signup";
+    public String signupRedirect() { return "redirect:/user/signup/step1"; }
+
+    @GetMapping("/signup/step1")
+    public String step1Form(Model m, HttpSession session) {
+        Object cached = session.getAttribute(SIGNUP_DTO);
+        m.addAttribute("userDto", (cached instanceof UserDto d) ? d : new UserDto());
+        return "user/signup-step1";
     }
 
-    @PostMapping("/signup")
-    public String signup(@Valid @ModelAttribute("userDto") UserDto userDto,
-                         BindingResult br,
-                         RedirectAttributes ra) {
-
-        if (br.hasErrors()) {
-            return "user/signup";
+    @PostMapping("/signup/step1")
+    public String step1Submit(@Valid @ModelAttribute("userDto") UserDto dto,
+                              BindingResult binding,
+                              HttpSession session) {
+        if (binding.hasErrors()) return "user/signup-step1";
+        if (!dto.isPwMatched()) {
+            binding.rejectValue("confirmUpw", "mismatch", "비밀번호가 일치하지 않습니다.");
+            return "user/signup-step1";
         }
-        userService.register(userDto);                // ← 예외 시 catch 불필요
-        ra.addFlashAttribute("msg", "회원가입 완료! 로그인해 주세요.");
-        return "redirect:/user/login";
+        if (userService.existsByUid(dto.getUid())) {
+            binding.rejectValue("uid", "duplicate", "이미 사용 중인 아이디입니다.");
+            return "user/signup-step1";
+        }
+        session.setAttribute(SIGNUP_DTO, dto);
+        return "redirect:/user/signup/step2";
     }
 
-    /* ───────── 로그인 ───────── */
+    /* ───────── 멀티스텝: step2 ───────── */
+    @GetMapping("/signup/step2")
+    public String step2Form(Model m, HttpSession session) {
+        UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
+        if (dto == null) return "redirect:/user/signup/step1";
+        m.addAttribute("userDto", dto);
+        return "user/signup-step2";
+    }
 
+    @PostMapping("/signup/step2")
+    public String step2Submit(@ModelAttribute("userDto") UserDto form, HttpSession session) {
+        UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
+        if (dto == null) return "redirect:/user/signup/step1";
+        dto.setUcurrency(form.getUcurrency());
+        session.setAttribute(SIGNUP_DTO, dto);
+        return "redirect:/user/signup/step3";
+    }
+
+    @GetMapping("/signup/step2/skip")
+    public String step2Skip(HttpSession session) {
+        if (session.getAttribute(SIGNUP_DTO) == null) return "redirect:/user/signup/step1";
+        return "redirect:/user/signup/step3";
+    }
+
+    /* ───────── 멀티스텝: step3 ───────── */
+    @GetMapping("/signup/step3")
+    public String step3Form(Model m, HttpSession session) {
+        UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
+        if (dto == null) return "redirect:/user/signup/step1";
+        m.addAttribute("userDto", dto);
+        return "user/signup-step3";
+    }
+
+    @PostMapping("/signup/step3")
+    public String step3Submit(@ModelAttribute("userDto") UserDto form,
+                              HttpSession session,
+                              RedirectAttributes ra) {
+        UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
+        if (dto == null) return "redirect:/user/signup/step1";
+
+        dto.setUinterest(form.getUinterest());
+        String uid = userService.signup(dto);
+        session.removeAttribute(SIGNUP_DTO);
+        ra.addFlashAttribute("signupOk", true);
+        ra.addFlashAttribute("uid", uid);
+        return "redirect:/user/signup/success";
+    }
+
+    @GetMapping("/signup/step3/skip")
+    public String step3Skip(HttpSession session, RedirectAttributes ra) {
+        UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
+        if (dto == null) return "redirect:/user/signup/step1";
+        String uid = userService.signup(dto);
+        session.removeAttribute(SIGNUP_DTO);
+        ra.addFlashAttribute("signupOk", true);
+        ra.addFlashAttribute("uid", uid);
+        return "redirect:/user/signup/success";
+    }
+
+    /* ───────── 성공 페이지 ───────── */
+    @GetMapping("/signup/success")
+    public String signupSuccess() { return "user/success"; }
+
+    /* ───────── 로그인/로그아웃 ───────── */
     @GetMapping("/login")
     public String loginForm() { return "user/login"; }
 
+    // ★ 로그인 성공 후: ROLE_ADMIN -> admin/adminMain, 그 외 -> user/userMain
     @PostMapping("/login")
-    public String login(@RequestParam(name = "uid") String uid,
-                        @RequestParam(name = "upw") String upw,
+    public String login(@RequestParam("uid") String uid,
+                        @RequestParam("upw") String upw,
                         HttpSession session,
                         RedirectAttributes ra) {
-        try {
-            User user = userService.login(uid, upw);
-            session.setAttribute("LOGIN_USER", user);
-            return "redirect:/";
-        } catch (IllegalArgumentException e) {
-            ra.addFlashAttribute("loginError", e.getMessage());
+        User user = userService.authenticate(uid, upw);
+        if (user == null) {
+            ra.addFlashAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
             return "redirect:/user/login";
         }
-    }
-    
-    @GetMapping("/access-denied")
-    public String accessDenied() {
-        return "access-denied"; // 이 위치에 HTML 필요
-    }
+        session.setAttribute(LOGIN_USER, user);
 
-    /* ───────── 로그아웃 ───────── */
+        // 필요 시 RETURN_TO 우선 적용하려면 여기에 분기 추가 가능
+        if ("ROLE_ADMIN".equals(user.getUrole())) {
+            return "admin/adminMain"; // → templates/admin/adminMain.html
+        } else {
+            return "user/userMain";   // → templates/user/userMain.html
+        }
+    }
 
     @PostMapping("/logout")
     public String logout(HttpSession session) {
         session.invalidate();
-        return "redirect:/user/login";
+        return "redirect:/";
     }
 
+    // 필요하면 GET 진입용 라우트도 추가 가능 (선택)
+    @GetMapping("/userMain")
+    public String userMain() { return "user/userMain"; }
+
+    @GetMapping("/userhome")
+    public String userhome() { return "user/userhome"; }
 }
