@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class User {
 
-    @Id
+    @Id 
     @Column(length = 50)
     private String uid;             // 사용자아이디 (PK)
 
