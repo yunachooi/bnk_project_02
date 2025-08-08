@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 void main() {
   runApp(ShoppingApp());
@@ -16,6 +17,263 @@ class ShoppingApp extends StatelessWidget {
       ),
       home: ShoppingHomePage(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class ProductDetailPage extends StatelessWidget {
+  final Product product;
+
+  const ProductDetailPage({
+    Key? key,
+    required this.product,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        shadowColor: Colors.grey.withOpacity(0.3),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.blue),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        title: Text(
+          '뒤로가기',
+          style: TextStyle(
+            color: Colors.blue,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.black),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Icon(Icons.share, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '해외직구쇼핑몰',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 20),
+
+              Container(
+                width: double.infinity,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: product.spurl.isEmpty
+                    ? Center(
+                  child: Icon(
+                    Icons.image,
+                    color: Colors.grey[400],
+                    size: 60,
+                  ),
+                )
+                    : ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    product.spurl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.grey[400],
+                          size: 60,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              Row(
+                children: [
+                  ...List.generate(5, (index) {
+                    return Icon(
+                      Icons.star,
+                      size: 18,
+                      color: index < product.sprating.floor()
+                          ? Colors.orange
+                          : Colors.grey[300],
+                    );
+                  }),
+                  SizedBox(width: 8),
+                  Text(
+                    '(리뷰수)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+
+              Text(
+                product.spname,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 8),
+
+              Text(
+                product.spdescription,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 20),
+
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '추천상품상품고',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[200]!, width: 1),
+                ),
+                child: Center(
+                  child: Text(
+                    '! 아마존 상품 안내 !',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+
+              Text(
+                '아마존 글로벌 스토어에서 판매 중인 상품으로\n공식 판매처인 아마존 미국에서 판매/배송을 책임집니다.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: 20),
+
+              Text(
+                '상품상세설명',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 12),
+
+              Container(
+                width: double.infinity,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    product.spdescription,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+
+              Container(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    '판매 사이트에서 구매하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -116,6 +374,7 @@ class ShoppingHomePage extends StatefulWidget {
 
 class _ShoppingHomePageState extends State<ShoppingHomePage> {
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
   String selectedCategory = '전체';
   List<String> categories = ['전체', 'USD', 'KRW', 'JPY', 'CNY'];
   List<String> categoryLabels = ['추천 상품', 'USD', 'KRW', 'JPY', 'CNY'];
@@ -126,16 +385,48 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
     'assets/images/jpy.png',
     'assets/images/cnh.png'
   ];
+  List<String> adImages = [
+    'assets/images/ad1.png',
+    'assets/images/ad2.png',
+    'assets/images/ad3.png'
+  ];
 
   List<Product> products = [];
   List<Product> filteredProducts = [];
   bool isLoading = true;
   String errorMessage = '';
+  int currentAdIndex = 0;
 
   @override
   void initState() {
     super.initState();
     loadProducts();
+    _startAdSlider();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAdSlider() {
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        if (currentAdIndex < adImages.length - 1) {
+          currentAdIndex++;
+        } else {
+          currentAdIndex = 0;
+        }
+        setState(() {});
+        _pageController.animateToPage(
+          currentAdIndex,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        _startAdSlider(); // 재귀 호출로 반복
+      }
+    });
   }
 
   Future<void> loadProducts() async {
@@ -177,7 +468,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
 
   List<Product> filterByCategory(List<Product> productList) {
     if (selectedCategory == '전체') {
-      return productList;
+      return productList.take(4).toList(); // 추천 상품은 4개만 표시
     }
 
     String currency = selectedCategory;
@@ -245,22 +536,56 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                 ),
                 SizedBox(height: 16),
 
+                // 광고 슬라이더
                 Container(
                   width: double.infinity,
-                  height: 120,
+                  height: 250,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.blue, width: 2),
                   ),
-                  child: Center(
-                    child: Text(
-                      '추천상품광고',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: PageView.builder(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          currentAdIndex = index;
+                        });
+                      },
+                      itemCount: adImages.length,
+                      itemBuilder: (context, index) {
+                        return Image.asset(
+                          adImages[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image,
+                                      color: Colors.grey[400],
+                                      size: 32,
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      '광고 ${index + 1}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -451,11 +776,21 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 20,
-                      childAspectRatio: 0.7,
+                      childAspectRatio: 0.55,
                     ),
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
-                      return ProductCard(product: filteredProducts[index]);
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailPage(product: filteredProducts[index]),
+                            ),
+                          );
+                        },
+                        child: ProductCard(product: filteredProducts[index]),
+                      );
                     },
                   ),
 
@@ -566,7 +901,7 @@ class ProductCard extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Padding(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -606,13 +941,28 @@ class ProductCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
 
-                  Text(
-                    '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          decoration: TextDecoration.lineThrough,
+                          decorationColor: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '${(product.spprice * 0.9).toStringAsFixed(2)} ${product.spcurrency}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

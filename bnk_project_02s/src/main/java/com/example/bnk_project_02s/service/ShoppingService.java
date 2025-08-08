@@ -199,4 +199,9 @@ public class ShoppingService {
         if (str.length() <= maxLength) return str;
         return str.substring(0, maxLength - 3) + "...";
     }
+
+	public List<ShoppingProductDto> getProductDetail() {
+		
+		return null;
+	}
 }
