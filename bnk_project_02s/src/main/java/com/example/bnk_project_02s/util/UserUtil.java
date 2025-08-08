@@ -1,58 +1,71 @@
 package com.example.bnk_project_02s.util;
 
-import com.example.bnk_project_02s.dto.UserDto;
-import com.example.bnk_project_02s.entity.User;
-import org.mindrot.jbcrypt.BCrypt;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-import java.util.List;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
 
+@Component
 public class UserUtil {
 
-    /* DTO ➜ Entity */
-    public static User toEntity(UserDto dto, boolean encodePw) {
-        User u = new User();
+    @Value("${aes.key.256.base64}")
+    private String aesKeyBase64; // properties에서 읽어온 Base64 키
 
-        u.setUid(dto.getUid());
-        u.setUname(dto.getUname());
-        u.setUgender(dto.getUgender());
-        u.setUbirth(dto.getUbirth());
-        u.setUphone(dto.getUphone());
+    private SecretKeySpec keySpec;
 
-        /* 다중 리스트 → 콤마 문자열 */
-        u.setUcurrency(listToStr(dto.getUcurrency()));
-        u.setUinterest(listToStr(dto.getUinterest()));
-
-        u.setUrole(dto.getUrole() == null ? "ROLE_USER" : dto.getUrole());
-        u.setUcheck(dto.getUcheck() == null ? "N" : dto.getUcheck());
-        u.setUshare(dto.getUshare() == null ? 0L : dto.getUshare());
-
-        if (encodePw && dto.getUpw() != null && !dto.getUpw().isBlank())
-            u.setUpw(BCrypt.hashpw(dto.getUpw(), BCrypt.gensalt(12)));
-
-        return u;
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Base64.getDecoder().decode(aesKeyBase64);
+        if (keyBytes.length != 32) {
+            throw new IllegalStateException("AES 키 길이가 32바이트가 아닙니다.");
+        }
+        this.keySpec = new SecretKeySpec(keyBytes, "AES");
     }
 
-    /* Entity ➜ DTO */
-    public static UserDto toDto(User e) {
-        return UserDto.builder()
-                .uid(e.getUid())
-                .uname(e.getUname())
-                .ugender(e.getUgender())
-                .ubirth(e.getUbirth())
-                .uphone(e.getUphone())
-                .urole(e.getUrole())
-                .ucheck(e.getUcheck())
-                .ushare(e.getUshare())
-                .ucurrency(strToList(e.getUcurrency()))
-                .uinterest(strToList(e.getUinterest()))
-                .build();
+    // ✅ 주민번호 암호화
+    public String encryptRrn(String rrnPlain) {
+        if (rrnPlain == null || rrnPlain.isBlank()) return null;
+        try {
+            byte[] iv = new byte[12];
+            new SecureRandom().nextBytes(iv);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, new GCMParameterSpec(128, iv));
+
+            byte[] cipherText = cipher.doFinal(rrnPlain.getBytes(StandardCharsets.UTF_8));
+
+            return Base64.getEncoder().encodeToString(iv) + ":" +
+                   Base64.getEncoder().encodeToString(cipherText);
+        } catch (Exception e) {
+            throw new IllegalStateException("주민번호 암호화 실패", e);
+        }
     }
 
-    /* 헬퍼 */
-    private static String listToStr(List<String> list) {
-        return (list == null || list.isEmpty()) ? null : String.join(",", list);
-    }
-    private static List<String> strToList(String str) {
-        return (str == null || str.isBlank()) ? null : List.of(str.split(","));
+    // ✅ 주민번호 복호화
+    public String decryptRrn(String encrypted) {
+        if (encrypted == null || encrypted.isBlank()) return null;
+        try {
+            String[] parts = encrypted.split(":");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("암호화된 주민번호 형식이 잘못되었습니다.");
+            }
+            byte[] iv = Base64.getDecoder().decode(parts[0]);
+            byte[] cipherText = Base64.getDecoder().decode(parts[1]);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, new GCMParameterSpec(128, iv));
+
+            byte[] plainText = cipher.doFinal(cipherText);
+
+            return new String(plainText, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new IllegalStateException("주민번호 복호화 실패", e);
+        }
     }
 }

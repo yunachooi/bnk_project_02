@@ -15,9 +15,15 @@ public class UserConfig implements WebMvcConfigurer {
         reg.addInterceptor(interceptor)
            .addPathPatterns("/user/**", "/mypage/**")
            .excludePathPatterns(
-               "/user/signup",
+               // 비로그인 허용 경로
                "/user/login",
+               "/user/signup",        // 단일 엔드포인트
+               "/user/signup/**",     // 다단계(step1/2/3/success 등)
                "/user/check-uid",
-               "/css/**", "/js/**", "/images/**");
+
+               // 정적/공통
+               "/css/**", "/js/**", "/images/**",
+               "/favicon.ico", "/error"
+           );
     }
 }
