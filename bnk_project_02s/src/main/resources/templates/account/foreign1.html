@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNK 쇼핑환전통장</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .container {
+            max-width: 500px; /* Adjusted from 600px to make it slightly smaller */
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 1rem; /* Overall rounded container */
+            overflow: hidden; /* Ensure rounded corners are visible */
+        }
+
+        /* Custom styles for slider */
+        .slider-container {
+            position: relative;
+            width: 80%; /* 슬라이더 컨테이너의 너비를 부모 요소의 80%로 줄였습니다. */
+            margin: 0.25rem auto; /* 슬라이더 위아래 간격을 0.25rem으로 동일하게 설정하고 중앙에 배치합니다. */
+            padding-bottom: 85%; /* Creates a 1:1 aspect ratio based on its width, making it taller */
+            height: 0; /* Important for the padding-bottom trick */
+            overflow: hidden;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #60A5FA 0%, #93C5FD 50%, #DBEAFE 100%); /* Blue-600 to Blue-300 to Blue-100 */
+            background-size: 400% 400%;
+            animation: skyCloudMovement 15s ease-in-out infinite alternate;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        @keyframes skyCloudMovement {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .slider-wrapper {
+            position: absolute; /* Position wrapper absolutely within the aspect-ratio container */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+        .slider-item {
+            min-width: 100%;
+            box-sizing: border-box;
+            padding: 0; /* Remove padding for image slides */
+            text-align: center;
+            color: #1a202c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%; /* Ensure item fills wrapper height */
+        }
+
+        /* Styles for content animation within slider items (only for the first slide) */
+        .slide-content-wrapper {
+            opacity: 0; /* Start hidden */
+            transform: translateY(20px); /* Start slightly below */
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out; /* Smooth transition */
+            padding: 2.5rem 1.5rem; /* Apply padding only to content wrapper */
+        }
+
+        .slide-content-wrapper.active-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slider-item h3 {
+            color: #1a202c;
+            font-weight: 900;
+            font-size: 1.8rem;
+            line-height: 1.2;
+            text-shadow: 1px 1px 3px rgba(255,255,255,0.6);
+        }
+        .slider-item p {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            text-shadow: 1px 1px 3px rgba(255,255,255,0.6);
+        }
+        /* Icon colors for each slide - Dark blue for clear contrast */
+        .slider-item svg { color: #1e40af; }
+
+        .slider-item img {
+            width: 100%; /* Make image fill slider item width */
+            height: 100%; /* Fill the 1:1 container */
+            object-fit: cover; /* 이미지가 잘리더라도 슬라이더를 꽉 채우도록 변경 */
+            border-radius: 0.75rem; /* Rounded borders for images */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+
+        .slider-dot {
+            width: 8px;
+            height: 8px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            margin: 0 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .slider-dot.active {
+            background-color: #2c3e50;
+        }
+
+        /* Custom styles for accordion */
+        .accordion-item {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            background-color: #ffffff;
+            transition: background-color 0.3s ease;
+            border-radius: 0.75rem;
+        }
+        .accordion-header:hover {
+            background-color: #f8fafc;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+            padding: 0 1.5rem;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .accordion-content.open {
+            max-height: 1000px;
+            padding: 1rem 1.5rem;
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        .accordion-icon.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Fixed bottom bar */
+        .bottom-bar {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+            display: flex;
+            justify-content: space-around;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        .bottom-bar button {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .bottom-bar button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="container">
+        <!-- Header -->
+        <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+            <a href="#" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                홈으로
+            </a>
+            <h1 class="text-xl font-bold text-gray-800">BNK 쇼핑환전통장</h1>
+            <!-- Share Icon (Optional, can add functionality later) -->
+            <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Main Product Title (Description removed) -->
+        <section class="header-main" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">
+            <!-- Removed the h1 "BNK 쇼핑환전통장" as per request -->
+            <!-- Removed the description paragraph as per request -->
+        </section>
+
+        <!-- Product Overview Slider -->
+        <section class="px-4 py-0"> <!-- 슬라이더 섹션의 상하 패딩을 0으로 설정하여 간격을 직접 제어합니다. -->
+            <!-- 슬라이더 컨테이너가 정사각형 비율을 유지하도록 수정 -->
+            <div class="slider-container relative w-full overflow-hidden rounded-2xl">
+                <div class="slider-wrapper h-full">
+                    <!-- Slide 1: Benefit Explanation (Image) -->
+                    <div class="slider-item">
+                        <img src="images/option0.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="BNK쇼핑환전 상품 디자인">
+                    </div>
+                    <!-- Slide 2: Card Design Option 1 (붉은돼지) -->
+                    <div class="slider-item">
+                        <img src="images/option1.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="붉은돼지 카드 디자인">
+                    </div>
+                    <!-- Slide 3: Card Design Option 2 (원피스) -->
+                    <div class="slider-item">
+                        <img src="images/option2.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/0000FF/FFFFFF?text=이미지+로드+실패: option2.png';" alt="원피스 카드 디자인">
+                    </div>
+                    <!-- Slide 4: Card Design Option 3 (건담) -->
+                    <div class="slider-item">
+                        <img src="images/option3.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/00FF00/FFFFFF?text=이미지+로드+실패: option3.png';" alt="건담 카드 디자인">
+                    </div>
+                </div>
+                <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 slider-dots">
+                    <div class="slider-dot active" data-slide="0"></div>
+                    <div class="slider-dot" data-slide="1"></div>
+                    <div class="slider-dot" data-slide="2"></div>
+                    <div class="slider-dot" data-slide="3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- New: PDF Buttons (Design Options Removed) -->
+        <section class="px-4 mt-2 mb-2">
+            <div class="bg-white rounded-2xl py-2 px-6 shadow-none">
+                <!-- PDF download buttons styled to match design options -->
+                <div class="flex flex-wrap justify-center gap-2"> <!-- 디자인 옵션 버튼이 없어졌으므로 mb-1 삭제 -->
+                    <a href="#" class="inline-flex items-center justify-center flex-grow px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent" style="min-width: calc(50% - 8px);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        약관 (PDF)
+                    </a>
+                    <a href="#" class="inline-flex items-center justify-center flex-grow px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent" style="min-width: calc(50% - 8px);">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2
+                            2 0 01-2 2z" />
+                            </svg>
+                        설명서 (PDF)
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Product Details Accordion (Scrollable) -->
+        <section class="px-4 py-1 flex-grow overflow-y-auto">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <!-- Accordion Item 1: 상품 특징 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" data-target="content1">
+                        <h3 class="font-semibold text-lg text-gray-800">상품 특징</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div id="content1" class="accordion-content">
+                        <h4 class="font-semibold text-base text-gray-700 mb-1">상품 개요</h4>
+                        <p class="text-base mb-3">해외여행, 직구 등 다양한 해외 금융 활동을 편리하게 관리하는 외화 입출금식 예금 및 카드입니다.</p>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">안전한 통장 & 카드 연동</h4>
+                            <p class="text-base">예금자보호와 이자 혜택은 물론, 통장과 카드가 연동되어 더욱 안전하게 외화를 관리할 수 있습니다.</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">환전 수수료 50% 우대</h4>
+                            <p class="text-base">쇼핑환전체크카드 충전 시 원하는 시점에 즉시 환전 가능하며, 전신환 환율 50% 우대 적용됩니다.</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">해외 쇼핑 & 결제 즉시 이용</h4>
+                            <p class="text-base">쇼핑환전체크카드와 연동하여 해외직구 및 현지 결제를 통장 잔액으로 바로 이용하세요.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">심플한 외화 관리</h4>
+                            <p class="text-base">원화 통장 없이 외화 통장으로만 구성되어 편리하고 직관적인 자산 관리가 가능합니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 2: 가입 방법 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" data-target="content2">
+                        <h3 class="font-semibold text-lg text-gray-800">가입 방법</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div id="content2" class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">예금 과목</h4>
+                            <p class="text-base">외화보통예금</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">가입 대상</h4>
+                            <p class="text-base">국민인 거주자 실명의 개인 (만 17세 이상)</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">가입 가능 통화</h4>
+                            <p class="text-base">미국달러화(USD), 일본엔화(JPY), 유로화(EUR) 등 총 17개</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">가입 금액</h4>
+                            <p class="text-base">제한 없음 (최초 소정의 원화 입금 필요)</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">가입 기간 및 방법</h4>
+                            <p class="text-base">제한 없음 / 비대면 가입 (스마트폰 앱)</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">필요 서류</h4>
+                            <p class="text-base">실명확인증표 (운전면허증 또는 주민등록증)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 3: 이자율 및 환율 정보 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" data-target="content3">
+                        <h3 class="font-semibold text-lg text-gray-800">이자율 및 환율 정보</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div id="content3" class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">이자율</h4>
+                            <p class="text-base">가입일 현재 영업점 및 당행 홈페이지 고시 외화보통예금 이율 적용 <em>(예시: USD 연 0.01000%)</em></p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">이자 지급 방식</h4>
+                            <p class="text-base">매일 최종 잔액에 연 4회 지급 (3, 6, 9, 12월 첫째 일요일 셈하여 익영업일 원금에 더함)</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">환전 기준</h4>
+                            <p class="text-base">매매 시점 고시 대고객 전신환 매입율/매도율 적용</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">환율 우대</h4>
+                            <p class="text-base">외화매입 시 매매시점 고시 대고객 전신환 매도율에 50% 우대 적용 (자동 적용)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 4: 주요 유의 사항 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" data-target="content4">
+                        <h3 class="font-semibold text-lg text-gray-800">주요 유의 사항</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div id="content4" class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">환율 변동 위험</h4>
+                            <p class="text-base">원화 인출 시 환율 변동에 따른 손익 발생 가능</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">현찰 거래 불가</h4>
+                            <p class="text-base">전신환 거래 전용 상품, 외화 현찰 입출금 불가</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">세금 우대</h4>
+                            <p class="text-base">세금우대 및 비과세종합저축 가입 불가</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">원금 및 이자 지급 제한</h4>
+                            <p class="text-base">압류·금융사기 등 발생 시 제한 가능</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accordion Item 5: 기타 안내 및 공시 -->
+                <div class="accordion-item">
+                    <div class="accordion-header" data-target="content5">
+                        <h3 class="font-semibold text-lg text-gray-800">기타 안내 및 공시</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    <div id="content5" class="accordion-content">
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">금융소비자 보호</h4>
+                            <p class="text-base">계약 전 약관·설명서 확인 및 설명 요구 가능</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">자료 열람 요구권</h4>
+                            <p class="text-base">권리 구제를 위해 은행 기록 열람 요구 가능</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">위법 계약 해지권</h4>
+                            <p class="text-base">은행의 법률 위반 계약 시 해지 요구 가능</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">계좌 구조</h4>
+                            <p class="text-base">모체 계좌번호만 노출, 자식 계좌번호는 내부 관리</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-base text-gray-700 mb-1">공시 승인 번호</h4>
+                            <p class="text-base">준법감시인 심의필 2025-0827</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fixed Bottom Bar -->
+        <footer class="bottom-bar">
+            <button class="bg-gray-200 text-gray-700 hover:bg-gray-300">상담</button>
+            <button class="bg-blue-600 text-white hover:bg-blue-700">가입하기</button>
+        </footer>
+    </div>
+
+    <script>
+        // Slider functionality
+        let currentSlide = 0;
+        const sliderWrapper = document.querySelector('.slider-wrapper');
+        const sliderItems = document.querySelectorAll('.slider-item');
+        const sliderDots = document.querySelectorAll('.slider-dot');
+        const totalSlides = sliderItems.length;
+
+        function updateSlider() {
+            sliderWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+            sliderDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+
+            // Animate content of the first slide only (if it's a content slide) - remains same
+            sliderItems.forEach((item, index) => {
+                const contentWrapper = item.querySelector('.slide-content-wrapper');
+                if (contentWrapper) {
+                    contentWrapper.classList.remove('active-content');
+                    void contentWrapper.offsetWidth; // Trigger reflow
+                    if (index === currentSlide) {
+                        contentWrapper.classList.add('active-content');
+                    }
+                }
+            });
+        }
+
+        sliderDots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                // Clear any ongoing auto-slide to prevent conflict
+                clearInterval(autoSlideInterval);
+                currentSlide = parseInt(e.target.dataset.slide);
+                updateSlider();
+                // Optionally restart auto-slide after a brief delay if desired
+                autoSlideInterval = setInterval(() => {
+                    currentSlide = (currentSlide + 1) % totalSlides;
+                    updateSlider();
+                }, 4000); // Changed speed to 4 seconds here
+            });
+        });
+
+        // Auto-slide every 5 seconds, now always cycles through all slides
+        let autoSlideInterval = setInterval(() => {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateSlider();
+        }, 4000); // Changed speed to 4 seconds here
+
+        // Accordion functionality - remains same
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const contentId = header.dataset.target;
+                const content = document.getElementById(contentId);
+                const icon = header.querySelector('.accordion-icon');
+
+                // Close all other open accordions
+                document.querySelectorAll('.accordion-content.open').forEach(openContent => {
+                    if (openContent.id !== contentId) {
+                        openContent.classList.remove('open');
+                        openContent.previousElementSibling.querySelector('.accordion-icon').classList.remove('rotate');
+                    }
+                });
+
+                // Toggle current accordion
+                content.classList.toggle('open');
+                icon.classList.toggle('rotate');
+            });
+        });
+
+        // Initial update for slider to show first slide content with animation
+        updateSlider();
+    </script>
+</body>
+</html>

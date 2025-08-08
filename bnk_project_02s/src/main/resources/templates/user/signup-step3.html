@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원가입 3/3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    .page-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .page-top a{font-weight:700;text-decoration:none;color:#111}
+    .title{margin:12px 0 8px;font-size:28px;font-weight:800;text-align:center}
+    .form{position:relative;z-index:20}
+    .chip-grid{position:relative;z-index:20;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+
+    label.chip{position:relative;display:block;cursor:pointer}
+    .chip input[type="checkbox"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0,0,0,0)}
+    .pill{
+      display:flex;align-items:center;justify-content:center;height:44px;padding:0 16px;border-radius:9999px;
+      border:1px solid #cfd5db;background:#f3f4f6;color:#374151;font-weight:700;transition:.15s
+    }
+    .chip:hover .pill{box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    .chip input:checked + .pill{background:#e8f0ff;border-color:#3b82f6;color:#1d4ed8}
+    .chip.is-checked .pill{background:#e8f0ff !important;border-color:#3b82f6 !important;color:#1d4ed8 !important}
+  </style>
+</head>
+<body class="signup">
+<header class="page-top">
+  <a th:href="@{/user/signup/step2}">&lt;뒤로가기</a>
+  <a th:href="@{/user/signup/step3/skip}">건너뛰기</a>
+</header>
+
+<div th:replace="~{fragments/stepper :: stepper(current=3)}"></div>
+
+<h1 class="title">관심분야</h1>
+
+<form th:action="@{/user/signup/step3}" th:object="${userDto}" method="post" class="form">
+  <div class="chip-grid" id="topicGrid">
+    <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="TRAVEL"><span class="pill">여 행</span></label>
+    <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="STUDY"><span class="pill">유 학</span></label>
+    <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="SHOPPING"><span class="pill">쇼 핑</span></label>
+    <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="FINANCE"><span class="pill">재테크</span></label>
+    <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="ETC"><span class="pill">기 타</span></label>
+  </div>
+
+  <div style="margin-top:24px;display:flex;justify-content:flex-end">
+    <button type="submit" class="pill" style="border-radius:10px;border:0;background:#2563eb;color:#fff;height:44px;padding:0 20px">가 입 완 료</button>
+  </div>
+</form>
+
+<script>
+  (function(){
+    const grid = document.getElementById('topicGrid');
+    if(!grid) return;
+    grid.querySelectorAll('label.chip').forEach(chip=>{
+      const input = chip.querySelector('input[type="checkbox"]');
+      const sync  = ()=> chip.classList.toggle('is-checked', !!input.checked);
+      sync();
+      input.addEventListener('change', sync);
+    });
+  })();
+</script>
+</body>
+</html>
