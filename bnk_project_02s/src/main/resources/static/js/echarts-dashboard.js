@@ -314,93 +314,123 @@ btn?.addEventListener('click', async () => {
   
 });
 
-/* ================== 리포트 PDF/Excel 내보내기 ================== */
+/* ===== AI 리포트: 상태표시 + 모달 + PDF/Excel (모달 내) ===== */
 
-// ======== 공용 상태/참조 ========
-const btn2      = document.getElementById('btn-generate-report');
-const outEl     = document.getElementById('ai-report'); // 없을 수 있으니 가드로 사용
-const pdfBtn    = document.getElementById('btn-open-pdf');
-const excelBtn  = document.getElementById('btn-open-excel');
+const generateBtn = document.getElementById('btn-generate-report');
+const statusEl    = document.getElementById('report-status');
 
 let lastReportText = '';
 let lastStatsJson  = null;
 
-function setOut(msg){
-  if (outEl) outEl.textContent = msg;
-  console.log(msg);
+// 모달 유틸
+function openReportModal(text){
+  const modal = document.getElementById('ai-report-modal');
+  const body  = document.getElementById('ai-report-body');
+  if (!modal || !body) return;
+  body.textContent = text || '(빈 리포트)';
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
 }
+function closeReportModal(){
+  const modal = document.getElementById('ai-report-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('ai-modal-close')?.addEventListener('click', closeReportModal);
+document.querySelector('#ai-report-modal .ai-modal__backdrop')?.addEventListener('click', closeReportModal);
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeReportModal(); });
 
-// ======== 단일 클릭 핸들러 ========
-btn?.addEventListener('click', async () => {
-	  try {
-	    setOut('AI 리포트를 생성 중입니다…');
+// 리포트 생성
+generateBtn?.addEventListener('click', async () => {
+  try {
+    // 상태 표시 + 버튼 비활성화
+    generateBtn.disabled = true;
+    const oldText = generateBtn.textContent;
+    generateBtn.textContent = '분석 중…';
+    if (statusEl) statusEl.textContent = '분석 중…';
 
-	    const stats = await buildStatsJson();
-	    lastStatsJson = stats;
+    const stats = await buildStatsJson();
+    lastStatsJson = stats;
 
-	    const res = await fetch('/api/generateReport', {
-	      method: 'POST',
-	      headers: { 'Content-Type': 'application/json' },
-	      body: JSON.stringify(stats)
-	    });
+    const res = await fetch('/api/generateReport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(stats)
+    });
 
-	    lastReportText = await res.text() || '비어 있는 응답입니다.';
+    lastReportText = (await res.text()) || '비어 있는 응답입니다.';
 
-	    // 기존 setOut 대신 모달로 표시
-	    openReportModal(lastReportText);
+    // 완료 → 상태초기화 + 모달 열기(중앙)
+    if (statusEl) statusEl.textContent = '완료';
+    openReportModal(lastReportText);
 
-	    // 내보내기 버튼 활성화
-	    if (pdfBtn)   pdfBtn.disabled   = false;
-	    if (excelBtn) excelBtn.disabled = false;
+    // 1초 후 상태표시 지우기
+    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
 
-	  } catch (e) {
-	    openReportModal('리포트 생성 실패: ' + (e?.message || e));
-	  }
-	});
-// ======== PDF 보기 ========
-pdfBtn?.addEventListener('click', () => {
-  if (!lastReportText) { alert('먼저 리포트를 생성하세요.'); return; }
-  const html = `
-    <html><head><meta charset="utf-8"><title>AI 리포트</title>
-    <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px;line-height:1.6}
-    h1{font-size:20px;margin-bottom:16px}pre{white-space:pre-wrap}.meta{color:#666;margin-bottom:16px}</style>
-    </head><body>
-    <h1>외환 대시보드 AI 리포트</h1>
-    <div class="meta">생성시각: ${new Date().toLocaleString()}</div>
-    <pre>${lastReportText.replace(/</g,'&lt;')}</pre>
-    <script>window.onload=()=>setTimeout(()=>window.print(),300)</script>
-    </body></html>`;
-  const w = window.open('about:blank', '_blank');
-  w.document.write(html); w.document.close();
+    // 버튼 원복
+    generateBtn.textContent = oldText;
+    generateBtn.disabled = false;
+
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '실패';
+    openReportModal('리포트 생성 실패: ' + (e?.message || e));
+    generateBtn.textContent = '리포트 분석';
+    generateBtn.disabled = false;
+  }
 });
 
-// ======== Excel(CSV) 다운로드 ========
-excelBtn?.addEventListener('click', () => {
+// 모달 내 PDF (인쇄)
+document.getElementById('ai-modal-print')?.addEventListener('click', () => {
+  if (!lastReportText) { alert('먼저 리포트를 생성하세요.'); return; }
+  const html = `
+  <html><head><meta charset="utf-8"><title>AI 리포트</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px;line-height:1.6}
+  pre{white-space:pre-wrap}</style></head>
+  <body><h2>AI 리포트</h2><pre>${lastReportText.replace(/</g,'&lt;')}</pre>
+  <script>window.onload=()=>setTimeout(()=>print(),200)</script></body></html>`;
+  const w = window.open('about:blank','_blank'); w.document.write(html); w.document.close();
+});
+
+// 모달 내 Excel (CSV) 다운로드
+document.getElementById('ai-modal-excel')?.addEventListener('click', () => {
   if (!lastStatsJson) { alert('먼저 리포트를 생성하세요.'); return; }
 
   const rows = [];
   rows.push(['섹션','라벨','값']);
+
   const pushSeries = (section, obj)=>{
     if (!obj) return;
     if (obj.labels && obj.data) obj.labels.forEach((lab,i)=> rows.push([section, lab, obj.data[i]]));
   };
-  pushSeries('가입자-일별',      lastStatsJson.subscribers?.daily);
-  pushSeries('가입자-월별',      lastStatsJson.subscribers?.monthly);
-  pushSeries('가입자-분기별',    lastStatsJson.subscribers?.quarterly);
+
+  pushSeries('가입자-일별',   lastStatsJson.subscribers?.daily);
+  pushSeries('가입자-월별',   lastStatsJson.subscribers?.monthly);
+  pushSeries('가입자-분기별', lastStatsJson.subscribers?.quarterly);
+
   if (lastStatsJson.demographics?.age)
-    Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대',k,v]));
+    Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v]));
   if (lastStatsJson.demographics?.gender)
-    Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별',k,v]));
-  pushSeries('리뷰-월별갯수',    lastStatsJson.reviews?.countMonthly);
-  pushSeries('평점-월별평균',    lastStatsJson.reviews?.ratingMonthly);
-  pushSeries('누적원화',         lastStatsJson.usage?.krwCumulative);
-  pushSeries('공유클릭-일별',    lastStatsJson.usage?.shareClicksDaily);
+    Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v]));
+
+  pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly);
+  pushSeries('평점-월별평균', lastStatsJson.reviews?.ratingMonthly);
+  pushSeries('누적원화',      lastStatsJson.usage?.krwCumulative);
+  pushSeries('공유클릭-일별', lastStatsJson.usage?.shareClicksDaily);
 
   const csv = '\uFEFF' + rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a    = document.createElement('a');
   a.href = url; a.download = `dashboard-report_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   setTimeout(()=> URL.revokeObjectURL(url), 1000);
-  });
+});
+
+// 모달 내 새 창
+document.getElementById('ai-modal-popout')?.addEventListener('click', () => {
+  if (!lastReportText) { alert('먼저 리포트를 생성하세요.'); return; }
+  const w = window.open('about:blank','_blank');
+  w.document.write(`<pre style="white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif">${lastReportText.replace(/</g,'&lt;')}</pre>`);
+  w.document.close();
+});

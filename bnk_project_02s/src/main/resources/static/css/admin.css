@@ -100,15 +100,18 @@ main h2 {
 /* ----------------------------------------------------------------------------------------------------------------------------------- */
 /* 차트 관련 css */
 /* chart 크기 & 카드 레이아웃 */
-.chart-grid {
-  display: flex;
+.chart-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(360px, 1fr)); /* 3열 기본, 최소 360px */
   gap: 24px;
+  align-items: stretch;
 }
 
-.chart-box {
-  width: 300px;
-  height: 200px;
+.chart-box{
+  width: 100%;
+  height: 260px;               /* 필요하면 280~320으로 올려도 됨 */
   border: 1px solid #eee;
+  border-radius: 8px;
 }
 
 .chart-lg { height: 320px; }
@@ -130,6 +133,25 @@ main h2 {
 .review-table th { text-align: left; background: #f7f9fc; }
 
 .report-toolbar{
-  position: sticky; top: 12px; float: right; z-index: 5;
-  display: flex; gap: 8px;
+  position: absolute;
+  right: 16px;
+  top: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+  float: none !important;
+}
+
+.dashboard-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+
+.dashboard-header .report-toolbar{
+  position: static !important;
+  display:flex;
+  gap:8px;
+  float:none !important;
 }

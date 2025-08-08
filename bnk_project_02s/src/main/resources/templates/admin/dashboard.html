@@ -5,21 +5,26 @@
 .ai-modal{position:fixed; inset:0; z-index:1000;}
 .ai-modal__backdrop{position:absolute; inset:0; background:rgba(0,0,0,.4);}
 .ai-modal__dialog{
-  position:absolute; right:24px; top:24px; width:min(760px, 80vw); height:min(80vh, 680px);
-  background:#fff; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.2); display:flex; flex-direction:column;
+  position:absolute; left:50%; top:50%;
+  transform: translate(-50%, -50%);
+  width:min(820px, 90vw); height:min(80vh, 680px);
+  background:#fff; border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);
+  display:flex; flex-direction:column;
 }
 .ai-modal__header{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid #eee;}
 .ai-modal__actions button{margin-left:6px;}
 .ai-modal__body{padding:14px; overflow:auto; white-space:pre-wrap; line-height:1.6;}
 </style>
 <th:block th:fragment="content">
+<div class="dashboard-header">
   <h2>외환 상품 대시보드</h2>
   <div class="report-toolbar">
-  <button id="btn-generate-report">리포트 생성</button>
-  <button id="btn-open-pdf"  disabled>PDF 보기</button>
-  <button id="btn-open-excel" disabled>Excel</button>
+    <button id="btn-generate-report">리포트 분석</button>
+    <span id="report-status" style="margin-left:8px;color:#666;"></span>
   </div>
-  <pre id="ai-report" style="white-space:pre-wrap; margin-top:8px;"></pre>
+</div>
+  
   <!-- ① 가입자수 (일·월·분기) ------------------------------------------- -->
   <section class="chart-section">
   <h3>가입자수 추이</h3>
@@ -90,7 +95,7 @@
     </table>
   </section>
   
-  <!-- AI 리포트 모달 -->
+<!-- AI 리포트 모달 -->
 <div id="ai-report-modal" class="ai-modal" style="display:none;">
   <div class="ai-modal__backdrop"></div>
   <div class="ai-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="aiReportTitle">
@@ -98,11 +103,12 @@
       <h3 id="aiReportTitle">AI 리포트</h3>
       <div class="ai-modal__actions">
         <button id="ai-modal-print">인쇄(PDF)</button>
+        <button id="ai-modal-excel">Excel</button>
         <button id="ai-modal-popout">새 창</button>
         <button id="ai-modal-close" aria-label="닫기">×</button>
       </div>
     </div>
-    <div id="ai-report-body" class="ai-modal__body"><!-- 내용 주입 --></div>
+    <div id="ai-report-body" class="ai-modal__body"></div>
   </div>
 </div>
   <!-- ECharts & 초기화 스크립트 ------------------------------------------ -->
