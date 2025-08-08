@@ -1,16 +1,9 @@
 package com.example.bnk_project_02s.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "bnk_rate")
@@ -21,30 +14,19 @@ import lombok.NoArgsConstructor;
 public class Rate {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "rno")
-    private Long rno; // 환율정보 고유번호 
-    
+    private Long rno;
+
     @Column(name = "rdate", nullable = false)
     private LocalDate rdate; // 기준일
 
-    @Column(name = "rcurrencyno", length = 10)
-    private String rcurrencyno; // 통화 코드 (예: USD)
+    @Column(name = "rcode", length = 10, nullable = false)
+    private String rcode; // 통화코드 (예: USD)
 
-    @Column(name = "rtoday", precision = 10, scale = 4)
-    private BigDecimal rtoday; // 당일 환율
+    @Column(name = "rcurrency", length = 30, nullable = false)
+    private String rcurrency; // 통화명 (예: 미국 달러)
 
-    @Column(name = "ryesterday", precision = 10, scale = 4)
-    private BigDecimal ryesterday; // 전일 환율
-
-    @Column(name = "r7ago", precision = 10, scale = 4)
-    private BigDecimal r7ago; // 1주 전 환율
-
-    @Column(name = "r1moago", precision = 10, scale = 4)
-    private BigDecimal r1moago; // 1달 전 환율
-
-    @Column(name = "rmax", precision = 10, scale = 4)
-    private BigDecimal rmax; // 1개월 최고
-
-    @Column(name = "rmin", precision = 10, scale = 4)
-    private BigDecimal rmin; // 1개월 최저
+    @Column(name = "rvalue", precision = 10, scale = 4, nullable = false)
+    private BigDecimal rvalue; // 매매기준율
 }

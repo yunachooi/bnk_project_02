@@ -9,19 +9,19 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ForexRateDto {
 	
-	@JsonProperty("cur_unit")
-	private String rcode; //통화코드 (USD, JPY)
+	@JsonProperty("TIME")
+    private String rdate;
 
-	@JsonProperty("cur_nm")
-	private String rcurrency; //통화명 (미국달러, 일본 엔)
- 
-	@JsonProperty("deal_bas_r")
-	private String rvalue; //환율값 (매매기준율)
+    @JsonProperty("ITEM_CODE1")
+    private String rcode;
+
+    @JsonProperty("ITEM_NAME1")
+    private String rcurrency;
+
+    @JsonProperty("DATA_VALUE")
+    private String rvalue;
 	
-//	private String rcode; //통화코드
-//	private String rvalue; //환율값 (매매기준율)
-//	private String ramount; //차액
-//	private String rpercent; //변동률
+
 	
 
 }

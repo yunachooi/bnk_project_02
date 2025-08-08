@@ -11,5 +11,9 @@ public interface ForexFirstRepository extends JpaRepository<Rate, Long> {
 	
 	// 1. 특정 날짜 기준 환율 전체 조회 (예: 오늘 날짜 기준)
     List<Rate> findByRdate(LocalDate rdate);
+    
+    boolean existsByRdateAndRcode(LocalDate rdate, String rcode);
+    
+    Rate findByRdateAndRcode(LocalDate rdate, String rcode);  // 전일값 조회용
 
 }

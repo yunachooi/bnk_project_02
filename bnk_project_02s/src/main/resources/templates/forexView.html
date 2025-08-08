@@ -1,110 +1,237 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>환율/환전</title>
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>환율/환전</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      color: #222;
+    }
 
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-weight: bold;
-            padding: 10px 0;
-            border-bottom: 2px solid #ccc;
-        }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      padding: 12px 0;
+      border-bottom: 2px solid #ccc;
+    }
 
-        .title {
-            text-align: center;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
+    .header .center {
+      flex-grow: 1;
+      text-align: center;
+    }
 
-        .rate-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding: 15px 0;
-        }
+    .title-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin: 20px 0 10px;
+    }
 
-        .rate-left {
-            display: flex;
-            align-items: center;
-        }
+    .title {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
 
-        .rate-left img {
-            width: 32px;
-            height: 22px;
-            margin-right: 10px;
-        }
+    .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+    }
 
-        .rate-code {
-            font-weight: bold;
-            font-size: 1rem;
-        }
+    .rate-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background-color: #fafafa;
+      transition: background-color 0.3s, border 0.3s;
+      cursor: pointer;
+    }
 
-        .rate-right {
-            font-size: 0.95rem;
-            text-align: right;
-            color: #333;
-        }
+    .rate-card:hover {
+      background-color: #f0f8ff;
+    }
 
-        .exchange-button {
-            margin-top: 30px;
-            width: 100%;
-            padding: 12px;
-            background-color: #d84545;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    .rate-card.selected {
+      border: 2px solid #FF0004;
+      background-color: #fff3f3;
+    }
 
-        .exchange-button:hover {
-            background-color: #c03535;
-        }
-    </style>
+    .rate-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .rate-top img {
+      width: 30px;
+      height: 22px;
+    }
+
+    .rate-code {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .rate-name {
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    .rate-mid {
+      font-size: 1rem;
+      margin: 6px 0;
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .rate-bottom {
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .diff-up {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+
+    .diff-down {
+      color: #1976d2;
+      font-weight: bold;
+    }
+
+    .exchange-button {
+      margin-top: 30px;
+      width: 100%;
+      padding: 14px;
+      background-color: #ccc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: not-allowed;
+    }
+
+    .exchange-button.active {
+      background-color: #FF0004;
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+      .title {
+        font-size: 1rem;
+      }
+
+      .subtitle {
+        font-size: 0.8rem;
+      }
+
+      .rate-code {
+        font-size: 1rem;
+      }
+
+      .rate-mid, .rate-bottom {
+        font-size: 0.9rem;
+      }
+
+      .exchange-button {
+        font-size: 0.95rem;
+        padding: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-        <div style="color: red;">&lt;뒤로가기</div>
-        <div>환율 / 환전</div>
-        <div></div>
-    </div>
+  <!-- 헤더 -->
+  <div class="header">
+    <div style="color: red;">&lt;뒤로가기</div>
+    <div class="center">환율 / 환전</div>
+    <div style="width: 60px;"></div>
+  </div>
 
-    <div class="title">
-        고시 환율 정보<br>
-        <span th:text="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy.MM.dd')} + ' 1회차 고시'"></span>
-    </div>
+  <!-- 제목 & 날짜 -->
+  <div class="title-area">
+    <div class="title">고시 환율 정보</div>
+    <div class="subtitle" th:text="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy.MM.dd')} + ' 1회차 고시'"></div>
+  </div>
 
-    <div th:each="rate : ${rates}" class="rate-box">
-        <div class="rate-left">
-            <img th:src="@{'/images/flags/' + ${rate.rcode.toLowerCase().replace('(100)', '').trim()} + '.png'}" alt="flag">
-            <div class="rate-code" th:text="${rate.rcode}">USD</div>
+  <!-- 카드형 환율 정보 -->
+  <div th:each="rate : ${rates}" class="rate-card" onclick="selectCurrency(this)" th:attr="data-code=${rate.rcode}">
+    <div class="rate-top">
+      <img th:src="@{'/images/flags/' + ${rate.rcode.toLowerCase().replace('(100)', '').trim()} + '.png'}" alt="flag">
+      <div>
+        <div class="rate-code" th:text="${rate.rcode}">USD</div>
+        <div class="rate-name" th:switch="${rate.rcode}">
+          <span th:case="'USD'">미국 달러</span>
+          <span th:case="'JPY(100)'">일본 엔</span>
+          <span th:case="'EUR'">유로</span>
+          <span th:case="'CNH'">중국 위안</span>
+          <span th:case="'GBP'">영국 파운드</span>
+          <span th:case="'CHF'">스위스 프랑</span>
+          <span th:case="*"></span>
         </div>
-        <div class="rate-right">
-            <span th:text="${rate.rvalue}">1,389.50</span><br>
-            (전일 평균 비교)
-        </div>
+      </div>
     </div>
+    <div class="rate-mid">
+      금일 매매 기준율: <span th:text="${#numbers.formatDecimal(rate.rvalue, 1, 2)}">1384.20</span> 원
+    </div>
+    <div class="rate-bottom">
+      <span th:if="${rate.diffFlag > 0}" class="diff-up">
+        <small>전일 대비 : </small>▲ <span th:text="${#numbers.formatDecimal(rate.rvalue.subtract(rate.ryesterday), 1, 2)}"></span> 원
+      </span>
+      <span th:if="${rate.diffFlag < 0}" class="diff-down">
+        <small>전일 대비 : </small>▼ <span th:text="${#numbers.formatDecimal(rate.ryesterday.subtract(rate.rvalue), 1, 2)}"></span> 원
+      </span>
+      <span th:if="${rate.diffFlag == 0}">-</span>
+    </div>
+  </div>
 
-    <button class="exchange-button">환전 하기</button>
+  <!-- 환전 버튼 -->
+  <button class="exchange-button" id="exchangeBtn" disabled>환전 하기</button>
 </div>
+
+<!-- 스크립트 -->
+<script>
+  let selectedCurrency = null;
+
+  function selectCurrency(card) {
+    // 선택 초기화
+    document.querySelectorAll('.rate-card').forEach(c => c.classList.remove('selected'));
+
+    // 선택된 카드 표시
+    card.classList.add('selected');
+    selectedCurrency = card.getAttribute('data-code');
+
+    // 버튼 활성화
+    const btn = document.getElementById('exchangeBtn');
+    btn.disabled = false;
+    btn.classList.add('active');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('exchangeBtn');
+    btn.addEventListener('click', function () {
+      if (selectedCurrency) {
+        window.location.href = `/exchange?currency=${selectedCurrency}`;
+      }
+    });
+  });
+</script>
 </body>
 </html>
