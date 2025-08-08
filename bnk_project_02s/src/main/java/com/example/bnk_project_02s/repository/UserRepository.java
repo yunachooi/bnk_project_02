@@ -31,21 +31,20 @@ public interface UserRepository extends JpaRepository<User, String> {
     
     
     
-    @Query("""
-    		  SELECT 
-    		    CASE 
-    		      WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 10 AND 19 THEN '10대'
-    		      WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 20 AND 29 THEN '20대'
-    		      WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 30 AND 39 THEN '30대'
-    		      WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 40 AND 49 THEN '40대'
-    		      WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 50 AND 59 THEN '50대'
-    		      ELSE '60대+'
-    		    END AS ageGroup,
-    		    COUNT(*) 
-    		  FROM User u
-    		  WHERE u.ubirth IS NOT NULL AND u.ubirth != ''
-    		  GROUP BY ageGroup
-    		""")
-    		List<Object[]> countByAgeGroup();
-    
+    @Query(value = """
+    	    SELECT 
+    	      CASE 
+    	        WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 10 AND 19 THEN '10대'
+    	        WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 20 AND 29 THEN '20대'
+    	        WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 30 AND 39 THEN '30대'
+    	        WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 40 AND 49 THEN '40대'
+    	        WHEN TIMESTAMPDIFF(YEAR, STR_TO_DATE(u.ubirth, '%Y-%m-%d'), CURDATE()) BETWEEN 50 AND 59 THEN '50대'
+    	        ELSE '60대+'
+    	      END AS ageGroup,
+    	      COUNT(*) AS cnt
+    	    FROM bnk_user2 u
+    	    WHERE u.ubirth IS NOT NULL AND u.ubirth != ''
+    	    GROUP BY ageGroup
+    	""", nativeQuery = true)
+    	List<Object[]> countByAgeGroup();
 }

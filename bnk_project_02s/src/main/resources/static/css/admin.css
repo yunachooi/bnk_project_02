@@ -128,3 +128,8 @@ main h2 {
 .review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .review-table th, .review-table td { border-bottom: 1px solid #e5e8ef; padding: 8px 6px; }
 .review-table th { text-align: left; background: #f7f9fc; }
+
+.report-toolbar{
+  position: sticky; top: 12px; float: right; z-index: 5;
+  display: flex; gap: 8px;
+}
