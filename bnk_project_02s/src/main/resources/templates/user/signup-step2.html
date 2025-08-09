@@ -4,64 +4,45 @@
   <meta charset="UTF-8" />
   <title>회원가입 2/3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    .page-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .page-top a{font-weight:700;text-decoration:none;color:#111}
-    .title{margin:12px 0 8px;font-size:28px;font-weight:800;text-align:center}
-    .form{position:relative;z-index:20}
-    .chip-grid{position:relative;z-index:20;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
-
-    label.chip{position:relative;display:block;cursor:pointer}
-    /* 시각만 숨김: 레이아웃 덮지 않음 */
-    .chip input[type="checkbox"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0,0,0,0)}
-    .pill{
-      display:flex;align-items:center;justify-content:center;height:44px;padding:0 16px;border-radius:9999px;
-      border:1px solid #cfd5db;background:#f3f4f6;color:#374151;font-weight:700;transition:.15s
-    }
-    .chip:hover .pill{box-shadow:0 0 0 3px rgba(37,99,235,.15)}
-    /* 기본 CSS 토글 */
-    .chip input:checked + .pill{background:#e8f0ff;border-color:#3b82f6;color:#1d4ed8}
-    /* 최후 보정(전역 CSS가 이겨버릴 때) */
-    .chip.is-checked .pill{background:#e8f0ff !important;border-color:#3b82f6 !important;color:#1d4ed8 !important}
-  </style>
+  <link rel="stylesheet" th:href="@{/css/user.css}" />
 </head>
 <body class="signup">
-<header class="page-top">
-  <a th:href="@{/user/signup/step1}">&lt;뒤로가기</a>
-  <a th:href="@{/user/signup/step2/skip}">건너뛰기</a>
-</header>
+  <div class="container">
+    <header class="page-top">
+      <a th:href="@{/user/signup/step1}" aria-label="이전 단계로 이동">&lt;뒤로가기</a>
+      <a th:href="@{/user/signup/step2/skip}" aria-label="이 단계 건너뛰기">건너뛰기</a>
+    </header>
 
-<div th:replace="~{fragments/stepper :: stepper(current=2)}"></div>
+    <div class="stepper" th:insert="~{fragments/stepper :: stepper(current=2)}"></div>
+    <h1 class="title">관심통화</h1>
 
-<h1 class="title">관심통화</h1>
+    <form th:action="@{/user/signup/step2}" th:object="${userDto}" method="post" class="form">
+      <div class="chip-grid" id="ccyGrid">
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="USD"><span class="pill">USD</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="JPY"><span class="pill">JPY</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="CNY"><span class="pill">CNY</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="EUR"><span class="pill">EUR</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="CHF"><span class="pill">CHF</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="VND"><span class="pill">VND</span></label>
+      </div>
 
-<form th:action="@{/user/signup/step2}" th:object="${userDto}" method="post" class="form">
-  <div class="chip-grid" id="ccyGrid">
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="USD"><span class="pill">USD</span></label>
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="JPY"><span class="pill">JPY</span></label>
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="CNY"><span class="pill">CNY</span></label>
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="EUR"><span class="pill">EUR</span></label>
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="CHF"><span class="pill">CHF</span></label>
-    <label class="chip"><input type="checkbox" th:field="*{ucurrency}" value="VND"><span class="pill">VND</span></label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-cta" aria-label="다음 단계로 이동">다 음</button>
+      </div>
+    </form>
   </div>
 
-  <div style="margin-top:24px;display:flex;justify-content:flex-end">
-    <button type="submit" class="pill" style="border-radius:10px;border:0;background:#2563eb;color:#fff;height:44px;padding:0 20px">다 음</button>
-  </div>
-</form>
-
-<script>
-  // 전역 CSS 충돌 대비: 체크 상태 ↔ .is-checked 동기화
-  (function(){
-    const grid = document.getElementById('ccyGrid');
-    if(!grid) return;
-    grid.querySelectorAll('label.chip').forEach(chip=>{
-      const input = chip.querySelector('input[type="checkbox"]');
-      const sync  = ()=> chip.classList.toggle('is-checked', !!input.checked);
-      sync(); // 초기(세션 값 반영)
-      input.addEventListener('change', sync);
-    });
-  })();
-</script>
+  <script>
+    (function(){
+      const grid = document.getElementById('ccyGrid');
+      if(!grid) return;
+      grid.querySelectorAll('label.chip').forEach(chip=>{
+        const input = chip.querySelector('input[type="checkbox"]');
+        const sync  = ()=> chip.classList.toggle('is-checked', !!input.checked);
+        sync(); // 초기값 반영
+        input.addEventListener('change', sync);
+      });
+    })();
+  </script>
 </body>
 </html>

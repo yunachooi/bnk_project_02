@@ -23,12 +23,25 @@ public class UserController {
 
     private final UserService userService;
 
-    /* ───────── 중복확인 ───────── */
+    /* ───────── 중복확인: ID ───────── */
     @GetMapping("/check-uid")
     @ResponseBody
     public String checkUid(@RequestParam("uid") String uid) {
         boolean exists = userService.existsByUid(uid);
         return exists ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
+    }
+
+    /* ───────── 중복확인: 주민등록번호(RRN) ───────── */
+    @GetMapping("/check-rrn")
+    @ResponseBody
+    public String checkRrn(@RequestParam("front") String rrnFront,
+                           @RequestParam("back")  String rrnBack) {
+        // 형식 먼저 간단히 확인(서비스에서 정규화/검증도 다시 수행)
+        if (!userService.isValidRrn(rrnFront, rrnBack)) {
+            return "주민등록번호 형식이 올바르지 않습니다.";
+        }
+        boolean exists = userService.isRrnDuplicate(rrnFront, rrnBack);
+        return exists ? "이미 등록된 주민등록번호입니다." : "사용 가능한 주민등록번호입니다.";
     }
 
     /* ───────── 멀티스텝: step1 ───────── */
@@ -47,6 +60,7 @@ public class UserController {
                               BindingResult binding,
                               HttpSession session) {
         if (binding.hasErrors()) return "user/signup-step1";
+
         if (!dto.isPwMatched()) {
             binding.rejectValue("confirmUpw", "mismatch", "비밀번호가 일치하지 않습니다.");
             return "user/signup-step1";
@@ -55,6 +69,16 @@ public class UserController {
             binding.rejectValue("uid", "duplicate", "이미 사용 중인 아이디입니다.");
             return "user/signup-step1";
         }
+        // ★ 주민등록번호 형식/중복 서버검증 추가
+        if (!userService.isValidRrn(dto.getRrnFront(), dto.getRrnBack())) {
+            binding.rejectValue("rrnFront", "format", "주민등록번호 형식이 올바르지 않습니다.");
+            return "user/signup-step1";
+        }
+        if (userService.isRrnDuplicate(dto.getRrnFront(), dto.getRrnBack())) {
+            binding.rejectValue("rrnFront", "duplicate", "이미 등록된 주민등록번호입니다.");
+            return "user/signup-step1";
+        }
+
         session.setAttribute(SIGNUP_DTO, dto);
         return "redirect:/user/signup/step2";
     }
@@ -100,7 +124,7 @@ public class UserController {
         if (dto == null) return "redirect:/user/signup/step1";
 
         dto.setUinterest(form.getUinterest());
-        String uid = userService.signup(dto);
+        String uid = userService.signup(dto); // 서비스에서 최종 AES/HMAC 저장 + 동시성 처리
         session.removeAttribute(SIGNUP_DTO);
         ra.addFlashAttribute("signupOk", true);
         ra.addFlashAttribute("uid", uid);
@@ -126,7 +150,7 @@ public class UserController {
     @GetMapping("/login")
     public String loginForm() { return "user/login"; }
 
-    // ★ 로그인 성공 후: ROLE_ADMIN -> admin/adminMain, 그 외 -> user/userMain
+    // ROLE_ADMIN -> admin/adminMain, 그 외 -> user/userMain
     @PostMapping("/login")
     public String login(@RequestParam("uid") String uid,
                         @RequestParam("upw") String upw,
@@ -138,12 +162,10 @@ public class UserController {
             return "redirect:/user/login";
         }
         session.setAttribute(LOGIN_USER, user);
-
-        // 필요 시 RETURN_TO 우선 적용하려면 여기에 분기 추가 가능
         if ("ROLE_ADMIN".equals(user.getUrole())) {
-            return "admin/adminMain"; // → templates/admin/adminMain.html
+            return "admin/adminMain";
         } else {
-            return "user/userMain";   // → templates/user/userMain.html
+            return "user/userMain";
         }
     }
 

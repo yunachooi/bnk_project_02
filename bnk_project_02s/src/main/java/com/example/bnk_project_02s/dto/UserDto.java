@@ -28,11 +28,11 @@ public class UserDto {
     private String uname;
 
     @NotBlank(message = "주민번호 앞 6자리는 필수입니다.")
-    @Pattern(regexp = "^\\d{6}$", message = "앞 6자리는 숫자 6자리여야 합니다.")
+    @Pattern(regexp = "^\\d{6}$", message = "생년월일은 숫자 6자리여야 합니다.")
     private String rrnFront;
 
     @NotBlank(message = "주민번호 뒤 7자리는 필수입니다.")
-    @Pattern(regexp = "^\\d{7}$", message = "뒤 7자리는 숫자 7자리여야 합니다.")
+    @Pattern(regexp = "^\\d{7}$", message = "뒷자리는 숫자 7자리여야 합니다.")
     private String rrnBack;
 
     @NotBlank(message = "휴대전화는 필수입니다.")

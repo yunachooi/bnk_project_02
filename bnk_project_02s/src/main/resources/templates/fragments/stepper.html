@@ -1,11 +1,53 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <style>
+    /* 스테퍼 전체 중앙 정렬 */
+    ol {
+      display: flex;
+      justify-content: center; /* 가운데 정렬 */
+      align-items: center;     /* 세로 정렬 */
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    /* 각 단계 스타일 */
+    li {
+      position: relative;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #e5e7eb; /* 회색 */
+      font-weight: 500;
+      color: #333;
+    }
+
+    /* 활성 단계 */
+    li.is-active {
+      background: #2563eb; /* 파란색 */
+      color: white;
+      font-weight: 700;
+    }
+
+    /* 단계 사이 선 */
+    li:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -40px;       /* 선과 다음 단계 간격 */
+      width: 40px;        /* 선 길이 */
+      height: 2px;        /* 선 두께 */
+      background-color: #ccc;
+      transform: translateY(-50%);
+    }
+  </style>
+</head>
 <body>
 <div th:fragment="stepper(current)">
   <ol>
-    <li th:classappend="${current}==1 ? 'is-active'">1)기본정보</li>
-    <li th:classappend="${current}==2 ? 'is-active'">2)관심통화</li>
-    <li th:classappend="${current}==3 ? 'is-active'">3)확인</li>
+    <li th:classappend="${current}==1 ? 'is-active'">1) 기본정보</li>
+    <li th:classappend="${current}==2 ? 'is-active'">2) 관심통화</li>
+    <li th:classappend="${current}==3 ? 'is-active'">3) 관심분야</li>
   </ol>
 </div>
 </body>

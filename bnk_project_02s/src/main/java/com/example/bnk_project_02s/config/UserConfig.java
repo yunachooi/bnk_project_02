@@ -17,13 +17,15 @@ public class UserConfig implements WebMvcConfigurer {
            .excludePathPatterns(
                // 비로그인 허용 경로
                "/user/login",
-               "/user/signup",        // 단일 엔드포인트
-               "/user/signup/**",     // 다단계(step1/2/3/success 등)
+               "/user/signup",
+               "/user/signup/**",
                "/user/check-uid",
+               "/user/check-rrn",   // ★ 추가: 주민등록 중복확인
 
                // 정적/공통
                "/css/**", "/js/**", "/images/**",
                "/favicon.ico", "/error"
-           );
+           )
+           .order(1);
     }
 }

@@ -4,12 +4,17 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "bnk_user2")
+@Table(
+    name = "bnk_user2",
+    indexes = {
+        @Index(name = "ux_rrn_hmac", columnList = "rrn_hmac", unique = true) // 중복 차단
+    }
+)
 @Getter @Setter
 @NoArgsConstructor
 public class User {
 
-    @Id 
+    @Id
     @Column(length = 50)
     private String uid;                    // 사용자아이디 (PK)
 
@@ -22,11 +27,10 @@ public class User {
     @Column(nullable = false, length = 1)  // 'M' 또는 'F'
     private String ugender;                // 성별 (주민번호로 유도)
 
-    // 생년월일은 사용하지 않으면 nullable 허용(또는 필드 제거)
-    @Column(nullable = true, length = 10)   // YYYYMMDD (옵션)
+    @Column(nullable = true, length = 10)  // YYYYMMDD (옵션)
     private String ubirth;
 
-    @Column(nullable = false, length = 13) // 010-1234-5678
+    @Column(nullable = false, length = 13) // 예: 010-1234-5678
     private String uphone;                  // 휴대번호(하이픈 포함)
 
     @Column(nullable = false, length = 20)
@@ -43,6 +47,11 @@ public class User {
 
     private Long ushare = 0L;               // 공유횟수
 
-    @Column(length = 256)                   // AES 등으로 암호화한 주민번호 전체
-    private String rrnEnc;                  // 주민등록번호 암호문
+    /* ===== 주민등록번호 보호 ===== */
+    @Column(name = "rrn_enc", nullable = false, length = 512)
+    private String urrnEnc;                  // AES-GCM 암호문(Base64, IV 포함)
+
+    @Column(name = "rrn_hmac", nullable = false, unique = true, length = 128)
+    private String urrnHmac;                 // HMAC-SHA256(조회/중복 인덱스용)
+
 }

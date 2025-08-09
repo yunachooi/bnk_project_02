@@ -4,161 +4,123 @@
   <meta charset="UTF-8" />
   <title>회원가입 1/3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    .page{max-width:640px;margin:24px auto;padding:0 16px}
-    .row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-    .field{margin-bottom:14px}
-    .field label{display:block;margin-bottom:6px;font-weight:700}
-    input[type="text"],input[type="password"],input[type="tel"]{
-      width:100%;height:40px;padding:0 10px;border:1px solid #cfd5db;border-radius:6px;box-sizing:border-box
-    }
-    .err{color:#d00;font-size:12px;margin-top:4px}
-    .th-invalid{border-color:#d00;outline-color:#d00}
-    .btn{height:40px;padding:0 12px;border-radius:8px;border:1px solid #cfd5db;background:#f3f4f6;cursor:pointer}
-    .btn-primary{background:#2563eb;color:#fff;border:0}
-    .actions{margin-top:18px}
-  </style>
+  <link rel="stylesheet" th:href="@{/css/user.css}">
 </head>
-<body>
-<div class="page">
-  <a th:href="@{/}">&lt;뒤로가기</a>
+<body class="signup">
+  <div class="container">
+    <header class="page-top">
+      <a th:href="@{/}" aria-label="이전 페이지로 이동">&lt;뒤로가기</a>
+      <span></span>
+    </header>
 
-  <div th:replace="~{fragments/stepper :: stepper(current=1)}"></div>
+    <div class="stepper" th:insert="~{fragments/stepper :: stepper(current=1)}"></div>
+    <h1 class="title">회원가입</h1>
 
-  <h1>회원가입</h1>
+    <!-- 서버 검증 전제: novalidate 유지(브라우저 기본 검증 off) -->
+    <form th:action="@{/user/signup/step1}" th:object="${userDto}" method="post" class="form" novalidate>
 
-  <form th:action="@{/user/signup/step1}" th:object="${userDto}" method="post" novalidate>
-
-    <!-- ID + 중복확인 -->
-    <div class="field">
-      <label for="uid">ID</label>
-      <div class="row">
-        <input th:field="*{uid}" id="uid" autocomplete="off" th:errorclass="th-invalid" />
-        <button type="button" id="btnCheckUid" class="btn">중복확인</button>
+      <!-- ID + 중복확인 -->
+      <div class="field">
+        <label for="uid">ID</label>
+        <div class="row">
+          <input th:field="*{uid}" id="uid" class="input" autocomplete="off" th:errorclass="th-invalid" />
+          <button type="button" id="btnCheckUid" class="btn">중복확인</button>
+        </div>
+        <p id="uidMsg" class="err"></p>
+        <!-- 서버 검증 메시지 -->
+        <p id="err-uid" class="err"
+           th:text="${#fields.hasErrors('uid')} ? ${#fields.errors('uid')[0]} : ''"></p>
       </div>
-      <p id="uidMsg" class="err"></p>
-      <p id="err-uid" class="err" th:if="${#fields.hasErrors('uid')}" th:errors="*{uid}">uid err</p>
-    </div>
 
-    <!-- PW -->
-    <div class="field">
-      <label for="upw">PW</label>
-      <input th:field="*{upw}" id="upw" type="password"
-             placeholder="대문자·특수문자 포함 8자 이상" th:errorclass="th-invalid" />
-      <p id="err-upw" class="err" th:if="${#fields.hasErrors('upw')}" th:errors="*{upw}">pw err</p>
-    </div>
-
-    <!-- PW 확인 -->
-    <div class="field">
-      <label for="confirmUpw">PW 확인</label>
-      <input th:field="*{confirmUpw}" id="confirmUpw" type="password" th:errorclass="th-invalid" />
-      <!-- 글로벌 에러(비번 불일치 등) -->
-      <p id="err-global" class="err" th:if="${#fields.hasGlobalErrors()}"
-         th:each="e : ${#fields.globalErrors()}" th:text="${e}"></p>
-      <p id="err-confirmUpw" class="err" th:if="${#fields.hasErrors('confirmUpw')}" th:errors="*{confirmUpw}">confirm err</p>
-    </div>
-
-    <!-- 이름 -->
-    <div class="field">
-      <label for="uname">이름</label>
-      <input th:field="*{uname}" id="uname" th:errorclass="th-invalid" />
-      <p id="err-uname" class="err" th:if="${#fields.hasErrors('uname')}" th:errors="*{uname}">name err</p>
-    </div>
-
-    <!-- 주민등록번호 -->
-    <div class="field">
-      <label>주민등록번호</label>
-      <div class="row" style="grid-template-columns:1fr auto 1fr">
-        <input th:field="*{rrnFront}" maxlength="6" placeholder="앞 6자리" inputmode="numeric" th:errorclass="th-invalid" />
-        <span style="text-align:center">-</span>
-        <input th:field="*{rrnBack}"  maxlength="7" placeholder="뒤 7자리" inputmode="numeric" th:errorclass="th-invalid" />
+      <!-- PW -->
+      <div class="field">
+        <label for="upw">PW</label>
+        <input th:field="*{upw}" id="upw" type="password" class="input"
+               placeholder="대문자·특수문자 포함 8자 이상" th:errorclass="th-invalid" />
+        <p id="err-upw" class="err"
+           th:text="${#fields.hasErrors('upw')} ? ${#fields.errors('upw')[0]} : ''"></p>
       </div>
-      <p id="err-rrnFront" class="err" th:if="${#fields.hasErrors('rrnFront')}" th:errors="*{rrnFront}">rrnF err</p>
-      <p id="err-rrnBack"  class="err" th:if="${#fields.hasErrors('rrnBack')}"  th:errors="*{rrnBack}">rrnB err</p>
-    </div>
 
-    <!-- 휴대전화 -->
-    <div class="field">
-      <label for="uphone">휴대전화</label>
-      <input th:field="*{uphone}" id="uphone" placeholder="010-0000-0000" inputmode="tel" th:errorclass="th-invalid" />
-      <p id="err-uphone" class="err" th:if="${#fields.hasErrors('uphone')}" th:errors="*{uphone}">phone err</p>
-    </div>
+      <!-- PW 확인 -->
+      <div class="field">
+        <label for="confirmUpw">PW 확인</label>
+        <input th:field="*{confirmUpw}" id="confirmUpw" type="password" class="input" th:errorclass="th-invalid" />
+        <!-- 전역(비번 불일치 등) 서버 에러 -->
+        <p id="err-global" class="err"
+           th:text="${#fields.hasGlobalErrors()} ? ${#fields.globalErrors()[0]} : ''"></p>
+        <p id="err-confirmUpw" class="err"
+           th:text="${#fields.hasErrors('confirmUpw')} ? ${#fields.errors('confirmUpw')[0]} : ''"></p>
+      </div>
 
-    <div class="actions">
-      <button type="submit" class="btn btn-primary">다음</button>
-    </div>
-  </form>
-</div>
+      <!-- 이름 -->
+      <div class="field">
+        <label for="uname">이름</label>
+        <input th:field="*{uname}" id="uname" class="input" th:errorclass="th-invalid" />
+        <p id="err-uname" class="err"
+           th:text="${#fields.hasErrors('uname')} ? ${#fields.errors('uname')[0]} : ''"></p>
+      </div>
 
-<!-- 중복확인 스크립트 -->
-<script>
-  const btn = document.getElementById('btnCheckUid');
-  if (btn) {
-    btn.addEventListener('click', async () => {
-      const input = document.getElementById('uid');
-      const msg   = document.getElementById('uidMsg');
-      const uid   = (input.value || '').trim();
-      if (!uid) { msg.textContent = 'ID를 입력하세요.'; msg.style.color = '#d00'; return; }
-      try {
-        const res  = await fetch(`/user/check-uid?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' });
-        const text = await res.text();
-        msg.textContent = text;
-        msg.style.color = text.includes('사용 가능한') ? '#0a0' : '#d00';
-      } catch (e) {
-        msg.textContent = '중복 확인 실패. 잠시 후 다시 시도하세요.'; msg.style.color = '#d00';
-      }
-    });
-  }
-</script>
+      <!-- 주민등록번호 -->
+      <div class="field">
+        <label>주민등록번호</label>
+        <div class="row row-rrn">
+          <!-- UI 보조용 maxlength만 유지(검증은 서버) -->
+          <input th:field="*{rrnFront}" class="input" maxlength="6" placeholder="생년월일" inputmode="numeric" th:errorclass="th-invalid" />
+          <span class="sep">-</span>
+          <input th:field="*{rrnBack}" class="input" maxlength="7" placeholder="뒷자리" inputmode="numeric" th:errorclass="th-invalid" />
+        </div>
+        <p id="err-rrnFront" class="err"
+           th:text="${#fields.hasErrors('rrnFront')} ? ${#fields.errors('rrnFront')[0]} : ''"></p>
+        <p id="err-rrnBack" class="err"
+           th:text="${#fields.hasErrors('rrnBack')} ? ${#fields.errors('rrnBack')[0]} : ''"></p>
+      </div>
 
-<!-- 입력 유효 시 에러/빨간 테두리 즉시 숨기기 -->
-<script>
-  (function(){
-    // 요소 참조
-    const uid         = document.getElementById('uid');
-    const upw         = document.getElementById('upw');
-    const confirmUpw  = document.getElementById('confirmUpw');
-    const uname       = document.getElementById('uname');
-    const rrnFront    = document.querySelector("[name='rrnFront']");
-    const rrnBack     = document.querySelector("[name='rrnBack']");
-    const uphone      = document.getElementById('uphone');
+      <!-- 휴대전화 -->
+      <div class="field">
+        <label for="uphone">휴대전화</label>
+        <input th:field="*{uphone}" id="uphone" class="input"
+               placeholder="010-0000-0000" inputmode="tel" th:errorclass="th-invalid" />
+        <p id="err-uphone" class="err"
+           th:text="${#fields.hasErrors('uphone')} ? ${#fields.errors('uphone')[0]} : ''"></p>
+      </div>
 
-    // 서버 @Pattern 과 최대한 맞춘 클라 검증
-    const rePw = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]).{8,}$/;
-    const validators = [
-      [uid,        v => v.trim().length > 0,               'err-uid'],
-      [upw,        v => rePw.test(v),                      'err-upw'],
-      [confirmUpw, v => v === (upw?.value ?? ''),          'err-confirmUpw'],
-      [uname,      v => v.trim().length > 0,               'err-uname'],
-      [rrnFront,   v => /^\d{6}$/.test(v),                 'err-rrnFront'],
-      [rrnBack,    v => /^\d{7}$/.test(v),                 'err-rrnBack'],
-      [uphone,     v => v.trim().length > 0,               'err-uphone']
-    ];
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-cta" aria-label="다음 단계로 이동">다 음</button>
+      </div>
+    </form>
+  </div>
 
-    function toggle(el, ok, errId){
-      if (!el) return;
-      el.classList.toggle('th-invalid', !ok); // 빨간 테두리 on/off
-      const err = document.getElementById(errId);
-      if (err) err.style.display = ok ? 'none' : ''; // 에러 메시지 숨김
-    }
+  <!-- ID 중복확인(UX용) & 입력 시 메시지 초기화 -->
+  <script>
+    (function () {
+      const btn = document.getElementById('btnCheckUid');
+      const uidInput = document.getElementById('uid');
+      const uidMsgEl = document.getElementById('uidMsg');
 
-    // 각 필드에 즉시 검증 연결
-    validators.forEach(([el, fn, errId]) => {
-      if (!el) return;
-      const run = () => {
-        toggle(el, fn(el.value), errId);
-        // 비밀번호 불일치 글로벌 에러도 함께 제어
-        if (el === upw || el === confirmUpw) {
-          const ok = (confirmUpw?.value ?? '') === (upw?.value ?? '');
-          const g = document.getElementById('err-global');
-          if (g) g.style.display = ok ? 'none' : '';
+      uidInput?.addEventListener('input', () => {
+        uidMsgEl.textContent = '';
+        uidMsgEl.classList.remove('ok');
+      });
+
+      btn?.addEventListener('click', async () => {
+        const uid = (uidInput.value || '').trim();
+        if (!uid) {
+          uidMsgEl.textContent = 'ID를 입력하세요.';
+          uidMsgEl.classList.remove('ok');
+          return;
         }
-      };
-      el.addEventListener('input', run);
-      run(); // 페이지 로드 직후 1회
-    });
-  })();
-</script>
+        try {
+          const res = await fetch(`/user/check-uid?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' });
+          const text = await res.text();
+          const ok = /사용\s*가능한\s*아이디입니다/.test(text);
+          uidMsgEl.textContent = text;
+          uidMsgEl.classList.toggle('ok', ok);
+        } catch (e) {
+          uidMsgEl.textContent = '중복 확인 실패. 잠시 후 다시 시도하세요.';
+          uidMsgEl.classList.remove('ok');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
