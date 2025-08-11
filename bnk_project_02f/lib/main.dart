@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
 import 'login/signin.dart';
-import 'login/signup.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const BNKApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BNKApp extends StatelessWidget {
+  const BNKApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'BNK WebView',
       debugShowCheckedModeBanner: false,
-      title: 'BNK Project',
-      initialRoute: '/signin',
-      routes: {
-        '/signin': (_) => const SignInPage(),
-        '/signup': (_) => const SignUpPage(),
-      },
       theme: ThemeData(useMaterial3: true),
+      home: const SignInWebViewPage(),
     );
   }
 }

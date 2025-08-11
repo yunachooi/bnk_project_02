@@ -9,11 +9,9 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Arrays;
 
 @Component
 public class UserUtil {
@@ -60,7 +58,7 @@ public class UserUtil {
         return normalized != null && normalized.matches("^\\d{13}$");
     }
 
-    /* ===================== AES-GCM ===================== */
+    /* ===================== AES-GCM (RRN) ===================== */
 
     /**
      * 주민번호 암호화 (입력은 평문, 내부에서 정규화)
@@ -112,7 +110,7 @@ public class UserUtil {
         }
     }
 
-    /* ===================== HMAC (중복/인덱스용) ===================== */
+    /* ===================== HMAC (RRN, 중복/인덱스용) ===================== */
 
     /** 조회/중복검사용 HMAC(HEX 소문자) — 입력은 13자리 숫자 */
     public String hmacRrnHex(String normalizedRrn13) {
@@ -131,11 +129,98 @@ public class UserUtil {
         }
     }
 
-    /* ===================== Masking/Helpers ===================== */
+    /* ===================== Masking (RRN) ===================== */
 
     /** 마스킹: 앞 6자리 + '-' + ******* */
     public String maskRrn(String normalizedRrn13) {
         if (!isValidRrn13(normalizedRrn13)) return "******-*******";
         return normalizedRrn13.substring(0, 6) + "-" + "*******";
+    }
+
+    /* ===================== Phone: Normalize / Validate ===================== */
+
+    /** 숫자만 남기기 */
+    public String normalizePhone(String phone) {
+        return phone == null ? "" : phone.replaceAll("\\D", "");
+    }
+
+    /** 한국 휴대폰 최소 검증: 01로 시작, 총 10~11자리 */
+    public boolean isValidPhone(String normalized) {
+        return normalized != null && normalized.matches("^01\\d{8,9}$");
+    }
+
+    /* ===================== AES-GCM (Phone) ===================== */
+
+    /** 휴대폰 암호화: 반환 포맷 base64(iv):base64(ciphertext) */
+    public String encryptPhone(String phonePlain) {
+        if (phonePlain == null || phonePlain.isBlank()) return null;
+        String n = normalizePhone(phonePlain);
+        if (!isValidPhone(n)) throw new IllegalArgumentException("휴대폰 형식 오류(01로 시작, 10~11자리)");
+
+        try {
+            byte[] iv = new byte[12];
+            secureRandom.nextBytes(iv);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey, new GCMParameterSpec(128, iv));
+            byte[] ct = cipher.doFinal(n.getBytes(StandardCharsets.UTF_8));
+
+            return Base64.getEncoder().encodeToString(iv) + ":" +
+                   Base64.getEncoder().encodeToString(ct);
+        } catch (Exception e) {
+            throw new IllegalStateException("휴대폰 암호화 실패", e);
+        }
+    }
+
+    /** 휴대폰 복호화 → 숫자만(10~11자리) 반환 */
+    public String decryptPhone(String encrypted) {
+        if (encrypted == null || encrypted.isBlank()) return null;
+        try {
+            String[] parts = encrypted.split(":");
+            if (parts.length != 2) throw new IllegalArgumentException("암호문 형식 오류(IV:CT)");
+
+            byte[] iv = Base64.getDecoder().decode(parts[0]);
+            byte[] ct = Base64.getDecoder().decode(parts[1]);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, aesKey, new GCMParameterSpec(128, iv));
+            byte[] pt = cipher.doFinal(ct);
+
+            String n = new String(pt, StandardCharsets.UTF_8);
+            if (!isValidPhone(n)) throw new IllegalStateException("복호화 결과 형식 오류(휴대폰)");
+            return n;
+        } catch (Exception e) {
+            throw new IllegalStateException("휴대폰 복호화 실패", e);
+        }
+    }
+
+    /* ===================== HMAC (Phone, 중복/인덱스용) ===================== */
+
+    /** 조회/중복검사용 HMAC(HEX 소문자) — 입력은 숫자만(10~11자리) */
+    public String hmacPhoneHex(String normalizedPhone) {
+        if (!isValidPhone(normalizedPhone))
+            throw new IllegalArgumentException("HMAC 계산 전 형식 오류(휴대폰 10~11자리 필요)");
+
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(hmacKey);
+            byte[] out = mac.doFinal(normalizedPhone.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(out.length * 2);
+            for (byte b : out) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("PHONE HMAC 계산 실패", e);
+        }
+    }
+
+    /* ===================== Masking (Phone) ===================== */
+
+    /** 표시용 마스킹: 010-****-1234 형태 */
+    public String maskPhone(String normalizedPhone) {
+        if (!isValidPhone(normalizedPhone)) return "010-****-****";
+        String formatted = (normalizedPhone.length() == 11)
+                ? normalizedPhone.replaceFirst("^(\\d{3})(\\d{4})(\\d{4})$", "$1-$2-$3")
+                : normalizedPhone.replaceFirst("^(\\d{3})(\\d{3})(\\d{4})$", "$1-$2-$3");
+        return formatted.replaceFirst("^(\\d{3})-(\\d{3,4})-(\\d{4})$", "$1-****-$3");
     }
 }

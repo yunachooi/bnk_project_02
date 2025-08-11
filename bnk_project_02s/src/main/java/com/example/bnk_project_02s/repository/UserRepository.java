@@ -17,8 +17,14 @@ public interface UserRepository extends JpaRepository<User, String> {
     /** 아이디 중복 여부 */
     boolean existsByUid(String uid);
 
-    /** 주민등록번호(HMAC) 중복 여부 — 엔티티 필드명에 맞춰 변경 */
+    /** 주민등록번호(HMAC) 중복 여부 */
     boolean existsByUrrnHmac(String urrnHmac);
+
+    /** 휴대번호(HMAC) 중복 여부 — 엔티티에 uphoneHmac 필드가 있어야 함 */
+    boolean existsByUphoneHmac(String uphoneHmac);
+
+    /** (선택) 휴대번호 HMAC로 사용자 조회 */
+    Optional<User> findByUphoneHmac(String uphoneHmac);
 
     /** 로그인/조회 시 사용 */
     Optional<User> findByUid(String uid);

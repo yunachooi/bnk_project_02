@@ -36,12 +36,22 @@ public class UserController {
     @ResponseBody
     public String checkRrn(@RequestParam("front") String rrnFront,
                            @RequestParam("back")  String rrnBack) {
-        // 형식 먼저 간단히 확인(서비스에서 정규화/검증도 다시 수행)
         if (!userService.isValidRrn(rrnFront, rrnBack)) {
             return "주민등록번호 형식이 올바르지 않습니다.";
         }
         boolean exists = userService.isRrnDuplicate(rrnFront, rrnBack);
         return exists ? "이미 등록된 주민등록번호입니다." : "사용 가능한 주민등록번호입니다.";
+    }
+
+    /* ───────── 중복확인: 휴대번호(Phone, HMAC) ───────── */
+    @GetMapping("/check-phone")
+    @ResponseBody
+    public String checkPhone(@RequestParam("phone") String phone) {
+        if (!userService.isValidPhone(phone)) {
+            return "휴대폰 형식이 올바르지 않습니다. (01로 시작, 숫자 10~11자리)";
+        }
+        boolean exists = userService.isPhoneDuplicate(phone);
+        return exists ? "이미 등록된 휴대전화번호입니다." : "사용 가능한 휴대전화번호입니다.";
     }
 
     /* ───────── 멀티스텝: step1 ───────── */
@@ -61,21 +71,32 @@ public class UserController {
                               HttpSession session) {
         if (binding.hasErrors()) return "user/signup-step1";
 
+        // 비밀번호 일치
         if (!dto.isPwMatched()) {
             binding.rejectValue("confirmUpw", "mismatch", "비밀번호가 일치하지 않습니다.");
             return "user/signup-step1";
         }
+        // 아이디 중복
         if (userService.existsByUid(dto.getUid())) {
             binding.rejectValue("uid", "duplicate", "이미 사용 중인 아이디입니다.");
             return "user/signup-step1";
         }
-        // ★ 주민등록번호 형식/중복 서버검증 추가
+        // ★ 주민등록번호 검증/중복
         if (!userService.isValidRrn(dto.getRrnFront(), dto.getRrnBack())) {
             binding.rejectValue("rrnFront", "format", "주민등록번호 형식이 올바르지 않습니다.");
             return "user/signup-step1";
         }
         if (userService.isRrnDuplicate(dto.getRrnFront(), dto.getRrnBack())) {
             binding.rejectValue("rrnFront", "duplicate", "이미 등록된 주민등록번호입니다.");
+            return "user/signup-step1";
+        }
+        // ★ 휴대번호 검증/중복 (AES/HMAC 저장은 서비스에서 처리)
+        if (!userService.isValidPhone(dto.getUphone())) {
+            binding.rejectValue("uphone", "format", "휴대폰 형식이 올바르지 않습니다. (01로 시작, 숫자 10~11자리)");
+            return "user/signup-step1";
+        }
+        if (userService.isPhoneDuplicate(dto.getUphone())) {
+            binding.rejectValue("uphone", "duplicate", "이미 등록된 휴대전화번호입니다.");
             return "user/signup-step1";
         }
 
@@ -124,7 +145,7 @@ public class UserController {
         if (dto == null) return "redirect:/user/signup/step1";
 
         dto.setUinterest(form.getUinterest());
-        String uid = userService.signup(dto); // 서비스에서 최종 AES/HMAC 저장 + 동시성 처리
+        String uid = userService.signup(dto); // 서비스에서 BCrypt + RRN AES/HMAC + Phone AES/HMAC 저장
         session.removeAttribute(SIGNUP_DTO);
         ra.addFlashAttribute("signupOk", true);
         ra.addFlashAttribute("uid", uid);
