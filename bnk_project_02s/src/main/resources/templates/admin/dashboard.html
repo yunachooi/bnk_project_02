@@ -2,26 +2,273 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <style>
-.ai-modal{position:fixed; inset:0; z-index:1000;}
-.ai-modal__backdrop{position:absolute; inset:0; background:rgba(0,0,0,.4);}
-.ai-modal__dialog{
-  position:absolute; left:50%; top:50%;
-  transform: translate(-50%, -50%);
-  width:min(820px, 90vw); height:min(80vh, 680px);
-  background:#fff; border-radius:10px;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
-  display:flex; flex-direction:column;
+/* ===== Blue Theme (no framework) ==================================== */
+:root{
+  --bg: #f6f9ff;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #5b6b8a;
+  --border: #e6efff;
+  --primary-50:  #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+  --ring: #93c5fd;
+  --shadow: 0 12px 26px rgba(37,99,235,.12);
 }
-.ai-modal__header{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid #eee;}
-.ai-modal__actions button{margin-left:6px;}
-.ai-modal__body{padding:14px; overflow:auto; white-space:pre-wrap; line-height:1.6;}
+
+html,body{background:linear-gradient(180deg,#f8fbff 0%,#f3f8ff 100%); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Pretendard,Apple SD Gothic Neo,Malgun Gothic,sans-serif; letter-spacing:-.1px;}
+h2,h3,h4{color:var(--primary-900);}
+h2{font-size:22px; font-weight:800; margin:0}
+h3{font-size:18px; font-weight:700; margin:0 0 10px}
+h4{font-size:15px; font-weight:700; margin:4px 0 8px; color:var(--primary-800)}
+
+/* ===== Header / Toolbar ============================================= */
+.dashboard-header{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--card); border:1px solid var(--border); border-left:4px solid var(--primary-600);
+  border-radius:14px; padding:14px 16px; margin:10px 0 18px; box-shadow:var(--shadow);
+}
+.report-toolbar button{
+  appearance:none; border:1px solid var(--primary-600); background:var(--primary-600);
+  color:#fff; padding:8px 12px; border-radius:10px; font-weight:700; cursor:pointer;
+  box-shadow:0 8px 16px rgba(37,99,235,.18); transition:.18s ease;
+}
+.report-toolbar button:hover{ background:var(--primary-700); border-color:var(--primary-700); transform:translateY(-1px) }
+.report-toolbar button:active{ transform:translateY(0) }
+#report-status{ margin-left:8px; color:var(--primary-700); font-weight:600 }
+
+/* ===== Sections & Cards ============================================= */
+section.card, section.chart-section{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:14px; box-shadow:var(--shadow); margin:12px 0;
+}
+section.chart-section > h3{ margin-bottom:8px }
+
+/* Grid helpers */
+.grid-2{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px }
+.grid-3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px }
+.chart-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px }
+
+/* Chart containers (consistent height + nice frame) */
+.chart-box, .chart-md, .chart-sm{
+  background:linear-gradient(180deg,#ffffff 0%, #f7fbff 100%);
+  border:1px solid var(--border); border-radius:12px; box-shadow:inset 0 1px 0 #fff;
+}
+.chart-box{ height:260px }
+.chart-md{  height:300px }
+.chart-sm{  height:240px }
+
+/* ===== Table (Recent Reviews) ======================================= */
+.review-table{ width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px; }
+.review-table thead th{
+  background:linear-gradient(180deg,var(--primary-50), #eef5ff);
+  color:var(--primary-900); font-weight:800; font-size:13px; letter-spacing:.2px;
+  border-bottom:1px solid var(--border); padding:10px 12px; text-align:left;
+}
+.review-table tbody td{
+  padding:10px 12px; border-bottom:1px solid #eef2ff; color:#0b1324; font-size:14px;
+}
+.review-table tbody tr:nth-child(odd){ background:#fbfdff }
+.review-table tbody tr:hover{ background:#f1f6ff }
+.review-table tbody td:nth-child(3){
+  font-weight:800; color:var(--primary-800);
+  background:var(--primary-50); border-left:4px solid var(--primary-300);
+}
+
+/* ===== Modal (AI Report) ============================================ */
+.ai-modal{position:fixed; inset:0; z-index:1000;}
+.ai-modal__backdrop{position:absolute; inset:0; background:rgba(16,24,40,.45); backdrop-filter:saturate(120%) blur(2px);}
+
+.ai-modal__dialog{
+  position:absolute; left:50%; top:50%; transform: translate(-50%, -50%);
+  width:min(880px, 92vw); height:min(82vh, 760px);
+  background:#fff; border-radius:14px; border:1px solid var(--border); box-shadow:0 24px 64px rgba(16,24,40,.22);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.ai-modal__header{
+  display:flex; justify-content:space-between; align-items:center; padding:12px 14px;
+  background:linear-gradient(180deg,var(--primary-700),var(--primary-800));
+  color:#fff; border-bottom:1px solid #0b2a7a;
+}
+.ai-modal__header h3{ color:#fff; font-weight:800 }
+.ai-modal__actions button{
+  appearance:none; background:transparent; color:#fff; border:1px solid rgba(255,255,255,.65);
+  padding:6px 10px; border-radius:9px; margin-left:6px; font-weight:700; cursor:pointer; transition:.18s ease;
+}
+.ai-modal__actions button:hover{ background:rgba(255,255,255,.12) }
+#ai-modal-close{ border-color:transparent; font-size:18px; padding:0 6px; line-height:1; }
+#ai-modal-close:hover{ background:rgba(255,255,255,.18) }
+
+.ai-modal__body{ padding:16px; overflow:auto; line-height:1.7; background:linear-gradient(180deg,#ffffff,#f9fbff); }
+.ai-modal__body h2,.ai-modal__body h3,.ai-modal__body h4{ margin:14px 0 8px; color:var(--primary-800) }
+.ai-modal__body ul{ margin:6px 0 10px 18px }
+.ai-report__screenshot{ width:100%; border-radius:10px; border:1px solid var(--border); margin:8px 0 14px; }
+#btn-generate-report{
+  background: var(--primary-600) !important;   /* 파란 배경 */
+  color: #fff !important;                      /* 흰 글자 */
+  border: 1px solid var(--primary-600) !important;
+  box-shadow: 0 10px 24px rgba(37,99,235,.25) !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* hover/active */
+#btn-generate-report:hover{
+  background: var(--primary-700) !important;
+  border-color: var(--primary-700) !important;
+}
+#btn-generate-report:active{
+  background: var(--primary-800) !important;
+  border-color: var(--primary-800) !important;
+  transform: translateY(0);
+}
+
+/* 비활성화 상태에서도 파란 배경 + 흰 글자 유지 */
+#btn-generate-report:disabled{
+  background: var(--primary-500) !important;
+  border-color: var(--primary-500) !important;
+  color: #fff !important;
+  opacity: 1 !important;   /* 일부 테마가 흐리게 만드는 것 방지 */
+  cursor: not-allowed;
+}
+.chart-box, .chart-md, .chart-sm{
+  position: relative;
+  border: 1px solid rgba(37,99,235,.18) !important;
+  box-shadow: 0 12px 28px rgba(37,99,235,.08), inset 0 1px 0 #fff !important;
+}
+.chart-box::after, .chart-md::after, .chart-sm::after{
+  content:""; position:absolute; inset:0; pointer-events:none; border-radius:12px;
+  box-shadow: inset 0 0 0 1px rgba(37,99,235,.06);
+}
+
+#consent-modal .form-row{display:grid;grid-template-columns:120px 1fr;gap:8px;margin:10px 0}
+#consent-modal label{font-weight:600;color:#0f172a}
+#consent-modal input[type="text"],#consent-modal input[type="date"]{
+  border:1px solid #dbeafe;border-radius:8px;padding:8px 10px;outline:none
+}
+#consent-modal input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+#consent-modal .legal-box{background:#f5f8ff;border:1px solid #e2ecff;border-radius:10px;padding:12px;margin:12px 0}
+#consent-modal .legal-box ul{margin:8px 0 0 18px}
+#consent-modal .chk{display:flex;align-items:center;gap:8px;margin-top:8px;color:#0f172a}
+.btn--ghost{background:#fff;border:1px solid #cfe0ff;border-radius:10px;padding:8px 14px}
+.btn--primary{background:#1e40af;color:#fff;border:0;border-radius:10px;padding:8px 14px}
+.btn--primary:disabled{opacity:.5;cursor:not-allowed}
+.ai-modal__footer{
+  display:flex;
+  justify-content:flex-end;  /* 오른쪽 정렬 */
+  gap:8px;
+}
+/* ===== Small details ================================================= */
+.card h3::after, .chart-section h3::after{
+  content:''; display:block; width:40px; height:3px; margin-top:6px;
+  background:linear-gradient(90deg,var(--primary-600), var(--primary-300)); border-radius:2px;
+}
+::selection{ background:var(--primary-200) }
+:focus-visible{ outline:3px solid var(--ring); outline-offset:2px }
+
+/* ===== Responsive ==================================================== */
+@media (max-width: 1024px){
+  .grid-3, .chart-grid{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+}
+@media (max-width: 640px){
+  .grid-2, .grid-3, .chart-grid{ grid-template-columns:1fr }
+  .dashboard-header{ padding:12px }
+  .report-toolbar button{ padding:7px 10px }
+}
+/* ===== Consent modal — wider, single-line feel, comfy paddings ===== */
+#consent-modal .ai-modal__dialog{
+  /* 리포트 모달(880px)보다 넓게 */
+  width: min(96vw, 960px) !important;
+  max-width: 960px !important;
+  max-height: 84vh;
+  height: auto;
+}
+
+#consent-modal .ai-modal__header{ padding: 16px 22px; }
+#consent-modal .ai-modal__body{   padding: 20px 24px; }
+#consent-modal .ai-modal__footer{
+  display:flex; justify-content:flex-end; gap:10px; padding: 12px 22px;
+}
+
+#consent-modal .form-row{
+  /* 한 줄 배치 + 여백 업 */
+  display: grid;
+  grid-template-columns: 150px 1fr;  /* 라벨 조금 더 넓게 */
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+}
+#consent-modal label{ font-weight: 700; color:#0f172a; }
+#consent-modal input[type="text"],
+#consent-modal input[type="date"]{
+  border:1px solid #dbeafe;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:15px;
+}
+#consent-modal input[type="text"]::placeholder{ color:#9aa7c1; }
+
+#consent-modal .legal-box{
+  background:#f5f8ff;
+  border:1px solid #e2ecff;
+  border-radius:12px;
+  padding:14px 16px;
+  margin:14px 0;
+}
+#consent-modal .legal-box ul{ margin:10px 0 0 22px; }
+#consent-modal .legal-box li{ margin:6px 0; line-height:1.55; }
+
+/* 넓은 화면에서는 가능하면 한 줄로(줄바꿈 최소화) */
+@media (min-width: 1100px){
+  #consent-modal .legal-box li{ white-space: nowrap; }
+}
+
+/* 동의 체크영역 간격 */
+#consent-modal .chk{
+  display:flex; align-items:center; gap:10px;
+  margin-top: 10px; color:#0f172a;
+}
+
+/* 버튼 스타일 유지(오른쪽 정렬) */
+#consent-modal .btn--ghost{ background:#fff; border:1px solid #cfe0ff; border-radius:10px; padding:9px 16px; }
+#consent-modal .btn--primary{ background:#1e40af; color:#fff; border:0; border-radius:10px; padding:9px 16px; }
+#consent-modal .btn--primary:disabled{ opacity:.5; cursor:not-allowed; }
+
+/* AI 리포트 모달 액션 버튼 크기 통일 */
+.ai-modal__actions{
+  display:flex;
+  gap:8px;
+}
+.ai-modal__actions button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:36px;          /* 동일 높이 */
+  padding:0 14px;       /* 좌우 여백 통일 */
+  min-width:60px;       /* 짧은 텍스트도 동일 폭 느낌 */
+  font-size:13px;
+  font-weight:700;
+  line-height:1;        /* 브라우저 기본 line-height 차이 제거 */
+  border-radius:9px;
+}
+
+/* 호버/액티브도 동일하게 */
+.ai-modal__actions button:hover{ transform:translateY(-1px); }
+.ai-modal__actions button:active{ transform:translateY(0); }
 </style>
 <th:block th:fragment="content">
+<div id="dashboard-capture"><!-- ⬅️ 추가 시작 -->
 <div class="dashboard-header">
   <h2>외환 상품 대시보드</h2>
   <div class="report-toolbar">
-    <button id="btn-generate-report">리포트 분석</button>
-    <span id="report-status" style="margin-left:8px;color:#666;"></span>
+    <button id="btn-generate-report">리포트 분석</button> 
   </div>
 </div>
   
@@ -94,6 +341,54 @@
       </tbody>
     </table>
   </section>
+  </div>
+
+<!-- 동의 모달 -->
+<div id="consent-modal" class="ai-modal" style="display:none">
+  <div class="ai-modal__backdrop"></div>
+  <div class="ai-modal__dialog consent--wide">
+    <div class="ai-modal__header">
+      <h3>리포트 분석 전 동의</h3>
+      <button id="consent-close" class="ai-modal__close" aria-label="닫기">×</button>
+    </div>
+
+    <div class="ai-modal__body">
+      <form id="consent-form">
+        <div class="form-row">
+          <label for="consent-name">이름</label>
+          <input id="consent-name" type="text" required autocomplete="name" />
+        </div>
+        <div class="form-row">
+          <label for="consent-birth">생년월일</label>
+          <input id="consent-birth" type="date" required />
+        </div>
+        <div class="form-row">
+          <label for="consent-purpose">사용 목적</label>
+          <input id="consent-purpose" type="text" required placeholder="예: 경영 리포트 작성" />
+        </div>
+
+        <div class="legal-box">
+          <strong>유의사항</strong>
+          <ul>
+            <li><b>개인정보보호법</b>: 입력한 개인정보는 리포트 생성 목적 범위 내에서만 사용됩니다.</li>
+            <li><b>저작권법</b>: 생성된 리포트는 내부 용도로 사용하며, 2차 배포 시 출처를 명시해야 합니다.</li>
+            <li><b>영업비밀보호법</b>: 대시보드/리포트의 민감 정보는 외부 공유를 제한합니다.</li>
+          </ul>
+        </div>
+
+        <label class="chk">
+          <input id="consent-agree" type="checkbox" required />
+          위 내용을 확인했고 동의합니다.
+        </label>
+      </form>
+    </div>
+
+    <div class="ai-modal__footer">
+      <button id="consent-cancel" type="button" class="btn--ghost">취소</button>
+      <button id="consent-confirm" type="button" class="btn--primary" disabled>동의하고 계속</button>
+    </div>
+  </div>
+</div>  
   
 <!-- AI 리포트 모달 -->
 <div id="ai-report-modal" class="ai-modal" style="display:none;">
@@ -113,6 +408,8 @@
 </div>
   <!-- ECharts & 초기화 스크립트 ------------------------------------------ -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script th:src="@{/js/echarts-dashboard.js}"></script>
 </th:block>
 </html>
