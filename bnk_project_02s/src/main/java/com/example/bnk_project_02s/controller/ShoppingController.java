@@ -1,6 +1,8 @@
 package com.example.bnk_project_02s.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.bnk_project_02s.dto.ShoppingProductDto;
+import com.example.bnk_project_02s.entity.User;
 import com.example.bnk_project_02s.service.ShoppingService;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/shopping")
@@ -24,6 +29,7 @@ public class ShoppingController {
     private ShoppingService shoppingService;
 
     @GetMapping("/product/api")
+    @ResponseBody
     public String getProduct(@RequestParam("spno") String spno) {
         try {
             return shoppingService.getProductDetails(spno);
@@ -47,16 +53,45 @@ public class ShoppingController {
             return "user/shopping/product";
         }
     }
-    
+
     @GetMapping("/products")
     @ResponseBody
     public List<ShoppingProductDto> getProductList() {
         return shoppingService.getProductList();
     }
-    
+
     @GetMapping("/products/detail/{spno}")
     @ResponseBody
-    public List<ShoppingProductDto> getProductDetail(@PathVariable("spno") String spno) {
-    	return shoppingService.getProductDetail();
+    public ShoppingProductDto getProductDetail(@PathVariable("spno") String spno) {
+        return shoppingService.getOrFetchProduct(spno);
+    }
+
+    @GetMapping("/user/info")
+    @ResponseBody
+    public Map<String, Object> getUserInfo(HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+
+        User loginUser = (User) session.getAttribute("LOGIN_USER");
+        if (loginUser != null) {
+            result.put("isLoggedIn", true);
+            result.put("uname", loginUser.getUname());
+            result.put("uid", loginUser.getUid());
+        } else {
+            result.put("isLoggedIn", false);
+            result.put("uname", "회원");
+        }
+
+        return result;
+    }
+
+    @GetMapping("/translate/all")
+    @ResponseBody
+    public String translateAllProducts() {
+        try {
+            shoppingService.translateExistingProducts();
+            return "모든 상품 번역 완료";
+        } catch (Exception e) {
+            return "번역 실패: " + e.getMessage();
+        }
     }
 }
