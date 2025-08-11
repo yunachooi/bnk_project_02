@@ -23,16 +23,22 @@ public class ShoppingProduct {
     
     private String spname;
     
+    @Column(length = 1000)
+    private String spnameKo;
+    
     @Column(length = 2000)
     private String spdescription;
     
+    @Column(length = 3000)
+    private String spdescriptionKo;
+    
     private Double spprice;
-    
     private String spcurrency;
-    
     private Double sprating;
-    
     private Integer spreviews;
+    
+    @Column(length = 2000)
+    private String spimgurl;
     
     @Column(length = 2000)
     private String spurl;

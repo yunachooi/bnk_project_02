@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(ShoppingApp());
 }
 
 class ShoppingApp extends StatelessWidget {
+  const ShoppingApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '해외직구쇼핑몰',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        primaryColor: Color(0xFF1976D2),
       ),
       home: ShoppingHomePage(),
       debugShowCheckedModeBanner: false,
@@ -21,13 +25,146 @@ class ShoppingApp extends StatelessWidget {
   }
 }
 
+class Product {
+  final String spno;
+  final String spname;
+  final String? spnameKo;
+  final String spdescription;
+  final String? spdescriptionKo;
+  final double spprice;
+  final String spcurrency;
+  final double sprating;
+  final int spreviews;
+  final String spimgurl;
+  final String spurl;
+  final String? spat;
+
+  Product({
+    required this.spno,
+    required this.spname,
+    this.spnameKo,
+    required this.spdescription,
+    this.spdescriptionKo,
+    required this.spprice,
+    required this.spcurrency,
+    required this.sprating,
+    required this.spreviews,
+    required this.spimgurl,
+    required this.spurl,
+    this.spat,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      spno: json['spno'] ?? '',
+      spname: json['spname'] ?? '',
+      spnameKo: json['spnameKo'] ?? json['spname_ko'],
+      spdescription: json['spdescription'] ?? '',
+      spdescriptionKo: json['spdescriptionKo'] ?? json['spdescription_ko'],
+      spprice: (json['spprice'] ?? 0).toDouble(),
+      spcurrency: json['spcurrency'] ?? 'USD',
+      sprating: (json['sprating'] ?? 0).toDouble(),
+      spreviews: json['spreviews'] ?? 0,
+      spimgurl: json['spimgurl'] ?? '',
+      spurl: json['spurl'] ?? '',
+      spat: json['spat'],
+    );
+  }
+
+  String get displayName {
+    return (spnameKo != null && spnameKo!.isNotEmpty) ? spnameKo! : spname;
+  }
+
+  String get displayDescription {
+    return (spdescriptionKo != null && spdescriptionKo!.isNotEmpty) ? spdescriptionKo! : spdescription;
+  }
+}
+
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:8093';
+
+  static Future<List<Product>> getProducts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/shopping/products'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+
+        if (responseBody.isEmpty) {
+          return [];
+        }
+
+        List<dynamic> jsonList = json.decode(responseBody);
+
+        List<Product> products = jsonList.map((json) {
+          try {
+            return Product.fromJson(json);
+          } catch (e) {
+            return null;
+          }
+        }).where((product) => product != null).cast<Product>().toList();
+
+        return products;
+
+      } else {
+        throw Exception('서버 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getUserInfo() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/shopping/user/info'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final responseBody = response.body;
+        if (responseBody.isEmpty) {
+          return {'isLoggedIn': false, 'uname': '회원'};
+        }
+
+        Map<String, dynamic> result = json.decode(responseBody);
+        return result;
+      } else {
+        return {'isLoggedIn': false, 'uname': '회원'};
+      }
+    } catch (e) {
+      return {'isLoggedIn': false, 'uname': '회원'};
+    }
+  }
+}
+
 class ProductDetailPage extends StatelessWidget {
   final Product product;
 
   const ProductDetailPage({
-    Key? key,
+    super.key,
     required this.product,
-  }) : super(key: key);
+  });
+
+  Future<void> _launchURL() async {
+    try {
+      final Uri url = Uri.parse(product.spurl);
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      throw Exception('링크를 열 수 없습니다: ${product.spurl}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +173,9 @@ class ProductDetailPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-        shadowColor: Colors.grey.withOpacity(0.3),
+        shadowColor: Colors.grey.withValues(alpha: 0.3),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.blue),
+          icon: Icon(Icons.arrow_back, color: Color(0xFF1976D2)),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -46,7 +183,7 @@ class ProductDetailPage extends StatelessWidget {
         title: Text(
           '뒤로가기',
           style: TextStyle(
-            color: Colors.blue,
+            color: Color(0xFF1976D2),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -77,7 +214,6 @@ class ProductDetailPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-
               Container(
                 width: double.infinity,
                 height: 300,
@@ -85,7 +221,7 @@ class ProductDetailPage extends StatelessWidget {
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: product.spurl.isEmpty
+                child: product.spimgurl.isEmpty
                     ? Center(
                   child: Icon(
                     Icons.image,
@@ -96,7 +232,7 @@ class ProductDetailPage extends StatelessWidget {
                     : ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    product.spurl,
+                    product.spimgurl,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -122,7 +258,6 @@ class ProductDetailPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 16),
-
               Row(
                 children: [
                   ...List.generate(5, (index) {
@@ -136,7 +271,7 @@ class ProductDetailPage extends StatelessWidget {
                   }),
                   SizedBox(width: 8),
                   Text(
-                    '(리뷰수)',
+                    '(${product.spreviews})',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -145,77 +280,152 @@ class ProductDetailPage extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 12),
-
               Text(
-                product.spname,
+                product.displayName,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: 8),
-
-              Text(
-                product.spdescription,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
               SizedBox(height: 20),
-
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Color(0xFFE3F2FD),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Color(0xFF90CAF9), width: 1),
                 ),
-                child: Center(
-                  child: Text(
-                    '추천상품상품고',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '가격 정보',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0D47A1),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '${(product.spprice * 0.9).toStringAsFixed(2)} ${product.spcurrency} (카드 할인 적용 시)',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1976D2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              GestureDetector(
+                onTap: () async {
+                  try {
+                    final Uri url = Uri.parse('https://www.busanbank.co.kr');
+                    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                      throw Exception('Could not launch $url');
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 150,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/images/ad4.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '추천상품상품광고',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
               ),
               SizedBox(height: 20),
-
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(12),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[200]!, width: 1),
+                  border: Border.all(color: Colors.orange[300]!, width: 2),
                 ),
-                child: Center(
-                  child: Text(
-                    '! 아마존 상품 안내 !',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange[600],
+                          size: 24,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '해외 직구 주의사항',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 12),
-
-              Text(
-                '아마존 글로벌 스토어에서 판매 중인 상품으로\n공식 판매처인 아마존 미국에서 판매/배송을 책임집니다.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black,
-                  height: 1.4,
+                    SizedBox(height: 12),
+                    Text(
+                      '• 아마존 글로벌 스토어에서 판매 중인 상품으로\n'
+                          '공식 판매자인 아마존 미국에서 판매/배송을 책입집니다.\n'
+                          '• 제품 문의 시 아마존 고객센터로 문의해주세요',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.orange[700],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 20),
-
               Text(
                 '상품상세설명',
                 style: TextStyle(
@@ -225,36 +435,36 @@ class ProductDetailPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 12),
-
-              Container(
-                width: double.infinity,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!, width: 1),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    product.spdescription,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                    ),
-                  ),
+              Text(
+                product.displayDescription,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.black87,
+                  height: 1.5,
                 ),
               ),
               SizedBox(height: 30),
-
-              Container(
+              SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    try {
+                      await _launchURL();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Color(0xFF1976D2),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -278,98 +488,11 @@ class ProductDetailPage extends StatelessWidget {
   }
 }
 
-class Product {
-  final String spno;
-  final String spname;
-  final String spdescription;
-  final double spprice;
-  final String spcurrency;
-  final double sprating;
-  final int spreviews;
-  final String spurl;
-  final String? spat;
-
-  Product({
-    required this.spno,
-    required this.spname,
-    required this.spdescription,
-    required this.spprice,
-    required this.spcurrency,
-    required this.sprating,
-    required this.spreviews,
-    required this.spurl,
-    this.spat,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      spno: json['spno'] ?? '',
-      spname: json['spname'] ?? '',
-      spdescription: json['spdescription'] ?? '',
-      spprice: (json['spprice'] ?? 0).toDouble(),
-      spcurrency: json['spcurrency'] ?? 'USD',
-      sprating: (json['sprating'] ?? 0).toDouble(),
-      spreviews: json['spreviews'] ?? 0,
-      spurl: json['spurl'] ?? '',
-      spat: json['spat'],
-    );
-  }
-}
-
-class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8093';
-
-  static Future<List<Product>> getProducts() async {
-    try {
-      print('API 호출 시작: $baseUrl/shopping/products');
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/shopping/products'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(Duration(seconds: 15));
-
-      print('API 응답 상태: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final responseBody = response.body;
-        print('응답 길이: ${responseBody.length}');
-
-        if (responseBody.isEmpty) {
-          print('응답 본문이 비어있음');
-          return [];
-        }
-
-        List<dynamic> jsonList = json.decode(responseBody);
-        print('파싱된 상품 개수: ${jsonList.length}');
-
-        List<Product> products = jsonList.map((json) {
-          try {
-            return Product.fromJson(json);
-          } catch (e) {
-            print('상품 파싱 오류: $e');
-            return null;
-          }
-        }).where((product) => product != null).cast<Product>().toList();
-
-        print('성공적으로 파싱된 상품: ${products.length}개');
-        return products;
-
-      } else {
-        throw Exception('서버 오류: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('API 호출 오류: $e');
-      throw Exception('네트워크 오류: $e');
-    }
-  }
-}
-
 class ShoppingHomePage extends StatefulWidget {
+  const ShoppingHomePage({super.key});
+
   @override
-  _ShoppingHomePageState createState() => _ShoppingHomePageState();
+  State<ShoppingHomePage> createState() => _ShoppingHomePageState();
 }
 
 class _ShoppingHomePageState extends State<ShoppingHomePage> {
@@ -396,11 +519,14 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
   bool isLoading = true;
   String errorMessage = '';
   int currentAdIndex = 0;
+  String username = '회원';
+  bool isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
     loadProducts();
+    loadUserInfo();
     _startAdSlider();
   }
 
@@ -424,9 +550,24 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        _startAdSlider(); // 재귀 호출로 반복
+        _startAdSlider();
       }
     });
+  }
+
+  Future<void> loadUserInfo() async {
+    try {
+      final userInfo = await ApiService.getUserInfo();
+      setState(() {
+        isLoggedIn = userInfo['isLoggedIn'] ?? false;
+        username = userInfo['uname'] ?? '회원';
+      });
+    } catch (e) {
+      setState(() {
+        isLoggedIn = false;
+        username = '회원';
+      });
+    }
   }
 
   Future<void> loadProducts() async {
@@ -458,7 +599,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
       } else {
         List<Product> searchResults = products
             .where((product) =>
-        product.spname.toLowerCase().contains(query.toLowerCase()) ||
+        product.displayName.toLowerCase().contains(query.toLowerCase()) ||
+            product.displayDescription.toLowerCase().contains(query.toLowerCase()) ||
+            product.spname.toLowerCase().contains(query.toLowerCase()) ||
             product.spdescription.toLowerCase().contains(query.toLowerCase()))
             .toList();
         filteredProducts = filterByCategory(searchResults);
@@ -468,7 +611,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
 
   List<Product> filterByCategory(List<Product> productList) {
     if (selectedCategory == '전체') {
-      return productList.take(4).toList(); // 추천 상품은 4개만 표시
+      return productList.take(4).toList();
     }
 
     String currency = selectedCategory;
@@ -491,7 +634,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-        shadowColor: Colors.grey.withOpacity(0.3),
+        shadowColor: Colors.grey.withValues(alpha: 0.3),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -501,7 +644,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         title: Text(
           '뒤로가기',
           style: TextStyle(
-            color: Colors.blue,
+            color: Color(0xFF1976D2),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -535,14 +678,12 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   ),
                 ),
                 SizedBox(height: 16),
-
-                // 광고 슬라이더
                 Container(
                   width: double.infinity,
                   height: 250,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue, width: 2),
+                    border: Border.all(color: Color(0xFF1976D2), width: 2),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -590,7 +731,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   ),
                 ),
                 SizedBox(height: 20),
-
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -615,7 +755,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   ),
                 ),
                 SizedBox(height: 20),
-
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -636,9 +775,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                 height: 60,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: isSelected ? Colors.blue : Colors.grey[200],
+                                  color: isSelected ? Color(0xFF1976D2) : Colors.grey[200],
                                   border: isSelected
-                                      ? Border.all(color: Colors.blue, width: 3)
+                                      ? Border.all(color: Color(0xFF1976D2), width: 3)
                                       : null,
                                 ),
                                 child: Center(
@@ -651,7 +790,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   )
-                                      : Container(
+                                      : SizedBox(
                                     width: 50,
                                     height: 50,
                                     child: ClipOval(
@@ -686,7 +825,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                 label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isSelected ? Colors.blue : Colors.black,
+                                  color: isSelected ? Color(0xFF1976D2) : Colors.black,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
@@ -698,13 +837,12 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   ),
                 ),
                 SizedBox(height: 20),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       selectedCategory == '전체'
-                          ? 'OOO님을 위한 추천 상품'
+                          ? '$username님을 위한 추천 상품'
                           : '상품 목록 (${filteredProducts.length}개)',
                       style: TextStyle(
                         fontSize: 16,
@@ -721,43 +859,41 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   ],
                 ),
                 SizedBox(height: 16),
-
                 if (errorMessage.isNotEmpty)
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: Color(0xFFE3F2FD),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(color: Color(0xFF90CAF9)),
                     ),
                     child: Column(
                       children: [
                         Text(
                           '데이터를 불러오는 중 오류가 발생했습니다',
-                          style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 8),
                         Text(
                           errorMessage,
-                          style: TextStyle(color: Colors.blue[600], fontSize: 12),
+                          style: TextStyle(color: Color(0xFF1976D2), fontSize: 12),
                         ),
                         SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: loadProducts,
-                          child: Text('다시 시도'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Color(0xFF1976D2),
                             foregroundColor: Colors.white,
                           ),
+                          child: Text('다시 시도'),
                         ),
                       ],
                     ),
                   ),
-
                 if (!isLoading && errorMessage.isEmpty)
                   filteredProducts.isEmpty
-                      ? Container(
+                      ? SizedBox(
                     height: 200,
                     child: Center(
                       child: Text(
@@ -793,9 +929,8 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                       );
                     },
                   ),
-
                 if (isLoading && errorMessage.isEmpty)
-                  Container(
+                  SizedBox(
                     height: 200,
                     child: Center(
                       child: Column(
@@ -814,7 +949,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                       ),
                     ),
                   ),
-
                 SizedBox(height: 20),
               ],
             ),
@@ -829,9 +963,9 @@ class ProductCard extends StatelessWidget {
   final Product product;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -841,7 +975,7 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: Offset(0, 1),
@@ -859,7 +993,7 @@ class ProductCard extends StatelessWidget {
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
               ),
-              child: product.spurl.isEmpty
+              child: product.spimgurl.isEmpty
                   ? Center(
                 child: Icon(
                   Icons.image,
@@ -870,7 +1004,7 @@ class ProductCard extends StatelessWidget {
                   : ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                 child: Image.network(
-                  product.spurl,
+                  product.spimgurl,
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -897,7 +1031,6 @@ class ProductCard extends StatelessWidget {
               ),
             ),
           ),
-
           Expanded(
             flex: 3,
             child: Padding(
@@ -928,9 +1061,8 @@ class ProductCard extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 4),
-
                   Text(
-                    product.spname,
+                    product.displayName,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -940,7 +1072,6 @@ class ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -959,7 +1090,7 @@ class ProductCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: Color(0xFF1976D2),
                         ),
                       ),
                     ],
