@@ -80,15 +80,24 @@ document.addEventListener('DOMContentLoaded', () => {
   /* 2) 연령대 bar / 성별 pie                                            */
   /* ------------------------------------------------------------------ */
 
-  echarts.init(document.getElementById('age-bar')).setOption({
-    xAxis: { type: 'category',
-             data: ['10대','20대','30대','40대','50대','60대+'] },
-    yAxis: { type: 'value' },
-    tooltip: { trigger: 'axis' },
-    series: [{ name: '가입자', type: 'bar',
-               itemStyle:{ color:'#4e81ff' },
-               data: [120, 340, 280, 220, 140, 60] }]
-  });
+  fetch('/api/ageStats')
+    .then(res => res.json())
+    .then(data => {
+      const labels = Object.keys(data);
+      const counts = Object.values(data);
+
+      echarts.init(document.getElementById('age-bar')).setOption({
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        tooltip: { trigger: 'axis' },
+        series: [{
+          name: '가입자',
+          type: 'bar',
+          itemStyle: { color: '#4e81ff' },
+          data: counts
+        }]
+      });
+    });
 
   echarts.init(document.getElementById('gender-pie')).setOption({
     tooltip: { trigger: 'item' },
@@ -203,4 +212,225 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>`);
   });
 
+});
+
+
+// 2) 차트에서 데이터 뽑는 유틸
+function extractSeriesDataByDomId(domId, seriesIndex = 0) {
+  const el = document.getElementById(domId);
+  if (!el) return null;
+  const inst = echarts.getInstanceByDom(el);
+  if (!inst) return null;
+  const opt = inst.getOption() || {};
+  const labels = (opt.xAxis && opt.xAxis[0] && opt.xAxis[0].data) ? opt.xAxis[0].data : [];
+  const series = (opt.series && opt.series[seriesIndex] && opt.series[seriesIndex].data) ? opt.series[seriesIndex].data : [];
+  return { labels, data: series };
+}
+
+// 3) 화면에 있는 모든 지표를 하나의 JSON으로 수집
+async function buildStatsJson() {
+  // 가입자 추이
+  const subscribers = {
+    daily: extractSeriesDataByDomId('chart-daily'),
+    monthly: extractSeriesDataByDomId('chart-monthly'),
+    quarterly: extractSeriesDataByDomId('chart-quarterly')
+  };
+
+  // 연령대: 서버 API 다시 호출(타이밍 보장용)
+  let ageStats = null;
+  try {
+    const res = await fetch('/api/ageStats');
+    if (res.ok) ageStats = await res.json();
+  } catch (_) {}
+
+  // 성별: 파이 차트에서 추출
+  let gender = null;
+  const gInst = echarts.getInstanceByDom(document.getElementById('gender-pie'));
+  if (gInst) {
+    const gopt = gInst.getOption();
+    const arr = (gopt.series && gopt.series[0] && gopt.series[0].data) ? gopt.series[0].data : [];
+    gender = arr.reduce((acc, cur) => (acc[cur.name] = cur.value, acc), {});
+  }
+
+  // 리뷰 지표
+  const reviewsCountMonthly = extractSeriesDataByDomId('review-count-bar');
+  const ratingMonthly      = extractSeriesDataByDomId('rating-line');
+
+  // 워드클라우드(있으면)
+  let keywords = null;
+  const wcEl = document.getElementById('sentiment-wordcloud');
+  if (wcEl) {
+    const wcInst = echarts.getInstanceByDom(wcEl);
+    if (wcInst) {
+      const wopt = wcInst.getOption();
+      keywords = (wopt.series && wopt.series[0] && wopt.series[0].data) ? wopt.series[0].data : null;
+    }
+  }
+
+  // 사용액/공유 클릭
+  const krwCumulative    = extractSeriesDataByDomId('krw-area');
+  const shareClicksDaily = extractSeriesDataByDomId('share-gauge');
+
+  // 최근 리뷰(테이블에서 추출)
+  const recentReviews = Array.from(document.querySelectorAll('#review-list tr')).map(tr => {
+    const tds = tr.querySelectorAll('td');
+    return {
+      date: tds[0]?.textContent?.trim(),
+      nick: tds[1]?.textContent?.trim(),
+      rate: tds[2]?.textContent?.trim(),
+      text: tds[3]?.textContent?.trim(),
+    };
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    subscribers,
+    demographics: { age: ageStats, gender },
+    reviews: { countMonthly: reviewsCountMonthly, ratingMonthly, recentReviews, keywords },
+    usage: { krwCumulative, shareClicksDaily }
+  };
+}
+
+// 4) 버튼 클릭 → 백엔드(OpenAI) 호출 → 결과 표시
+const btn = document.getElementById('btn-generate-report');
+const out = document.getElementById('ai-report');
+
+btn?.addEventListener('click', async () => {
+  try {
+    out.textContent = 'AI 리포트를 생성 중입니다…';
+    const stats = await buildStatsJson();
+
+    const res = await fetch('/api/generateReport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(stats)
+    });
+
+    const text = await res.text();
+    out.textContent = text || '비어 있는 응답입니다.';
+  } catch (e) {
+    out.textContent = '리포트 생성 실패: ' + (e?.message || e);
+  }
+  
+});
+
+/* ===== AI 리포트: 상태표시 + 모달 + PDF/Excel (모달 내) ===== */
+
+const generateBtn = document.getElementById('btn-generate-report');
+const statusEl    = document.getElementById('report-status');
+
+let lastReportText = '';
+let lastStatsJson  = null;
+
+// 모달 유틸
+function openReportModal(text){
+  const modal = document.getElementById('ai-report-modal');
+  const body  = document.getElementById('ai-report-body');
+  if (!modal || !body) return;
+  body.textContent = text || '(빈 리포트)';
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeReportModal(){
+  const modal = document.getElementById('ai-report-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('ai-modal-close')?.addEventListener('click', closeReportModal);
+document.querySelector('#ai-report-modal .ai-modal__backdrop')?.addEventListener('click', closeReportModal);
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeReportModal(); });
+
+// 리포트 생성
+generateBtn?.addEventListener('click', async () => {
+  try {
+    // 상태 표시 + 버튼 비활성화
+    generateBtn.disabled = true;
+    const oldText = generateBtn.textContent;
+    generateBtn.textContent = '분석 중…';
+    if (statusEl) statusEl.textContent = '분석 중…';
+
+    const stats = await buildStatsJson();
+    lastStatsJson = stats;
+
+    const res = await fetch('/api/generateReport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(stats)
+    });
+
+    lastReportText = (await res.text()) || '비어 있는 응답입니다.';
+
+    // 완료 → 상태초기화 + 모달 열기(중앙)
+    if (statusEl) statusEl.textContent = '완료';
+    openReportModal(lastReportText);
+
+    // 1초 후 상태표시 지우기
+    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
+
+    // 버튼 원복
+    generateBtn.textContent = oldText;
+    generateBtn.disabled = false;
+
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '실패';
+    openReportModal('리포트 생성 실패: ' + (e?.message || e));
+    generateBtn.textContent = '리포트 분석';
+    generateBtn.disabled = false;
+  }
+});
+
+// 모달 내 PDF (인쇄)
+document.getElementById('ai-modal-print')?.addEventListener('click', () => {
+  if (!lastReportText) { alert('먼저 리포트를 생성하세요.'); return; }
+  const html = `
+  <html><head><meta charset="utf-8"><title>AI 리포트</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px;line-height:1.6}
+  pre{white-space:pre-wrap}</style></head>
+  <body><h2>AI 리포트</h2><pre>${lastReportText.replace(/</g,'&lt;')}</pre>
+  <script>window.onload=()=>setTimeout(()=>print(),200)</script></body></html>`;
+  const w = window.open('about:blank','_blank'); w.document.write(html); w.document.close();
+});
+
+// 모달 내 Excel (CSV) 다운로드
+document.getElementById('ai-modal-excel')?.addEventListener('click', () => {
+  if (!lastStatsJson) { alert('먼저 리포트를 생성하세요.'); return; }
+
+  const rows = [];
+  rows.push(['섹션','라벨','값']);
+
+  const pushSeries = (section, obj)=>{
+    if (!obj) return;
+    if (obj.labels && obj.data) obj.labels.forEach((lab,i)=> rows.push([section, lab, obj.data[i]]));
+  };
+
+  pushSeries('가입자-일별',   lastStatsJson.subscribers?.daily);
+  pushSeries('가입자-월별',   lastStatsJson.subscribers?.monthly);
+  pushSeries('가입자-분기별', lastStatsJson.subscribers?.quarterly);
+
+  if (lastStatsJson.demographics?.age)
+    Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v]));
+  if (lastStatsJson.demographics?.gender)
+    Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v]));
+
+  pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly);
+  pushSeries('평점-월별평균', lastStatsJson.reviews?.ratingMonthly);
+  pushSeries('누적원화',      lastStatsJson.usage?.krwCumulative);
+  pushSeries('공유클릭-일별', lastStatsJson.usage?.shareClicksDaily);
+
+  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `dashboard-report_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 1000);
+});
+
+// 모달 내 새 창
+document.getElementById('ai-modal-popout')?.addEventListener('click', () => {
+  if (!lastReportText) { alert('먼저 리포트를 생성하세요.'); return; }
+  const w = window.open('about:blank','_blank');
+  w.document.write(`<pre style="white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif">${lastReportText.replace(/</g,'&lt;')}</pre>`);
+  w.document.close();
 });

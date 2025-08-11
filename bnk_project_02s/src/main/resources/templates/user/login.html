@@ -1,24 +1,79 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>로그인</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- 공통 CSS -->
+  <link rel="stylesheet" th:href="@{/css/user.css}">
 </head>
 <body>
 
-<h2>로그인</h2>
+<div class="container">
+  <h1 class="title">로그인</h1>
 
-<form th:action="@{/user/login}" method="post">
-  <label>ID : <input name="uid"/></label><br/>
-  <label>비밀번호 : <input type="password" name="upw"/></label><br/>
-  <button>로그인</button>
-</form>
+  <form id="loginForm" th:action="@{/user/login}" method="post" autocomplete="off">
+    <!-- ID -->
+    <div class="field">
+      <label for="uid">ID</label>
+      <input id="uid" name="uid" class="input"
+             inputmode="latin" lang="en"
+             autocomplete="off" autocapitalize="off" spellcheck="false" />
+    </div>
 
-<!-- 로그인 실패 메시지 -->
-<p th:if="${loginError}" th:text="${loginError}" style="color:red;"></p>
-<p th:if="${msg}" th:text="${msg}" style="color:green;"></p>
+    <!-- 비밀번호 -->
+    <div class="field">
+      <label for="upw">비밀번호</label>
+      <input id="upw" type="password" name="upw" class="input"
+             inputmode="latin" lang="en"
+             autocomplete="off" autocapitalize="off" spellcheck="false" />
+    </div>
 
-<p><a th:href="@{/user/signup}">회원가입</a></p>
+    <button type="submit" class="btn btn-primary btn-full">로그인</button>
+  </form>
+
+  <!-- 로그인 실패/안내 메시지 -->
+  <p class="err" th:if="${loginError}" th:text="${loginError}"></p>
+  <p class="err ok" th:if="${msg}" th:text="${msg}"></p>
+
+  <!-- 회원가입 / 비밀번호 찾기 -->
+  <div class="login-links" style="margin-top:20px; text-align:center; font-size:14px;">
+    <a th:href="@{/user/signup}">회원가입</a>
+    <span style="margin:0 6px;">|</span>
+    <a href="#">아이디/비밀번호를 잊어버리셨어요?</a>
+  </div>
+</div>
+
+<script>
+  // 페이지 로드 시 ID 자동 포커스
+  window.addEventListener('load', () => {
+    const uid = document.getElementById('uid');
+    if (uid) uid.focus();
+  });
+
+  // 제로폭 문자 제거용
+  const ZERO_WIDTH = /[\u200B\u200C\u200D\uFEFF]/g;
+
+  // 제출 전 입력값 정리
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    const idInput = document.getElementById('uid');
+    const pwInput = document.getElementById('upw');
+
+    // ID: 제로폭 제거 + trim (+ 필요시 소문자 통일)
+    let cleaned = (idInput.value || '').replace(ZERO_WIDTH, '').trim();
+    cleaned = cleaned.toLowerCase();
+    idInput.value = cleaned;
+
+    // PW: 제로폭/앞뒤 공백 제거
+    pwInput.value = (pwInput.value || '').replace(ZERO_WIDTH, '').trim();
+
+    // 빈 값 방지
+    if (!idInput.value || !pwInput.value) {
+      e.preventDefault();
+      if (!idInput.value) idInput.focus(); else pwInput.focus();
+    }
+  });
+</script>
 
 </body>
 </html>

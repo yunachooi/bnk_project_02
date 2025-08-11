@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>가입 완료</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" th:href="@{/css/user.css}" />
+</head>
+<body class="signup success">
+  <div class="container">
+    <main class="success-wrap">
+      <section class="success-box">
+        <p>환영합니다.</p>
+        <p><strong class="accent">회원가입</strong>이</p>
+        <p>정상적으로 되었습니다.</p>
+      </section>
+
+     <div class="form-actions">
+  <a th:href="@{/user/login}" class="btn btn-primary btn-cta btn-lg" aria-label="로그인 화면으로 이동">
+    <span class="btn-label">로그인 하러 가기</span>
+    <span class="btn-ico" aria-hidden="true">→</span>
+  </a>
+</div>
+    </main>
+  </div>
+</body>
+</html>

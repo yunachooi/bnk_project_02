@@ -1,44 +1,57 @@
 package com.example.bnk_project_02s.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
 public class UserDto {
 
-    /* ───── 기본 정보 ───── */
-    @NotBlank @Size(min = 4, max = 50, message = "ID는 4~50자 사이여야 합니다")
+    @NotBlank(message = "ID는 필수입니다.")
     private String uid;
 
-    /** 비밀번호: ① 4자 이상 ② 대문자·특수문자 포함 */
-    @Size(min = 4, message = "비밀번호는 최소 4자 이상이어야 합니다")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$",
-             message = "비밀번호는 대문자와 특수문자를 포함해야 합니다")
+    @NotBlank(message = "비밀번호는 필수입니다.")
+    // 최소 8자, 대문자 1개 이상, 특수문자 1개 이상
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-={}\\[\\]:;\"'<>,.?/]).{8,}$",
+             message = "대문자/특수문자 포함 8자 이상으로 입력하세요.")
     private String upw;
 
-    @NotBlank @Size(max = 30, message = "이름은 30자 이하로 입력하세요")
+    @NotBlank(message = "비밀번호 확인은 필수입니다.")
+    private String confirmUpw;
+
+    @NotBlank(message = "이름은 필수입니다.")
     private String uname;
 
-    @Pattern(regexp = "^[MF]$", message = "성별은 M 또는 F 로 입력하세요")
-    private String ugender;
+    @NotBlank(message = "주민번호 앞 6자리는 필수입니다.")
+    @Pattern(regexp = "^\\d{6}$", message = "생년월일은 숫자 6자리여야 합니다.")
+    private String rrnFront;
 
-    @Pattern(regexp = "^\\d{8}$", message = "생년월일은 YYYYMMDD 형식입니다")
-    private String ubirth;
+    @NotBlank(message = "주민번호 뒤 7자리는 필수입니다.")
+    @Pattern(regexp = "^\\d{7}$", message = "뒷자리는 숫자 7자리여야 합니다.")
+    private String rrnBack;
 
-    @Pattern(regexp = "^01\\d-\\d{3,4}-\\d{4}$", message = "휴대폰 번호 형식이 올바르지 않습니다")
+    @NotBlank(message = "휴대전화는 필수입니다.")
+    @Pattern(
+      regexp = "^010-\\d{4}-\\d{3,4}$",
+      message = "휴대번호는 010-1111-1111 또는 010-1111-111 형식이어야 합니다."
+    )
     private String uphone;
 
-    /* ───── 권한 & 상태 ───── */
-    private String urole;
-    private String ucheck;
-    private Long   ushare;
+    private List<String> ucurrency = new ArrayList<>();
+    private List<String> uinterest = new ArrayList<>();
 
-    /* ───── 다중 선택 필드 ───── */
-    @NotEmpty(message = "관심 통화를 한 가지 이상 선택하세요")
-    private List<String> ucurrency;
+    public boolean isPwMatched() {
+        return upw != null && upw.equals(confirmUpw);
+    }
 
-    @NotEmpty(message = "관심 분야를 한 가지 이상 선택하세요")
-    private List<String> uinterest;
+    // ★ 서비스에서 쓰는 합쳐진 주민번호 제공
+    public String getRrn() {
+        if (rrnFront == null || rrnBack == null) return null;
+        return rrnFront + "-" + rrnBack;
+    }
 }

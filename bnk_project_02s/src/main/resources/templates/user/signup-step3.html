@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원가입 3/3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" th:href="@{/css/user.css}" />
+</head>
+<body class="signup">
+  <div class="container">
+    <header class="page-top">
+      <a th:href="@{/user/signup/step2}" aria-label="이전 단계로 이동">&lt;뒤로가기</a>
+      <a th:href="@{/user/signup/step3/skip}" aria-label="이 단계 건너뛰기">건너뛰기</a>
+    </header>
+
+    <div class="stepper" th:insert="~{fragments/stepper :: stepper(current=3)}"></div>
+    <h1 class="title">관심분야</h1>
+
+    <form th:action="@{/user/signup/step3}" th:object="${userDto}" method="post" class="form">
+      <div class="chip-grid" id="topicGrid">
+        <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="TRAVEL"><span class="pill">여 행</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="STUDY"><span class="pill">유 학</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="SHOPPING"><span class="pill">쇼 핑</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="FINANCE"><span class="pill">재테크</span></label>
+        <label class="chip"><input type="checkbox" th:field="*{uinterest}" value="ETC"><span class="pill">기 타</span></label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-cta" aria-label="가입 완료">가 입 완 료</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      const grid = document.getElementById('topicGrid');
+      if(!grid) return;
+      grid.querySelectorAll('label.chip').forEach(chip=>{
+        const input = chip.querySelector('input[type="checkbox"]');
+        const sync  = ()=> chip.classList.toggle('is-checked', !!input.checked);
+        sync(); // 초기값 반영
+        input.addEventListener('change', sync);
+      });
+    })();
+  </script>
+</body>
+</html>

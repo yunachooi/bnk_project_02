@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.example.bnk_project_02s.dto.ShoppingProductDto;
 import com.example.bnk_project_02s.entity.ShoppingProduct;
 import com.example.bnk_project_02s.repository.ShoppingProductRepository;
-import com.example.bnk_project_02s.util.ShoppingProductConveter;
+import com.example.bnk_project_02s.util.ShoppingProductConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,6 +23,9 @@ public class ShoppingService {
 
     @Autowired
     private ShoppingProductRepository shoppingProductRepository;
+    
+    @Autowired
+    private TranslationService translationService;
 
     @Value("${amazon.api.key}")
     private String apiKey;
@@ -39,7 +42,7 @@ public class ShoppingService {
     public List<ShoppingProductDto> getProductList() {
         List<ShoppingProduct> entities = shoppingProductRepository.findAll();
         return entities.stream()
-                .map(ShoppingProductConveter::toDto)
+                .map(ShoppingProductConverter::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -57,11 +60,24 @@ public class ShoppingService {
         ShoppingProduct entity = shoppingProductRepository.findById(spno)
                 .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다: " + spno));
         
-        return ShoppingProductConveter.toDto(entity);
+        return ShoppingProductConverter.toDto(entity);
     }
 
     public ShoppingProductDto fetchAndSaveProduct(String spno) {
         ShoppingProductDto dto = fetchProduct(spno);
+        
+        if (dto.getSpname() != null && !dto.getSpname().isEmpty()) {
+            String translatedName = translationService.translateText(dto.getSpname());
+            dto.setSpnameKo(translatedName);
+            System.out.println("상품명 번역: " + dto.getSpname() + " -> " + translatedName);
+        }
+        
+        if (dto.getSpdescription() != null && !dto.getSpdescription().isEmpty()) {
+            String translatedDesc = translationService.translateText(dto.getSpdescription());
+            dto.setSpdescriptionKo(translatedDesc);
+            System.out.println("상품설명 번역 완료");
+        }
+        
         return saveProduct(dto);
     }
 
@@ -103,7 +119,8 @@ public class ShoppingService {
             dto.setSpcurrency(getTextValue(root, "currency", "USD"));
             dto.setSprating(getDoubleValue(root, "product_star_rating", 0.0));
             dto.setSpreviews(getIntValue(root, "product_num_ratings", 0));
-            dto.setSpurl(getTextValue(root, "product_photo", ""));
+            dto.setSpimgurl(getTextValue(root, "product_photo", ""));
+            dto.setSpurl(getTextValue(root, "product_url", "https://www.amazon.com/"));
 
             return dto;
             
@@ -114,17 +131,20 @@ public class ShoppingService {
 
     public ShoppingProductDto saveProduct(ShoppingProductDto dto) {
         try {
-            ShoppingProduct entity = ShoppingProductConveter.toEntity(dto);
+            ShoppingProduct entity = ShoppingProductConverter.toEntity(dto);
             
             entity.setSpname(truncateString(dto.getSpname(), 1000));
+            entity.setSpnameKo(truncateString(dto.getSpnameKo(), 1000));
             entity.setSpdescription(truncateString(dto.getSpdescription(), 2000));
+            entity.setSpdescriptionKo(truncateString(dto.getSpdescriptionKo(), 3000));
             entity.setSpurl(truncateString(dto.getSpurl(), 2000));
+            entity.setSpimgurl(truncateString(dto.getSpimgurl(), 2000));
 
-            System.out.println("저장 전 Entity: " + entity);
+            System.out.println("저장 전 Entity (번역 포함): " + entity);
             ShoppingProduct savedEntity = shoppingProductRepository.save(entity);
             System.out.println("저장 후 Entity: " + savedEntity);
             
-            return ShoppingProductConveter.toDto(savedEntity);
+            return ShoppingProductConverter.toDto(savedEntity);
         } catch (Exception e) {
             System.err.println("DB 저장 중 오류: " + e.getMessage());
             e.printStackTrace();
@@ -147,6 +167,40 @@ public class ShoppingService {
                 throw new RuntimeException("API 호출 실패: " + response.code());
             }
             return response.body().string();
+        }
+    }
+
+    public void translateExistingProducts() {
+        List<ShoppingProduct> products = shoppingProductRepository.findAll();
+        
+        for (ShoppingProduct product : products) {
+            try {
+                boolean needsUpdate = false;
+                
+                if ((product.getSpnameKo() == null || product.getSpnameKo().isEmpty()) 
+                    && product.getSpname() != null) {
+                    String translatedName = translationService.translateText(product.getSpname());
+                    product.setSpnameKo(translatedName);
+                    needsUpdate = true;
+                }
+                
+                if ((product.getSpdescriptionKo() == null || product.getSpdescriptionKo().isEmpty()) 
+                    && product.getSpdescription() != null) {
+                    String translatedDesc = translationService.translateText(product.getSpdescription());
+                    product.setSpdescriptionKo(translatedDesc);
+                    needsUpdate = true;
+                }
+                
+                if (needsUpdate) {
+                    shoppingProductRepository.save(product);
+                    System.out.println("상품 번역 완료: " + product.getSpno());
+                    
+                    Thread.sleep(100);
+                }
+                
+            } catch (Exception e) {
+                System.err.println("상품 번역 실패: " + product.getSpno() + " - " + e.getMessage());
+            }
         }
     }
 
@@ -198,5 +252,9 @@ public class ShoppingService {
         if (str == null) return null;
         if (str.length() <= maxLength) return str;
         return str.substring(0, maxLength - 3) + "...";
+    }
+
+    public List<ShoppingProductDto> getProductDetail() {
+        return null;
     }
 }
