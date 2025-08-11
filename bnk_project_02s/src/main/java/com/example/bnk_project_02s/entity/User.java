@@ -32,8 +32,8 @@ public class User {
     private String ubirth;
 
     // ⚠️ 호환용: 평문 휴대폰. 더 이상 저장하지 않음(서비스에서 uphoneEnc/Hmac만 사용).
-    //@Column(nullable = true, length = 13)    // 예: 010-1234-5678
-    //private String uphone;
+    @Column(nullable = true, length = 13)    // 예: 010-1234-5678
+    private String uphone;
 
     @Column(nullable = false, length = 20)
     private String urole = "ROLE_USER";
