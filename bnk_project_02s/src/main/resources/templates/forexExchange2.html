@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>구매 확인</title>
+  <style>
+    :root{
+      --accent:#e35353; --fg:#222; --muted:#666; --border:#e5e5e5; --bar:#dcdcdc;
+      --bg:#fff; --card:#f6f6f6; --pill:#f3f3f3;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--fg);background:var(--bg)}
+    .wrap{max-width:420px;margin:0 auto;padding:12px 16px 28px}
+
+    .back{color:#d32f2f;font-weight:700;cursor:pointer;margin:6px 0 10px}
+    .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:700;margin-bottom:16px}
+
+    /* 진행 바 */
+    .progress{display:flex;gap:10px;align-items:center;justify-content:center;margin:6px 0 22px}
+    .seg{flex:0 0 64px;height:6px;border-radius:999px;background:#eee;position:relative;overflow:hidden}
+    .seg::after{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .28s ease}
+    .seg.done::after{transform:scaleX(1)}
+    .seg.current{height:8px}
+    .seg.current::after{transform:scaleX(1)}
+
+    /* 질문 카드 */
+    .ask{
+      background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 16px;text-align:center;
+      font-weight:800;box-shadow:0 1px 0 rgba(0,0,0,.03);margin-bottom:16px
+    }
+
+    /* 요약 카드 */
+    .summary{
+      background:#f7f7f7;border:1px solid var(--border);border-radius:16px;padding:14px 14px 12px;
+      box-shadow:0 1px 0 rgba(0,0,0,.03);
+    }
+    .row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 2px}
+    .row+.row{border-top:1px dashed #e9e9e9}
+    .label{color:#444}
+    .value{font-weight:800;color:#c13d3d;text-align:right}
+    .sub{display:block;color:#888;font-size:12px;margin-top:2px}
+
+    /* 부모: 두 아이(버튼, 폼)를 같은 비율로 */
+	.btns {
+	  display: flex;
+	  gap: 12px;
+	  justify-content: space-between;
+	  margin-top: 20px;
+	}
+	
+	/* 핵심: .btns의 직계 자식은 모두 flex:1 (button, form 둘 다) */
+	.btns > * {
+	  flex: 1;
+	  min-width: 0; /* 줄바꿈 방지 */
+	}
+	
+	/* 버튼 공통 */
+	.btn {
+	  display: block;
+	  width: 100%;                 /* 폼 안에 있어도 꽉 채우기 */
+	  height: 46px;
+	  border: 2px solid transparent;  /* 높이 동일화 */
+	  border-radius: 14px;
+	  font-weight: 800;
+	  cursor: pointer;
+	  background: var(--accent);
+	  color: #fff;
+	  box-shadow: 0 1px 0 rgba(0,0,0,.05);
+	}
+	.btn:active { transform: translateY(1px); }
+	
+	/* 폼 기본 마진 제거 + 내부 버튼 풀폭 유지 */
+	.btns form { margin: 0; display: flex; }
+	.btns form .btn { width: 100%; }
+	
+	/* 스타일 변형: 이전/확인 */
+	.btn.prev {
+	  background: #fff;
+	  color: var(--accent);
+	  border-color: var(--accent);
+	}
+	.btn.ok {
+	  background: var(--accent);
+	  color: #fff;
+	  border-color: var(--accent);
+	}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="back" onclick="history.back()">&lt;뒤로가기</div>
+  <div class="bar">구매 확인</div>
+
+  <!-- 3단계 진행바: 2단계 활성화 -->
+  <div class="progress" aria-label="구매 진행 상황">
+    <div class="seg done" id="seg1"></div>
+    <div class="seg current done" id="seg2"></div>
+    <div class="seg" id="seg3"></div>
+  </div>
+
+  <!-- 질문 -->
+  <div class="ask">
+    <span id="qCode" th:text="${rateCode} + '를 구매하시겠습니까 ?'">USD를 구매하시겠습니까 ?</span>
+  </div>
+
+  <!-- 요약 -->
+  <div class="summary">
+    <div class="row">
+      <div class="label">환전 금액</div>
+      <div class="value">
+        <span id="fxText" th:text="${fxAmount} + ' ' + ${rateCode}">10000.00 USD</span>
+        <span> → </span>
+        <span id="krwText" th:text="${krwAmount} + ' 원'">1,939,650 원</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="label">적용 환율</div>
+      <div class="value">
+        <span id="rateText" th:text="${finalRate} + '원'">193.9650원</span>
+        <small class="sub" th:text="'(' + ${rateDate} + ' ' + ${rateRound} + '회차 고시 기준)'">(2025-08-11 1회차 고시 기준)</small>
+      </div>
+    </div>
+    <div class="row" id="acctRow">
+      <div class="label">출금 계좌</div>
+      <div class="value" id="acctText" th:text="${accountMasked} + (${branchName} != null ? ' (' + ${branchName} + ')' : '')">112-2348-0440-08 (부산)</div>
+    </div>
+    <div class="row">
+      <div class="label">환전 수수료</div>
+      <div class="value">
+        <span id="saveText" th:text="${savedFee} + '원 절약'">9,650원 절약</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 버튼 -->
+  <div class="btns">
+    <button class="btn prev" type="button" onclick="goPrev()">&lt; 이전으로</button>
+    <form th:action="@{/exchange/submit}" method="post" style="flex:1">
+      <input type="hidden" name="code"      th:value="${rateCode}">
+      <input type="hidden" name="fxAmount"  th:value="${fxAmount}">
+      <input type="hidden" name="krwAmount" th:value="${krwAmount}">
+      <input type="hidden" name="finalRate" th:value="${finalRate}">
+      <input type="hidden" name="rateDate"  th:value="${rateDate}">
+      <input type="hidden" name="rateRound" th:value="${rateRound}">
+      <input type="hidden" name="account"   th:value="${accountMasked}">
+      <input type="hidden" name="savedFee"  th:value="${savedFee}">
+      <button class="btn ok" type="submit">확인</button>
+    </form>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  // 화면 표시용 포맷터 (모델의 문자열/숫자 모두 안전 처리)
+  const toNum = (v)=> Number((v ?? '').toString().replace(/,/g,'').trim() || '0');
+  const fmtKRWInt = (v)=> toNum(v).toLocaleString('ko-KR'); // 정수 콤마
+  const fmtFx2    = (v)=> toNum(v).toLocaleString('ko-KR',{minimumFractionDigits:2, maximumFractionDigits:2}); // 소수 2
+  const fmtRate2  = (v)=> toNum(v).toLocaleString('ko-KR',{minimumFractionDigits:2, maximumFractionDigits:2}); // 소수 2
+
+  // 모델 값 (표시 전용)
+  const FX   = /*[['' + ${fxAmount}]]*/ '0';
+  const KRW  = /*[['' + ${krwAmount}]]*/ '0';
+  const RATE = /*[['' + ${finalRate}]]*/ '0';
+  const SAVE = /*[['' + ${savedFee}]]*/ '0';
+  const CODE = /*[['' + ${rateCode}]]*/ 'USD';
+  const ACCT = /*[['' + ${accountMasked}]]*/ '';
+
+  // 텍스트 치환
+  document.getElementById('fxText').textContent   = `${fmtFx2(FX)} ${CODE}`;
+  document.getElementById('krwText').textContent  = `${fmtKRWInt(KRW)} 원`;
+  document.getElementById('rateText').textContent = `${fmtRate2(RATE)}원`;
+  document.getElementById('saveText').textContent = `${fmtKRWInt(SAVE)}원 절약`;
+
+  // 출금계좌가 null/빈값이면 "미지정" 표시 (또는 행 숨김 원하면 아래 한 줄로 대체)
+  if(!ACCT || ACCT.toLowerCase() === 'null'){
+    document.getElementById('acctText').textContent = '미지정';
+    // 행 자체를 숨기려면:
+    // document.getElementById('acctRow').style.display = 'none';
+  }
+
+  function goPrev(){ history.back(); }
+</script>
+</body>
+</html>

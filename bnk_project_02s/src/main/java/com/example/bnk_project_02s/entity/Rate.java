@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "bnk_rate")
+@Table(name = "bnk_rate", uniqueConstraints = @UniqueConstraint(columnNames = {"rdate", "rcode"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
