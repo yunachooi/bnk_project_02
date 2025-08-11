@@ -1,17 +1,22 @@
 package com.example.bnk_project_02s.service;
 
-import com.example.bnk_project_02s.dto.UserDto;
-import com.example.bnk_project_02s.entity.User;
-import com.example.bnk_project_02s.repository.UserRepository;
-import com.example.bnk_project_02s.util.UserUtil;
-import lombok.RequiredArgsConstructor;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Optional;
+import com.example.bnk_project_02s.dto.UserDto;
+import com.example.bnk_project_02s.entity.User;
+import com.example.bnk_project_02s.repository.UserRepository;
+import com.example.bnk_project_02s.util.UserUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -182,5 +187,17 @@ public class UserService {
         };
         if (century == null) return null;
         return century + yy + "-" + mm + "-" + dd;
+    }
+    
+    /** 알림푸쉬 권한 관련*/
+    @Transactional
+    public void updatePushConsent(String uid, boolean consent) {
+        User u = userRepository.findById(uid)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + uid));
+        u.setUpush(consent ? "Y" : "N");
+        String nowKst = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        u.setUpushdate(nowKst);
+        userRepository.save(u);
     }
 }
