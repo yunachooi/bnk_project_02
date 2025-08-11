@@ -32,8 +32,8 @@ public class User {
     private String ubirth;
 
     // ⚠️ 호환용: 평문 휴대폰. 더 이상 저장하지 않음(서비스에서 uphoneEnc/Hmac만 사용).
-    @Column(nullable = true, length = 13)    // 예: 010-1234-5678
-    private String uphone;
+    //@Column(nullable = true, length = 13)    // 예: 010-1234-5678
+    //private String uphone;
 
     @Column(nullable = false, length = 20)
     private String urole = "ROLE_USER";
@@ -58,10 +58,6 @@ public class User {
     
     @Column
     private String ulocation;
-
-    /* ===== 키 버전(옵션) ===== */
-    @Column(length = 10)
-    private String ukeyVer = "v1";           // 암호화 키 버전 태그
 
     /* ===== 주민등록번호 보호 ===== */
     @Column(name = "rrn_enc",  nullable = false, length = 512)
