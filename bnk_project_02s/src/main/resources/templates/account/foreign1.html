@@ -108,7 +108,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-
         .slider-dot {
             width: 8px;
             height: 8px;
@@ -184,13 +183,54 @@
         .bottom-bar button:active {
             transform: scale(0.98);
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+        /* 줄바꿈을 위한 CSS */
+        .modal-message-break-word {
+            word-break: keep-all; /* 단어가 잘리지 않고 줄바꿈 되도록 */
+            white-space: normal; /* 기본 줄바꿈 허용 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container">
         <!-- Header -->
         <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <a href="#" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+            <!-- "홈으로" 버튼: foreign0으로 이동하도록 수정 -->
+            <a href="/foreign0" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -198,7 +238,7 @@
             </a>
             <h1 class="text-xl font-bold text-gray-800">BNK 쇼핑환전통장</h1>
             <!-- Share Icon (Optional, can add functionality later) -->
-            <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300">
+            <button id="shareButton" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                 </svg>
@@ -217,21 +257,13 @@
             <div class="slider-container relative w-full overflow-hidden rounded-2xl">
                 <div class="slider-wrapper h-full">
                     <!-- Slide 1: Benefit Explanation (Image) -->
-                    <div class="slider-item">
-                        <img src="images/option0.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="BNK쇼핑환전 상품 디자인">
-                    </div>
+                    <img src="images/option00.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="BNK쇼핑환전 상품 디자인" class="slider-item">
                     <!-- Slide 2: Card Design Option 1 (붉은돼지) -->
-                    <div class="slider-item">
-                        <img src="images/option1.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="붉은돼지 카드 디자인">
-                    </div>
+                    <img src="images/option1.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/FF0000/FFFFFF?text=이미지+로드+실패: option1.png';" alt="붉은돼지 카드 디자인" class="slider-item">
                     <!-- Slide 3: Card Design Option 2 (원피스) -->
-                    <div class="slider-item">
-                        <img src="images/option2.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/0000FF/FFFFFF?text=이미지+로드+실패: option2.png';" alt="원피스 카드 디자인">
-                    </div>
+                    <img src="images/option2.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/0000FF/FFFFFF?text=이미지+로드+실패: option2.png';" alt="원피스 카드 디자인" class="slider-item">
                     <!-- Slide 4: Card Design Option 3 (건담) -->
-                    <div class="slider-item">
-                        <img src="images/option3.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/00FF00/FFFFFF?text=이미지+로드+실패: option3.png';" alt="건담 카드 디자인">
-                    </div>
+                    <img src="images/option3.png" onerror="this.onerror=null;this.src='https://placehold.co/1024x1024/00FF00/FFFFFF?text=이미지+로드+실패: option3.png';" alt="건담 카드 디자인" class="slider-item">
                 </div>
                 <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 slider-dots">
                     <div class="slider-dot active" data-slide="0"></div>
@@ -246,17 +278,20 @@
         <section class="px-4 mt-2 mb-2">
             <div class="bg-white rounded-2xl py-2 px-6 shadow-none">
                 <!-- PDF download buttons styled to match design options -->
-                <div class="flex flex-wrap justify-center gap-2"> <!-- 디자인 옵션 버튼이 없어졌으므로 mb-1 삭제 -->
-                    <a href="#" class="inline-flex items-center justify-center flex-grow px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent" style="min-width: calc(50% - 8px);">
+                <div class="flex justify-between items-center gap-2">
+                    <!-- 약관 (PDF) 다운로드 버튼 -->
+                    <a href="#" id="downloadTermsBtn" class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1
+                            1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         약관 (PDF)
                     </a>
-                    <a href="#" class="inline-flex items-center justify-center flex-grow px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent" style="min-width: calc(50% - 8px);">
+                    <!-- 설명서 (PDF) 다운로드 버튼 -->
+                    <a href="#" id="downloadManualBtn" class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md shadow-sm text-blue-800 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-offset-0 focus:ring-transparent">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2
-                            2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1
+                            1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         설명서 (PDF)
                     </a>
@@ -328,7 +363,7 @@
                         </div>
                         <div>
                             <h4 class="font-semibold text-base text-gray-700 mb-1">필요 서류</h4>
-                            <p class="text-base">실명확인증표 (운전면허증 또는 주민등록증)</p>
+                            <p class="text-base">실명확인증표 (주민등록증)</p>
                         </div>
                     </div>
                 </div>
@@ -350,13 +385,9 @@
                             <h4 class="font-semibold text-base text-gray-700 mb-1">이자 지급 방식</h4>
                             <p class="text-base">매일 최종 잔액에 연 4회 지급 (3, 6, 9, 12월 첫째 일요일 셈하여 익영업일 원금에 더함)</p>
                         </div>
-                        <div class="mb-3">
-                            <h4 class="font-semibold text-base text-gray-700 mb-1">환전 기준</h4>
-                            <p class="text-base">매매 시점 고시 대고객 전신환 매입율/매도율 적용</p>
-                        </div>
                         <div>
                             <h4 class="font-semibold text-base text-gray-700 mb-1">환율 우대</h4>
-                            <p class="text-base">외화매입 시 매매시점 고시 대고객 전신환 매도율에 50% 우대 적용 (자동 적용)</p>
+                            <p class="text-base">외화 매입 시 전신환 환율 50% 우대 적용<br>(자동 적용)</p>
                         </div>
                     </div>
                 </div>
@@ -425,12 +456,68 @@
 
         <!-- Fixed Bottom Bar -->
         <footer class="bottom-bar">
-            <button class="bg-gray-200 text-gray-700 hover:bg-gray-300">상담</button>
-            <button class="bg-blue-600 text-white hover:bg-blue-700">가입하기</button>
+            <button id="customerServiceCallButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">고객센터 상담</button>
+            <!-- "가입하기" 버튼: /foreign2으로 이동하도록 수정 -->
+            <button id="signUpButton" class="bg-blue-600 text-white hover:bg-blue-700">가입하기</button>
         </footer>
     </div>
 
+    <!-- Custom Confirmation Modal HTML -->
+    <div id="downloadConfirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4 text-gray-800" id="modalTitle"></h3>
+            <!-- 줄바꿈을 위해 modal-message-break-word 클래스 추가 -->
+            <p class="text-gray-700 mb-6 modal-message-break-word" id="modalMessage"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="modalConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+                <button id="modalCancelBtn" class="bg-gray-300 text-gray-800 px-5 py-2 rounded-md font-semibold hover:bg-gray-400 transition duration-200">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Confirmation Modal HTML (for logged-in users) -->
+    <div id="signUpConfirmModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">📢 안내드립니다, 고객님!</h3>
+            <p class="text-gray-700 mb-6 modal-message-break-word">
+				BNK 쇼핑환전예금 개설과<br>
+				BNK 쇼핑환전 체크카드 발급이<br>
+				차례로 함께 진행됩니다.<br><br>
+				계속 진행하시겠어요? 😊
+            </p>
+            <div class="flex justify-center space-x-4">
+                <button id="signUpModalConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+                <button id="signUpModalCancelBtn" class="bg-gray-300 text-gray-800 px-5 py-2 rounded-md font-semibold hover:bg-gray-400 transition duration-200">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Required Modal HTML (for non-logged-in users) -->
+    <div id="loginRequiredModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">로그인 필요 안내</h3>
+            <p class="text-gray-700 mb-6 modal-message-break-word">
+                죄송합니다, 고객님.<br>
+                해당 서비스는 로그인이 필요합니다.<br>
+                로그인 후 다시 이용해주세요.
+            </p>
+            <div class="flex justify-center">
+                <button id="loginRequiredConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kakao SDK 불러오기 -->
+    <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
     <script>
+        // Kakao SDK 초기화
+        if (!Kakao.isInitialized()) {
+            Kakao.init('ddddfa309c2e5aeadf3c10e400872d16'); // 제공된 앱 키
+        }
+
+        // --- 임시 로그인 여부 시뮬레이션 변수 ---
+        const isLoggedIn = true; // 필요시 실제 로그인 상태로 대체
+
         // Slider functionality
         let currentSlide = 0;
         const sliderWrapper = document.querySelector('.slider-wrapper');
@@ -444,7 +531,6 @@
                 dot.classList.toggle('active', index === currentSlide);
             });
 
-            // Animate content of the first slide only (if it's a content slide) - remains same
             sliderItems.forEach((item, index) => {
                 const contentWrapper = item.querySelector('.slide-content-wrapper');
                 if (contentWrapper) {
@@ -459,32 +545,28 @@
 
         sliderDots.forEach(dot => {
             dot.addEventListener('click', (e) => {
-                // Clear any ongoing auto-slide to prevent conflict
                 clearInterval(autoSlideInterval);
                 currentSlide = parseInt(e.target.dataset.slide);
                 updateSlider();
-                // Optionally restart auto-slide after a brief delay if desired
                 autoSlideInterval = setInterval(() => {
                     currentSlide = (currentSlide + 1) % totalSlides;
                     updateSlider();
-                }, 4000); // Changed speed to 4 seconds here
+                }, 4000);
             });
         });
 
-        // Auto-slide every 5 seconds, now always cycles through all slides
         let autoSlideInterval = setInterval(() => {
             currentSlide = (currentSlide + 1) % totalSlides;
             updateSlider();
-        }, 4000); // Changed speed to 4 seconds here
+        }, 4000);
 
-        // Accordion functionality - remains same
+        // Accordion
         document.querySelectorAll('.accordion-header').forEach(header => {
             header.addEventListener('click', () => {
                 const contentId = header.dataset.target;
                 const content = document.getElementById(contentId);
                 const icon = header.querySelector('.accordion-icon');
 
-                // Close all other open accordions
                 document.querySelectorAll('.accordion-content.open').forEach(openContent => {
                     if (openContent.id !== contentId) {
                         openContent.classList.remove('open');
@@ -492,14 +574,141 @@
                     }
                 });
 
-                // Toggle current accordion
                 content.classList.toggle('open');
                 icon.classList.toggle('rotate');
             });
         });
 
-        // Initial update for slider to show first slide content with animation
+        // Initial slider state
         updateSlider();
+
+        // 고객센터 상담 버튼
+        document.getElementById('customerServiceCallButton').addEventListener('click', function() {
+            const phoneNumber = 'tel:15880000'; // 예시 번호
+            window.location.href = phoneNumber;
+        });
+
+        // --- PDF 다운로드 확인 모달 기능 ---
+        const downloadConfirmModal = document.getElementById('downloadConfirmModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        let currentDownloadUrl = '';
+
+        function showConfirmationModal(fileName, fileUrl) {
+            modalTitle.textContent = '파일 다운로드 확인';
+            modalMessage.innerHTML = `'${fileName}'<br>파일을 다운로드하시겠습니까?`;
+            currentDownloadUrl = fileUrl;
+            downloadConfirmModal.classList.add('open');
+        }
+
+        function closeConfirmationModal() {
+            downloadConfirmModal.classList.remove('open');
+            currentDownloadUrl = '';
+        }
+
+        modalConfirmBtn.addEventListener('click', function() {
+            if (currentDownloadUrl) {
+                window.location.href = currentDownloadUrl;
+            }
+            closeConfirmationModal();
+        });
+
+        modalCancelBtn.addEventListener('click', closeConfirmationModal);
+        downloadConfirmModal.addEventListener('click', function(event) {
+            if (event.target === downloadConfirmModal) {
+                closeConfirmationModal();
+            }
+        });
+
+        // ✅ 약관 (PDF) 버튼 클릭 이벤트 — Google Drive 즉시 다운로드
+        document.getElementById('downloadTermsBtn').addEventListener('click', function(event) {
+            event.preventDefault();
+            showConfirmationModal(
+                'BNK쇼핑환전예금약관',
+                'https://drive.google.com/uc?export=download&id=1v3j71CuM96tLY92Ib-AW74j2VFSmfs8y'
+            );
+        });
+
+        // ✅ 설명서 (PDF) 버튼 클릭 이벤트 — Google Drive 즉시 다운로드
+        document.getElementById('downloadManualBtn').addEventListener('click', function(event) {
+            event.preventDefault();
+            showConfirmationModal(
+                'BNK쇼핑환전예금상품설명서',
+                'https://drive.google.com/uc?export=download&id=1d6TjpYAyPT6FzgK4ObMwKBQKOzJgRlNy'
+            );
+        });
+
+        // --- 가입 확인/로그인 필요 모달 ---
+        const signUpConfirmModal = document.getElementById('signUpConfirmModal');
+        const signUpModalConfirmBtn = document.getElementById('signUpModalConfirmBtn');
+        const signUpModalCancelBtn = document.getElementById('signUpModalCancelBtn');
+        const loginRequiredModal = document.getElementById('loginRequiredModal');
+        const loginRequiredConfirmBtn = document.getElementById('loginRequiredConfirmBtn');
+
+        document.getElementById('signUpButton').addEventListener('click', function(event) {
+            event.preventDefault();
+            if (isLoggedIn) {
+                signUpConfirmModal.classList.add('open');
+            } else {
+                loginRequiredModal.classList.add('open');
+            }
+        });
+
+        signUpModalConfirmBtn.addEventListener('click', function() {
+            signUpConfirmModal.classList.remove('open');
+            window.location.href = '/foreign2';
+        });
+
+        signUpModalCancelBtn.addEventListener('click', function() {
+            signUpConfirmModal.classList.remove('open');
+        });
+        signUpConfirmModal.addEventListener('click', function(event) {
+            if (event.target === signUpConfirmModal) {
+                signUpConfirmModal.classList.remove('open');
+            }
+        });
+
+        loginRequiredConfirmBtn.addEventListener('click', function() {
+            loginRequiredModal.classList.remove('open');
+            // 필요시 로그인 페이지로 이동
+            // window.location.href = '/login';
+        });
+        loginRequiredModal.addEventListener('click', function(event) {
+            if (event.target === loginRequiredModal) {
+                loginRequiredModal.classList.remove('open');
+            }
+        });
+
+        // --- 카카오톡 공유하기 ---
+        document.getElementById('shareButton').addEventListener('click', function() {
+            if (Kakao.isInitialized()) {
+                Kakao.Share.sendDefault({
+                    objectType: 'feed',
+                    content: {
+                        title: 'BNK 쇼핑환전통장',
+                        description: '해외여행, 직구에 최적화된 BNK 쇼핑환전통장! 지금 바로 만나보세요.',
+                        imageUrl: 'https://placehold.co/600x400/60A5FA/FFFFFF?text=BNK+Shopping',
+                        link: {
+                            mobileWebUrl: window.location.origin + '/foreign1',
+                            webUrl: window.location.origin + '/foreign1',
+                        },
+                    },
+                    buttons: [
+                        {
+                            title: '자세히 보기',
+                            link: {
+                                mobileWebUrl: window.location.origin + '/foreign1',
+                                webUrl: window.location.origin + '/foreign1',
+                            },
+                        },
+                    ],
+                });
+            } else {
+                console.error('카카오 SDK가 초기화되지 않았습니다. JavaScript 앱 키를 확인하세요.');
+            }
+        });
     </script>
 </body>
 </html>

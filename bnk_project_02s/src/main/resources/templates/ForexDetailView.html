@@ -1,197 +1,241 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title th:text="${currencyName} + ' 상세 환율'">환율 상세</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      font-family: 'Noto Sans KR', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #fff;
-      color: #222;
-    }
+    :root { --accent-red:#ff4a57; --hi-red:#e53935; --lo-blue:#1e88e5; }
 
-    .header {
-      font-weight: bold;
-      color: red;
-      cursor: pointer;
-    }
+    * { box-sizing: border-box; }
+    body { font-family:'Noto Sans KR',sans-serif; margin:0; color:#222; background:#fff; }
+    .container { max-width:500px; margin:0 auto; padding:20px; }
 
-    .title-box {
-      background: #eee;
-      padding: 10px;
-      margin: 16px 0;
-      text-align: center;
-      font-weight: bold;
-    }
+    .header { font-weight:700; color:#d32f2f; cursor:pointer; }
+    .title-box { width:100%; background:#f2f2f2; padding:12px; margin:16px 0; text-align:center; font-weight:700; border-radius:8px; }
 
-    .rate-info {
-      font-size: 1rem;
-      margin-bottom: 12px;
-    }
+    .rate-info { margin:10px 0 8px; line-height:1.35; }
+    .rate-info strong { font-size:1.6rem; }
+    .up{color:#d32f2f;} .down{color:#1976d2;}
 
-    .rate-info strong {
-      font-size: 1.3rem;
-    }
+    .chart-area { position:relative; width:100%; height:clamp(240px,40vh,420px); margin:12px 0 20px; border-radius:12px; }
+    .chart-area canvas { width:100% !important; height:100% !important; display:block; }
 
-    .rate-info .up {
-      color: red;
+    .range-buttons { display:flex; justify-content:center; gap:10px; margin:12px 0 28px; }
+    .range-buttons button{
+      background:#eee; border:none; padding:6px 14px; border-radius:16px; cursor:pointer; font-weight:700;
     }
+    .range-buttons button.active{ background:var(--accent-red); color:#fff; }
 
-    .rate-info .down {
-      color: blue;
-    }
-
-    .chart-area {
-      background: #f5f5f5;
-      padding: 10px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-    }
-
-    .range-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 30px;
-    }
-
-    .range-buttons button {
-      background: #ddd;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 16px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .action-button {
-      text-align: center;
-    }
-
-    .buy-button {
-      background: #d32f2f;
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 30px;
-      font-size: 1rem;
-      cursor: pointer;
+    .action-button { text-align:center; }
+    .buy-button{
+      background:var(--accent-red); color:#fff; font-weight:700; border:none; border-radius:8px;
+      padding:12px 30px; font-size:1rem; cursor:pointer;
     }
   </style>
 </head>
 <body>
-<div class="header" onclick="history.back()">&lt;뒤로가기</div>
+<div class="container">
+  <div class="header" onclick="history.back()">&lt;뒤로가기</div>
+  <div class="title-box" th:text="${currencyName}">미국 달러</div>
 
-<div class="title-box" th:text="${currencyName}">미국 달러</div>
+  <div class="rate-info">
+    <p>금일 환율</p>
+    <p><strong th:text="${#numbers.formatDecimal(todayRate, 1, 2)} + ' 원'">1,384.20 원</strong></p>
+    <p th:if="${diff > 0}" class="up">
+      어제보다 +<span th:text="${#numbers.formatDecimal(diff, 1, 2)}"></span>원
+      (<span th:text="${#numbers.formatDecimal(diffPercent, 1, 2)}"></span>%)
+    </p>
+    <p th:if="${diff < 0}" class="down">
+      어제보다 -<span th:text="${#numbers.formatDecimal(diff, 1, 2)}"></span>원
+      (<span th:text="${#numbers.formatDecimal(diffPercent, 1, 2)}"></span>%)
+    </p>
+  </div>
 
-<div class="rate-info">
-  <p>금일 환율</p>
-  <p><strong th:text="${todayRate} + ' 원'">1,403.47원</strong></p>
-  <p th:if="${diff > 0}" class="up">
-    어제보다 +<span th:text="${diff}"></span>원 (<span th:text="${diffPercent}"></span>%)
-  </p>
-  <p th:if="${diff < 0}" class="down">
-    어제보다 -<span th:text="${diff}"></span>원 (<span th:text="${diffPercent}"></span>%)
-  </p>
-</div>
+  <div class="chart-area">
+    <canvas id="rateChart"></canvas>
+  </div>
 
-<div class="chart-area">
-  <canvas id="rateChart" height="220"></canvas>
-</div>
+  <div class="range-buttons">
+    <button id="btn-week" class="active" onclick="updateChart('week')">1주 평균</button>
+    <button id="btn-month" onclick="updateChart('month')">1달 평균</button>
+  </div>
 
-<div class="range-buttons">
-  <button onclick="updateChart('week')">1주 평균</button>
-  <button onclick="updateChart('month')">1달 평균</button>
-</div>
-
-<div class="action-button">
-  <button class="buy-button">구매하기</button>
+  <div class="action-button">
+    <button class="buy-button" th:attr="data-code=${currencyCode}"onclick="goBuyPage(this)">구매하기</button>
+  </div>
 </div>
 
 <script th:inline="javascript">
-	const weekData = JSON.parse(/*[[${weekRatesJson}]]*/ '[]');
-	const monthData = JSON.parse(/*[[${monthRatesJson}]]*/ '[]');
+  // 서버에서 주입되는 JSON (예: [{date:'YYYY-MM-DD', rvalue:'1350.1'}, ...])
+  const weekData  = JSON.parse(/*[[${weekRatesJson}]]*/ '[]');
+  const monthData = JSON.parse(/*[[${monthRatesJson}]]*/ '[]');
+
+  const nf1 = new Intl.NumberFormat('ko-KR',{minimumFractionDigits:1, maximumFractionDigits:1});
+  const fmtDate = (iso) => { const [y,m,d] = iso.split('-'); return `${y}.${m}.${d}`; };
 
   let chart;
+  let currentLabels = [];
 
-  function createChart(dataSet) {
-    const ctx = document.getElementById("rateChart").getContext("2d");
+  function createChart(dataSet){
+    const ctx = document.getElementById('rateChart').getContext('2d');
     if (chart) chart.destroy();
 
-    const labels = dataSet.map(d => d.date);
-    const data = dataSet.map(d => Number(d.rvalue)); // rvalue는 BigDecimal → 숫자로 변환
+    currentLabels = dataSet.map(d => d.date);
+    const values  = dataSet.map(d => Number(d.rvalue));
 
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const maxIdx = data.indexOf(max);
-    const minIdx = data.indexOf(min);
+    if (!values.length){
+      chart = new Chart(ctx, { type:'line', data:{labels:[], datasets:[{data:[]}]}, options:{responsive:true, maintainAspectRatio:false} });
+      return;
+    }
+
+    const gradient = (() => {
+      const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+      g.addColorStop(0, 'rgba(255,74,87,0.15)');
+      g.addColorStop(1, 'rgba(255,74,87,0.00)');
+      return g;
+    })();
+
+    // ✅ 최고/최저 점 + 텍스트(말풍선 없음, 라인과 비겹침)
+    const extremaPlugin = {
+	  id: 'extremaMarkers',
+	  afterDatasetsDraw(chartInstance) {
+	    const { ctx, chartArea, scales: { x, y } } = chartInstance;
+	    const ds = chartInstance.data.datasets[0].data;
+	    if (!ds?.length) return;
+	
+	    const max = Math.max(...ds);
+	    const min = Math.min(...ds);
+	    const maxIdx = ds.indexOf(max);
+	    const minIdx = ds.indexOf(min);
+	
+	    const px = (i) => x.getPixelForValue(i);
+	    const py = (v) => y.getPixelForValue(v);
+	
+	    const hi = getComputedStyle(document.documentElement)
+	                 .getPropertyValue('--hi-red').trim() || '#e53935';
+	    const lo = getComputedStyle(document.documentElement)
+	                 .getPropertyValue('--lo-blue').trim() || '#1e88e5';
+	
+	    const drawPoint = (px0, py0, color) => {
+	      ctx.save();
+	      ctx.fillStyle = color;
+	      ctx.shadowColor = color;
+	      ctx.shadowBlur = 8;
+	      ctx.beginPath();
+	      ctx.arc(px0, py0, 6, 0, Math.PI * 2);
+	      ctx.fill();
+	      ctx.globalAlpha = 0.25;
+	      ctx.beginPath();
+	      ctx.arc(px0, py0, 9, 0, Math.PI * 2);
+	      ctx.fill();
+	      ctx.globalAlpha = 1;
+	      ctx.restore();
+	    };
+	
+	    const drawText = (tx, ty, text, color) => {
+	      ctx.save();
+	      ctx.font = '700 13px Noto Sans KR';
+	      ctx.textAlign = 'center';
+	      ctx.textBaseline = 'middle';
+	
+	      // 좌우 경계 보정
+	      const tw = ctx.measureText(text).width;
+	      if (tx - tw / 2 < chartArea.left + 6) tx = chartArea.left + tw / 2 + 6;
+	      if (tx + tw / 2 > chartArea.right - 6) tx = chartArea.right - tw / 2 - 6;
+	
+	      // 흰색 외곽선
+	      ctx.lineWidth = 4;
+	      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+	      ctx.strokeText(text, tx, ty);
+	
+	      ctx.fillStyle = color;
+	      ctx.fillText(text, tx, ty);
+	      ctx.restore();
+	    };
+	
+	    // 최고 → 위쪽
+	    const pMax = { x: px(maxIdx), y: py(max) };
+	    drawPoint(pMax.x, pMax.y, hi);
+	    drawText(pMax.x, pMax.y - 16, `최고 ${nf1.format(max)}원`, hi);
+	
+	    // 최저 → 아래쪽
+	    const pMin = { x: px(minIdx), y: py(min) };
+	    drawPoint(pMin.x, pMin.y, lo);
+	    drawText(pMin.x, pMin.y + 16, `최저 ${nf1.format(min)}원`, lo);
+	  }
+	};
 
     chart = new Chart(ctx, {
-      type: "line",
+      type: 'line',
       data: {
-        labels,
+        labels: currentLabels,
         datasets: [{
-          label: "환율",
-          data,
-          borderColor: "#FF0004",
-          backgroundColor: "rgba(255,0,4,0.1)",
+          label: '환율',
+          data: values,
+          borderColor: '#ff4a57',
+          backgroundColor: gradient,
           fill: true,
-          tension: 0.4,
-          pointRadius: (ctx) => ctx.dataIndex === data.length - 1 ? 5 : 0,
-          pointBackgroundColor: "#FF0004"
+          tension: 0.3,
+          cubicInterpolationMode: 'monotone',
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          pointHitRadius: 14,
+          borderWidth: 3,
+          borderJoinStyle: 'round'
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        scales: {
+          x: { display:false, grid:{display:false}, border:{display:false} },
+          y: { display:false, grid:{display:false}, border:{display:false} }
+        },
         plugins: {
-          legend: { display: false },
+          legend: { display:false },
           tooltip: {
+            enabled: true,
+            displayColors: false,
+            backgroundColor: 'rgba(255,255,255,0.96)',
+            borderColor: '#eee',
+            borderWidth: 1,
+            titleColor: '#444',
+            bodyColor: '#111',
+            padding: 10,
             callbacks: {
-              label: (ctx) => `${ctx.raw.toFixed(4)} 원`
+              title: (items) => fmtDate(currentLabels[items[0].dataIndex]),
+              label: (c) => `${nf1.format(c.raw)} 원`
             }
           }
         },
-        scales: {
-          y: {
-            ticks: {
-              callback: (val) => `${val}원`
-            }
-          }
-        }
+        layout: { padding: { left:16, right:16, top:36, bottom:36 } },
+        animation: { duration: 250 }
       },
-      plugins: [{
-        id: 'extremaLabels',
-        afterDatasetsDraw(chart) {
-          const {ctx, data, scales: {x, y}} = chart;
-          ctx.save();
-          ctx.font = '12px Noto Sans KR';
-          ctx.fillStyle = "#FF0004";
-
-          ctx.fillText(`최고 ${max.toFixed(2)}원`, x.getPixelForValue(maxIdx), y.getPixelForValue(max) - 10);
-          ctx.fillText(`최저 ${min.toFixed(2)}원`, x.getPixelForValue(minIdx), y.getPixelForValue(min) + 20);
-
-          ctx.restore();
-        }
-      }]
+      plugins: [extremaPlugin]
     });
   }
 
-  function updateChart(type) {
-    if (type === 'week') {
-      createChart(weekData);
-    } else {
-      createChart(monthData);
-    }
+  function setActiveButton(type){
+    document.getElementById('btn-week').classList.toggle('active', type === 'week');
+    document.getElementById('btn-month').classList.toggle('active', type === 'month');
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function updateChart(type){
+    setActiveButton(type);
+    createChart(type === 'week' ? weekData : monthData);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
     updateChart('week');
   });
+  
+  function goBuyPage(btn){
+	  const code = btn.getAttribute("data-code");
+	  window.location.href = `/exchange/buy/${code}`;
+	}
 </script>
 </body>
 </html>
