@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${rate.cname} + ' 구매'">구매 실행</title>
+  <style>
+    :root{
+      --accent:#e35353; --fg:#222; --muted:#666; --border:#e5e5e5; --bar:#dcdcdc; --chip:#f3f3f3;
+      --ok:#1e88e5; --danger:#d32f2f; --bg:#fff; --card:#f6f6f6;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--fg);background:var(--bg)}
+    .wrap{max-width:420px;margin:0 auto;padding:12px 16px 28px}
+
+    .back{color:var(--danger);font-weight:700;cursor:pointer;margin:6px 0 10px}
+
+    .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:700;margin-bottom:10px}
+
+    /* 3단계 진행 바 */
+    .progress{display:flex;gap:8px;align-items:center;margin:2px 0 12px}
+    .seg{flex:1;height:6px;border-radius:6px;background:#eee;position:relative;overflow:hidden}
+    .seg::after{
+      content:"";position:absolute;inset:0;background:var(--accent);
+      transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
+    }
+    .seg.done::after{transform:scaleX(1)}
+    .seg.current{height:8px}
+    .seg.current::after{transform:scaleX(1)}
+
+    /* 상단 환율 스트립 */
+    .rate-strip{
+      display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:12px;
+      padding:10px 12px;margin-bottom:12px;box-shadow:0 1px 0 rgba(0,0,0,.02);
+      cursor:pointer;
+    }
+    .flag{width:22px;height:16px;border-radius:2px;object-fit:cover}
+    .rate-txt{font-weight:800}
+    .pill{
+      margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fafafa;
+      padding:6px 10px;border-radius:999px;cursor:pointer
+    }
+    .pill:hover{background:#fff}
+    .pill .info{font-weight:700}
+
+    /* 코인 아이콘 */
+    .coin-dot{
+      position: relative; width:16px;height:16px;border-radius:50%;display:inline-block;
+      background: radial-gradient(circle at 30% 30%, #ffe08a 0%, #f8c846 45%, #e0a924 100%);
+      box-shadow: inset 0 0 0 2px #f1c453, inset -2px -2px 4px rgba(0,0,0,.08), 0 1px 0 rgba(0,0,0,.06);
+      animation: coinWobble 1.2s ease-in-out infinite;
+    }
+    .coin-dot::before{
+      content:"₩"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:900; color:#8a6d00; transform:translateY(-0.5px);
+    }
+    .coin-dot::after{
+      content:""; position:absolute; inset:-6px; border-radius:50%;
+      border:2px solid rgba(232,178,58,.35); animation: coinPulse 1.6s infinite;
+    }
+    @keyframes coinWobble{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(8deg) translateY(-1px)}}
+    @keyframes coinPulse{0%{transform:scale(.6);opacity:.9}70%{transform:scale(1.35);opacity:0}100%{opacity:0}}
+
+    /* IO 카드 */
+    .io{display:flex;align-items:center;justify-content:space-between;background:#eee;border-radius:14px;padding:14px 16px}
+    .io + .io{margin-top:10px}
+    .io .label{font-weight:700}
+    .io .val{font-weight:800}
+    .arrow{display:flex;justify-content:center;align-items:center;color:#333;margin:8px 0}
+
+    .meta{margin-top:10px}
+    .meta .row{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+    .meta .row b{font-size:15px}
+    .save{color:var(--accent);font-weight:900;font-size:17px}
+
+    /* 키패드 */
+    .num{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 10px 18px;user-select:none;
+    }
+    .key{
+      position:relative;height:52px;border:1px solid var(--border);border-radius:14px;
+      font-size:18px;background:linear-gradient(#ffffff,#f7f7f7);cursor:pointer;
+      box-shadow:0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(0,0,0,.04);
+      transition:transform .06s ease, box-shadow .12s ease; overflow:hidden;
+    }
+    .key:active{transform:translateY(1px);box-shadow:0 0 0 rgba(0,0,0,0), inset 0 -1px 0 rgba(0,0,0,.06)}
+    .key::after{
+      content:"";position:absolute;left:50%;top:50%;width:0;height:0;border-radius:50%;
+      background:rgba(0,0,0,.06);transform:translate(-50%,-50%);transition:width .25s ease,height .25s ease,opacity .35s ease;
+      opacity:0;
+    }
+    .key:active::after{width:180%;height:180%;opacity:1}
+    .confirm{
+      display:block;width:200px;margin:6px auto 0;background:var(--accent);color:#fff;border:none;border-radius:12px;
+      padding:12px 8px;font-weight:800;cursor:pointer;font-size:16px
+    }
+
+    /* 모달 */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center}
+    .modal{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:16px 16px 20px}
+    .modal h3{margin:0 0 8px 0}
+    .modal .close{float:right;cursor:pointer;color:#999}
+    .formula{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f7f7f7;border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+    .explain{font-size:14px;color:#333;line-height:1.55}
+    .ex-list{margin:8px 0 0 0;padding:0;list-style:none}
+    .ex-list li{display:flex;justify-content:space-between;border-bottom:1px dashed #eee;padding:6px 0}
+    .ex-list .val{font-weight:700}
+    .kbd{font-family:ui-monospace,monospace;background:#eee;border:1px solid #ddd;border-bottom-width:2px;border-radius:6px;padding:2px 6px}
+    .tip{font-size:12px;color:#888;margin-top:4px}
+
+    @media (prefers-reduced-motion: reduce){
+      .coin-dot,.coin-dot::after{animation:none}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="back" onclick="history.back()">&lt;뒤로가기</div>
+
+  <!-- 3단계 진행 바 (1단계 활성화) -->
+  <div class="progress" aria-label="구매 진행 상황">
+    <div class="seg" id="seg1"></div>
+    <div class="seg" id="seg2"></div>
+    <div class="seg" id="seg3"></div>
+  </div>
+
+  <div class="bar">구매 실행</div>
+
+  <!-- 상단 환율 스트립 -->
+  <div class="rate-strip" id="rateStrip" role="button" tabindex="0" aria-label="계산 방식 보기">
+    <img class="flag"
+         th:src="@{'/images/flags/' + ${#strings.replace(#strings.toLowerCase(rate.ccode),'(100)','')} + '.png'}"
+         th:alt="${rate.cname} + ' 국기'"/>
+    <div class="rate-txt">
+      <span style="color:#d32f2f">1</span>
+      <span th:text="${rate.ccode}">USD</span> =
+      <span th:text="${#numbers.formatDecimal(finalRate,1,2)}">0</span> 원
+    </div>
+    <div class="pill" id="infoBtn" title="계산 방식 보기">
+      <span class="coin-dot" aria-hidden="true"></span>
+      <span class="info">계산 방식 보기</span>
+    </div>
+  </div>
+
+  <!-- IO 카드 -->
+  <div class="io">
+    <div class="label" th:text="${rate.cname}">미국 달러</div>
+    <div>
+      <span class="val" id="fxIn">0</span>
+      <span style="margin-left:6px;color:#777" th:text="${rate.ccode}">USD</span>
+    </div>
+  </div>
+  <div class="arrow">↕</div>
+  <div class="io">
+    <div class="label">한국 원</div>
+    <div>
+      <span class="val" id="krwOut">0</span>
+      <span style="margin-left:6px;color:#777">KRW</span>
+    </div>
+  </div>
+
+  <!-- 적용 환율 / 절감액 -->
+  <div class="meta">
+    <div class="row">
+      <div>고객 적용 환율</div>
+      <b><span id="applied" th:text="${#numbers.formatDecimal(finalRate,1,2)}">0</span> 원</b>
+    </div>
+    <div class="row">
+      <div>우대에 따른 예상 절감액</div>
+      <div class="save"><span id="vSave">0</span> 원</div>
+    </div>
+  </div>
+
+  <!-- 키패드 -->
+  <div class="num">
+    <button class="key" onclick="tap('1')">1</button>
+    <button class="key" onclick="tap('2')">2</button>
+    <button class="key" onclick="tap('3')">3</button>
+    <button class="key" onclick="tap('4')">4</button>
+    <button class="key" onclick="tap('5')">5</button>
+    <button class="key" onclick="tap('6')">6</button>
+    <button class="key" onclick="tap('7')">7</button>
+    <button class="key" onclick="tap('8')">8</button>
+    <button class="key" onclick="tap('9')">9</button>
+    <button class="key" onclick="tap('.')">.</button>
+    <button class="key" onclick="tap('0')">0</button>
+    <button class="key" onclick="backspace()">⌫</button>
+  </div>
+
+  <!-- 확인(2단계 이동) 폼 -->
+  <form th:action="@{/exchange/confirm}" method="post" id="exchangeForm">
+    <input type="hidden" name="code" th:value="${rate.ccode}">
+    <input type="hidden" name="fxAmount" id="fxAmount">
+    <input type="hidden" name="krwAmount" id="krwAmount">
+    <input type="hidden" name="finalRate" th:value="${finalRate}">
+    <input type="hidden" name="rateDate" th:value="${rateDate}">
+    <input type="hidden" name="rateRound" th:value="${rateRound}">
+    <input type="hidden" name="savedFee" id="savedFee">
+    <!-- 필요 시 계좌/지점도 함께 전송 -->
+    <button class="confirm" type="button" onclick="submitExchange()">확인</button>
+  </form>
+</div>
+
+<!-- 모달 -->
+<div class="modal-backdrop" id="backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <span class="close" id="closeModal">닫기 ✕</span>
+    <h3 id="modalTitle">고객 적용 환율은 이렇게 계산해요</h3>
+    <div class="explain">
+      <p><b>환전 수수료에서 우대율 만큼 할인한 뒤,<br/>남은 수수료를 매매기준율에 더한 값이 고객 적용 환율이에요.</b></p>
+      <ul class="ex-list">
+        <li><span>매매기준율</span><span class="val"><span id="mBase">-</span> 원</span></li>
+        <li><span>환전 수수료</span><span class="val"><span id="mSpread">-</span> 원</span></li>
+        <li><span>우대율</span><span class="val"><span id="mPref">-</span>%</span></li>
+        <li><span>우대로 절감</span><span class="val"><span id="mDisc">-</span> 원</span></li>
+        <li><span>실제 적용 수수료</span><span class="val"><span id="mAppliedSpread">-</span> 원</span></li>
+      </ul>
+      <div class="tip">상단의 <b>계산 방식 보기</b>를 언제든 눌러 다시 확인할 수 있어요.</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <b>고객 적용 환율</b>
+        <b><span id="mFinal">-</span> 원</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  // ---------- 서버 값 ----------
+  const CODE   = /*[['' + ${rate.ccode}]]*/ 'USD';
+  const CVALUE = Number(/*[[${rate.cvalue}]]*/ 0);
+  const TTS    = Number(/*[[${rate.ctts}]]*/ 0);
+  const PREF   = Number(/*[[${prefRate}]]*/ 0);
+  const SPREAD = Number(/*[[${fee}]]*/ 0);
+  const CFINAL = Number(/*[[${finalRate}]]*/ 0);
+
+  // 소수 자릿수
+  const DECIMAL_PLACES = /JPY/i.test(CODE) ? 0 : 2;
+
+  // 유틸
+  const fmt2 = (n) => (isFinite(n)? n : 0).toLocaleString('ko-KR',{maximumFractionDigits:2});
+  const fmt0 = (n) => (isFinite(n)? n : 0).toLocaleString('ko-KR',{maximumFractionDigits:0});
+
+  // 진행 바
+  function setStep(step){
+    const segs = [document.getElementById('seg1'),document.getElementById('seg2'),document.getElementById('seg3')];
+    segs.forEach((el,i)=>{
+      el.classList.remove('done','current');
+      if(i+1 < step) el.classList.add('done');
+      if(i+1 === step) el.classList.add('current','done');
+    });
+  }
+
+  // 상태
+  let input = '0';
+
+  // 렌더
+  function render(){
+    const hasTyped = !(input === '0');
+    const fxNum = Number(input || '0');
+    document.getElementById('fxIn').textContent = hasTyped ? fxNum.toFixed(DECIMAL_PLACES) : '0';
+
+    const krwRaw = fxNum * (isFinite(CFINAL) ? CFINAL : 0);
+    const krwInt = Math.floor(krwRaw);
+    document.getElementById('krwOut').textContent = fmt0(krwInt);
+
+    const saveTotalInt = Math.floor(fxNum * (TTS - CFINAL));
+    document.getElementById('vSave').textContent = fmt0(saveTotalInt);
+
+    // 모달 동기화
+    const discPerUnit   = SPREAD * (PREF/100);
+    const appliedSpread = SPREAD * (1 - PREF/100);
+    document.getElementById('mBase').textContent          = fmt2(CVALUE);
+    document.getElementById('mSpread').textContent        = fmt2(SPREAD);
+    document.getElementById('mPref').textContent          = PREF.toFixed(0);
+    document.getElementById('mDisc').textContent          = fmt2(discPerUnit);
+    document.getElementById('mAppliedSpread').textContent = fmt2(appliedSpread);
+    document.getElementById('mFinal').textContent         = fmt2(CFINAL);
+  }
+
+  // 입력
+  function tap(ch){
+    if (ch === '.' && (DECIMAL_PLACES === 0 || input.includes('.'))) return;
+    input = (input === '0' && ch !== '.') ? ch : (input + ch);
+    if (input.includes('.')) {
+      const [a,b] = input.split('.');
+      if (b.length > DECIMAL_PLACES) input = a + '.' + b.slice(0, DECIMAL_PLACES);
+    }
+    render();
+  }
+  function backspace(){
+    input = input.length > 1 ? input.slice(0,-1) : '0';
+    render();
+  }
+
+  // 모달
+  const backdrop = document.getElementById('backdrop');
+  const openModal = () => { backdrop.style.display = 'flex'; backdrop.setAttribute('aria-hidden','false'); }
+  const closeModal = () => { backdrop.style.display = 'none'; backdrop.setAttribute('aria-hidden','true'); }
+  document.getElementById('infoBtn').addEventListener('click', openModal);
+  document.getElementById('rateStrip').addEventListener('click', openModal);
+  document.getElementById('rateStrip').addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') openModal(); });
+  document.getElementById('closeModal').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeModal(); });
+
+  // 확인 → 2단계로 이동 (폼 제출)
+  function submitExchange(){
+    const fxNum  = Number(input || '0');
+    const krwInt = Math.floor(fxNum * (isFinite(CFINAL) ? CFINAL : 0));
+    const saveInt= Math.floor(fxNum * (TTS - CFINAL));
+
+    // 값 주입
+    document.getElementById('fxAmount').value  = fxNum.toFixed(DECIMAL_PLACES);
+    document.getElementById('krwAmount').value = krwInt;
+    document.getElementById('savedFee').value  = saveInt;
+
+    // 제출
+    document.getElementById('exchangeForm').submit();
+  }
+
+  // 초기 렌더 + 진행바(1단계)
+  render();
+  setStep(1);
+</script>
+</body>
+</html>
