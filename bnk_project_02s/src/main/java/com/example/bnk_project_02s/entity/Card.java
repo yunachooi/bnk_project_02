@@ -7,7 +7,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -24,15 +27,19 @@ import lombok.NoArgsConstructor;
 public class Card {
 
     @Id
-    @Column(name = "cano", length = 16)
-    private String cano;
+    @Column(name = "cardno", length = 16)
+    private String cardno;
 
-    @Column(name = "cacvc")
-    private Integer cacvc;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cano", referencedColumnName = "cano")
+    private ChildAccount childAccount;
 
-    @Column(name = "caname")
+    @Column(name = "cardcvc")
+    private Integer cardcvc;
+
+    @Column(name = "cardname")
     @Builder.Default
-    private String caname = "BNK 쇼핑환전체크카드";
+    private String cardname = "BNK 쇼핑환전체크카드";
 
     @Column(name = "pano")
     private String pano;
@@ -40,21 +47,21 @@ public class Card {
     @Column(name = "cuno")
     private String cuno;
 
-    @Column(name = "castatus", length = 1)
+    @Column(name = "cardstatus", length = 1)
     @Builder.Default
-    private String castatus = "Y";
+    private String cardstatus = "Y";
 
     @CreationTimestamp
-    @Column(name = "cadate")
-    private LocalDateTime cadate;
+    @Column(name = "carddate")
+    private LocalDateTime carddate;
 
     @PrePersist
     public void prePersist() {
-        if (this.cano == null) {
-            this.cano = generateCardNumber();
+        if (this.cardno == null) {
+            this.cardno = generateCardNumber();
         }
-        if (this.cacvc == null) {
-            this.cacvc = generateCvc();
+        if (this.cardcvc == null) {
+            this.cardcvc = generateCvc();
         }
     }
 

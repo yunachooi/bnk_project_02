@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.example.bnk_project_02s.dto.ShoppingProductDto;
-import com.example.bnk_project_02s.entity.ShoppingProduct;
+import com.example.bnk_project_02s.dto.ShoppingProductsDto;
+import com.example.bnk_project_02s.entity.ShoppingProducts;
 import com.example.bnk_project_02s.repository.ShoppingProductRepository;
-import com.example.bnk_project_02s.util.ShoppingProductConverter;
+import com.example.bnk_project_02s.util.ShoppingProductsConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,14 +39,14 @@ public class ShoppingService {
     private final OkHttpClient client = new OkHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public List<ShoppingProductDto> getProductList() {
-        List<ShoppingProduct> entities = shoppingProductRepository.findAll();
+    public List<ShoppingProductsDto> getProductList() {
+        List<ShoppingProducts> entities = shoppingProductRepository.findAll();
         return entities.stream()
-                .map(ShoppingProductConverter::toDto)
+                .map(ShoppingProductsConverter::toDto)
                 .collect(Collectors.toList());
     }
 
-    public ShoppingProductDto getOrFetchProduct(String spno) {
+    public ShoppingProductsDto getOrFetchProduct(String spno) {
         try {
             System.out.println("DB에서 제품 조회 시도: " + spno);
             return getProductFromDb(spno);
@@ -56,15 +56,15 @@ public class ShoppingService {
         }
     }
 
-    public ShoppingProductDto getProductFromDb(String spno) {
-        ShoppingProduct entity = shoppingProductRepository.findById(spno)
+    public ShoppingProductsDto getProductFromDb(String spno) {
+        ShoppingProducts entity = shoppingProductRepository.findById(spno)
                 .orElseThrow(() -> new RuntimeException("제품을 찾을 수 없습니다: " + spno));
         
-        return ShoppingProductConverter.toDto(entity);
+        return ShoppingProductsConverter.toDto(entity);
     }
 
-    public ShoppingProductDto fetchAndSaveProduct(String spno) {
-        ShoppingProductDto dto = fetchProduct(spno);
+    public ShoppingProductsDto fetchAndSaveProduct(String spno) {
+        ShoppingProductsDto dto = fetchProduct(spno);
         
         if (dto.getSpname() != null && !dto.getSpname().isEmpty()) {
             String translatedName = translationService.translateText(dto.getSpname());
@@ -81,7 +81,7 @@ public class ShoppingService {
         return saveProduct(dto);
     }
 
-    public ShoppingProductDto fetchProduct(String spno) {
+    public ShoppingProductsDto fetchProduct(String spno) {
         String url = "https://real-time-amazon-data.p.rapidapi.com/product-details?asin=" + spno + "&country=US";
         Request request = new Request.Builder()
                 .url(url)
@@ -111,7 +111,7 @@ public class ShoppingService {
                 throw new RuntimeException("API 응답에서 제품 데이터를 찾을 수 없습니다");
             }
 
-            ShoppingProductDto dto = new ShoppingProductDto();
+            ShoppingProductsDto dto = new ShoppingProductsDto();
             dto.setSpno(getTextValue(root, "asin", spno));
             dto.setSpname(getTextValue(root, "product_title", "제품명 없음"));
             dto.setSpdescription(getTextValue(root, "product_description", "설명 없음"));
@@ -129,9 +129,9 @@ public class ShoppingService {
         }
     }
 
-    public ShoppingProductDto saveProduct(ShoppingProductDto dto) {
+    public ShoppingProductsDto saveProduct(ShoppingProductsDto dto) {
         try {
-            ShoppingProduct entity = ShoppingProductConverter.toEntity(dto);
+            ShoppingProducts entity = ShoppingProductsConverter.toEntity(dto);
             
             entity.setSpname(truncateString(dto.getSpname(), 1000));
             entity.setSpnameKo(truncateString(dto.getSpnameKo(), 1000));
@@ -141,10 +141,10 @@ public class ShoppingService {
             entity.setSpimgurl(truncateString(dto.getSpimgurl(), 2000));
 
             System.out.println("저장 전 Entity (번역 포함): " + entity);
-            ShoppingProduct savedEntity = shoppingProductRepository.save(entity);
+            ShoppingProducts savedEntity = shoppingProductRepository.save(entity);
             System.out.println("저장 후 Entity: " + savedEntity);
             
-            return ShoppingProductConverter.toDto(savedEntity);
+            return ShoppingProductsConverter.toDto(savedEntity);
         } catch (Exception e) {
             System.err.println("DB 저장 중 오류: " + e.getMessage());
             e.printStackTrace();
@@ -171,9 +171,9 @@ public class ShoppingService {
     }
 
     public void translateExistingProducts() {
-        List<ShoppingProduct> products = shoppingProductRepository.findAll();
+        List<ShoppingProducts> products = shoppingProductRepository.findAll();
         
-        for (ShoppingProduct product : products) {
+        for (ShoppingProducts product : products) {
             try {
                 boolean needsUpdate = false;
                 
@@ -254,7 +254,7 @@ public class ShoppingService {
         return str.substring(0, maxLength - 3) + "...";
     }
 
-    public List<ShoppingProductDto> getProductDetail() {
+    public List<ShoppingProductsDto> getProductDetail() {
         return null;
     }
 }

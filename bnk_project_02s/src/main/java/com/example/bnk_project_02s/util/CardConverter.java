@@ -13,13 +13,13 @@ public class CardConverter {
         }
         
         return CardDto.builder()
-                .cano(card.getCano())
-                .cacvc(card.getCacvc())
-                .caname(card.getCaname())
+                .cardno(card.getCardno())
+                .cardcvc(card.getCardcvc())
+                .cardname(card.getCardname())
                 .pano(card.getPano())
                 .cuno(card.getCuno())
-                .castatus(card.getCastatus())
-                .cadate(card.getCadate())
+                .cardstatus(card.getCardstatus())
+                .carddate(card.getCarddate())
                 .build();
     }
 
@@ -29,13 +29,13 @@ public class CardConverter {
         }
         
         return Card.builder()
-                .cano(cardDto.getCano())
-                .cacvc(cardDto.getCacvc())
-                .caname(cardDto.getCaname())
+                .cardno(cardDto.getCardno())
+                .cardcvc(cardDto.getCardcvc())
+                .cardname(cardDto.getCardname())
                 .pano(cardDto.getPano())
                 .cuno(cardDto.getCuno())
-                .castatus(cardDto.getCastatus())
-                .cadate(cardDto.getCadate())
+                .cardstatus(cardDto.getCardstatus())
+                .carddate(cardDto.getCarddate())
                 .build();
     }
 }

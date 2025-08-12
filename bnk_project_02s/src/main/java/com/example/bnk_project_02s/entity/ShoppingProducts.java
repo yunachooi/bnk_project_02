@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ShoppingProduct {
+public class ShoppingProducts {
     
     @Id
     private String spno;
