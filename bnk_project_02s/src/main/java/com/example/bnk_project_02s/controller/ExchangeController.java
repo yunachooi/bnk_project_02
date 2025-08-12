@@ -57,6 +57,32 @@ public class ExchangeController {
         model.addAttribute("accountMasked", accountMasked);
         return "forexExchange2"; // 확인 페이지
     }
+    
+    /* 3단계: 구매 완료 화면 (임시 버전 - DB 저장 없음) */
+    @PostMapping("/submit")
+    public String doneTemp(
+            @RequestParam("code") String code,
+            @RequestParam("fxAmount") String fxAmount,
+            @RequestParam("krwAmount") String krwAmount,
+            @RequestParam("finalRate") String finalRate,
+            @RequestParam(value = "rateDate", required = false) String rateDate,
+            @RequestParam(value = "rateRound", required = false) String rateRound,
+            @RequestParam(value = "account", required = false) String accountMasked,
+            @RequestParam(value = "savedFee", required = false) String savedFee,
+            Model model
+    ) {
+        // 임시: 저장 없이 모델만 전달하여 완료 페이지 렌더링
+        model.addAttribute("rateCode", code);
+        model.addAttribute("fxAmount", fxAmount);
+        model.addAttribute("krwAmount", krwAmount);
+        model.addAttribute("finalRate", finalRate);
+        model.addAttribute("rateDate", rateDate);
+        model.addAttribute("rateRound", rateRound);
+        model.addAttribute("accountMasked", accountMasked);
+        model.addAttribute("savedFee", savedFee);
+        return "forexExchange3"; // 임시 완료 페이지
+    }
+    
 
 
 }

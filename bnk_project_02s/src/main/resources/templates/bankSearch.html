@@ -1,0 +1,203 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BNK 지점 찾기</title>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin></script>
+
+  <style>
+    :root {
+      --brand: #d81b60;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif; color: var(--ink); background: var(--bg); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .title { font-weight: 800; font-size: 20px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    .tab-btn { appearance: none; border: 0; background: transparent; padding: 10px 14px; cursor: pointer; color: var(--muted); font-weight: 700; border-bottom: 2px solid transparent; }
+    .tab-btn.active { color: var(--brand); border-color: var(--brand); }
+
+    /* Layout */
+    .grid { display: grid; grid-template-columns: 1fr 360px; gap: 14px; }
+    @media (max-width: 980px){ .grid { grid-template-columns: 1fr; } }
+
+    /* Map */
+    #map { width: 100%; height: 560px; border: 1px solid var(--border); border-radius: 10px; }
+
+    /* List */
+    .panel { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+    .panel-head { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .panel-title { font-weight: 700; }
+    .count-badge { background: var(--ink); color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 999px; }
+    .list { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow: auto; }
+    .item { padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .item:hover { background: #fafafa; }
+    .item .name { font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .pill { font-size: 10px; padding: 2px 6px; border-radius: 999px; background: #fce7f3; color: #9d174d; font-weight: 700; }
+    .addr { color: var(--muted); font-size: 13px; }
+    .phone { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+    .footer-note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="title">BNK 지점 지도</div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-all" class="tab-btn active" data-tab="all">전체 지점</button>
+      <button id="tab-digital" class="tab-btn" data-tab="digital">디지털 영업점</button>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div id="map"></div>
+        <div class="footer-note">지도를 확대/이동하거나, 오른쪽 목록을 클릭해 상세 위치를 확인하세요.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="panel-title">전체 지점 목록</div>
+          <span class="count-badge" id="count">0</span>
+        </div>
+        <ul class="list" id="list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 서버에서 내려준 초기 탭 (없으면 'all') -->
+  <script th:inline="javascript">
+    const serverInitialTab = /*[[${initialTab}]]*/ 'all';
+  </script>
+
+  <script>
+    const DEFAULT_CENTER = [35.1796, 129.0756]; // 부산
+    let map, markers = [], markerById = new Map();
+    let allBranches = [];
+    let activeTab = 'all'; // 'all' | 'digital'
+
+    init();
+
+    async function init(){
+      // 1) Init map
+      map = L.map('map', { zoomControl: true }).setView(DEFAULT_CENTER, 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+      // 2) Fetch data
+      try {
+        const res = await fetch('/api/branches');
+        allBranches = await res.json();
+      } catch (e) {
+        console.error('지점 데이터를 불러오지 못했어요.', e);
+        allBranches = [];
+      }
+
+      // 3) First render
+      render();
+
+      // 4) Tab handlers
+      document.getElementById('tab-all').addEventListener('click', () => switchTab('all'));
+      document.getElementById('tab-digital').addEventListener('click', () => switchTab('digital'));
+
+      // ✅ 초기 탭 결정 (우선순위: 서버값 > URL 쿼리 > 기본 all)
+      const params = new URLSearchParams(location.search);
+      const qsTab = params.get('tab');
+      const initial = (serverInitialTab === 'digital') ? 'digital' : (qsTab === 'digital' ? 'digital' : 'all');
+      if (initial === 'digital') switchTab('digital');
+    }
+
+    function switchTab(tab){
+      if (activeTab === tab) return;
+      activeTab = tab;
+      document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+      document.getElementById('tab-digital').classList.toggle('active', tab === 'digital');
+      document.getElementById('panel-title').textContent = tab === 'all' ? '전체 지점 목록' : '디지털 영업점 목록';
+      render();
+    }
+
+    function render(){
+      // Filter rows
+      let rows = allBranches.filter(r => r && r.lat && r.lng);
+      if (activeTab === 'digital') rows = rows.filter(r => !!r.digital);
+
+      // Update count
+      document.getElementById('count').textContent = rows.length.toString();
+
+      // Render markers
+      clearMarkers();
+      const listEl = document.getElementById('list');
+      listEl.innerHTML = '';
+
+      if (!rows.length){
+        map.setView(DEFAULT_CENTER, 11);
+        return;
+      }
+
+      const bounds = [];
+      rows.forEach(r => {
+        const lat = parseFloat(r.lat), lng = parseFloat(r.lng);
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+        const m = L.marker([lat, lng]).addTo(map);
+        const popupHtml = `
+          <div style="min-width:220px">
+            <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+              ${escapeHtml(r.name || '')}
+              ${r.digital ? '<span class="pill">디지털</span>' : ''}
+            </div>
+            <div class="addr">${escapeHtml(r.addr || '')}</div>
+            ${r.phone ? `<div class="phone">${escapeHtml(r.phone)}</div>` : ''}
+          </div>
+        `;
+        m.bindPopup(popupHtml);
+        markers.push(m);
+        markerById.set(String(r.bno), m);
+        bounds.push([lat, lng]);
+
+        // List item
+        const li = document.createElement('li');
+        li.className = 'item';
+        li.innerHTML = `
+          <div class="name">${escapeHtml(r.name || '')} ${r.digital ? '<span class="pill">디지털</span>' : ''}</div>
+          <div class="addr">${escapeHtml(r.addr || '')}</div>
+          ${r.phone ? `<div class="phone">${escapeHtml(r.phone)}</div>` : ''}
+        `;
+        li.addEventListener('click', () => {
+          map.setView([lat, lng], 17);
+          m.openPopup();
+        });
+        listEl.appendChild(li);
+      });
+
+      // Fit map
+      try {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.12));
+      } catch { map.setView(DEFAULT_CENTER, 11); }
+    }
+
+    function clearMarkers(){
+      markers.forEach(m => m.remove());
+      markers = [];
+      markerById.clear();
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[c]));
+    }
+  </script>
+</body>
+</html>
