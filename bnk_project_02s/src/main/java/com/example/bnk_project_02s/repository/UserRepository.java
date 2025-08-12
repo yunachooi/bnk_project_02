@@ -80,4 +80,11 @@ public interface UserRepository extends JpaRepository<User, String> {
         ORDER BY FIELD(t.k,'TRAVEL','STUDY','SHOPPING','FINANCE','ETC')
         """, nativeQuery = true)
     List<Object[]> countInterestTopicsCsv();
+    
+    @Query("""
+            select upper(trim(u.ugender)) as g, count(u)
+            from User u
+            group by upper(trim(u.ugender))
+            """)
+     List<Object[]> countByGenderRaw();
 }

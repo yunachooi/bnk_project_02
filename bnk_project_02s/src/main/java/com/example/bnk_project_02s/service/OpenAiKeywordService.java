@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.example.bnk_project_02s.dto.KeywordItem;   // record KeywordItem(String name, int value) 가정
+import com.example.bnk_project_02s.dto.KeywordItem;   // record KeywordItem(String name, int value)
 import com.example.bnk_project_02s.dto.KeywordResult; // record KeywordResult(List<KeywordItem> positive, List<KeywordItem> negative)
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +45,19 @@ public class OpenAiKeywordService {
     private static final Pattern POS_PAT = Pattern.compile("(좋|만족|추천|괜찮|신뢰|편리|빠르|안정|혜택|친절|유용|감사|훌륭|만점|잘됨|깔끔)");
     private static final Pattern NEG_PAT = Pattern.compile("(불편|느리|오류|버그|지연|아쉽|개선|문제|끊김|부정확|떨어진다|대기\\s*시간|불만|짜증|불친절|불만족)");
 
+    /* === 추가: 개수 고정용 설정/시드 === */
+    private static final int TARGET_K = 15;
+
+    private static final List<String> POS_SEED = List.of(
+        "좋다","만족","추천","괜찮다","신뢰","편리","빠르다","안정",
+        "혜택","친절","유용","감사","훌륭","만점","깔끔","잘됨"
+    );
+
+    private static final List<String> NEG_SEED = List.of(
+        "불편","느리다","오류","버그","지연","아쉽다","개선","문제",
+        "끊김","부정확","대기 시간","불만","짜증","불친절","불만족","느림"
+    );
+
     public KeywordResult extract(List<String> texts) {
         try {
             String joined = String.join("\n", texts == null ? List.of() : texts);
@@ -55,7 +68,7 @@ public class OpenAiKeywordService {
                 "절차: (1) 문장을 양/음/중립으로 분류한다. (2) 각 문장에서 해당 감성의 서술어 위주의 핵심 키워드만 뽑아 합산한다. " +
                 "부정 예시: 불편, 느리다, 오류, 버그, 지연, 아쉽다, 개선, 문제, 끊김, 부정확, 대기 시간, 떨어진다 등. " +
                 "긍정 예시: 좋다, 만족, 추천, 괜찮다, 신뢰, 편리, 빠르다, 안정, 혜택, 친절 등. " +
-                "반드시 {\"positive\":[{\"name\":\"…\",\"value\":n}], \"negative\":[…]} 형태이며 각 배열 최대 15개."
+                "반드시 {\"positive\":[{\"name\":\"…\",\"value\":n}], \"negative\":[…]} 형태이며 각 배열 최소 15개 이상."
             );
             ChatMessage user = new ChatMessage("user",
                 "리뷰 텍스트(개행 구분):\n" + joined + "\n\n반드시 JSON만 출력하세요."
@@ -94,6 +107,7 @@ public class OpenAiKeywordService {
         if (i >= 0 && j > i) s = s.substring(i, j + 1);
         return s.trim();
     }
+
     private static String repairJson(String s) {
         if (s == null || s.isBlank()) return "{}";
         String r = s.replaceAll(",\\s*([}\\]])", "$1");
@@ -130,7 +144,39 @@ public class OpenAiKeywordService {
     private static String getStr(JsonNode n, String... keys){ for(String k:keys){var v=n.get(k); if(v!=null && !v.isNull()) return v.asText();} return null; }
     private static int getInt(JsonNode n, String... keys){ for(String k:keys){var v=n.get(k); if(v!=null && v.isNumber()) return v.asInt();} return 0; }
 
-    /* -------- 폴라리티 가드(오분류 교정 + 중복 합산) -------- */
+    /* -------- 병합/정렬/상위K + 시드 패딩 -------- */
+    private static List<KeywordItem> mergeSortLimitPad(List<KeywordItem> src, List<String> seed, int k) {
+        // 동일 키워드 합산(빈도)
+        LinkedHashMap<String, Integer> map = src.stream()
+            .filter(it -> it != null && it.name() != null && !it.name().isBlank())
+            .collect(Collectors.toMap(
+                it -> it.name().trim(),
+                it -> Math.max(1, it.value()),
+                Integer::sum,
+                LinkedHashMap::new
+            ));
+
+        // 빈도순 정렬 후 상위 k개
+        List<KeywordItem> out = map.entrySet().stream()
+            .map(e -> new KeywordItem(e.getKey(), e.getValue()))
+            .sorted((a,b) -> Integer.compare(b.value(), a.value()))
+            .limit(k)
+            .collect(Collectors.toCollection(ArrayList::new));
+
+        // 부족하면 시드로 채워서 정확히 k개
+        if (out.size() < k) {
+            Set<String> existing = out.stream().map(KeywordItem::name).collect(Collectors.toSet());
+            for (String s : seed) {
+                if (out.size() >= k) break;
+                if (!existing.contains(s)) out.add(new KeywordItem(s, 1));
+            }
+        }
+        while (out.size() < k) out.add(new KeywordItem("기타", 1));
+
+        return out;
+    }
+
+    /* -------- 폴라리티 가드(오분류 교정 + 15개 고정) -------- */
     private KeywordResult polarityGuard(KeywordResult in){
         if (in == null) return new KeywordResult(List.of(), List.of());
         List<KeywordItem> posOut = new ArrayList<>(), negOut = new ArrayList<>();
@@ -145,15 +191,12 @@ public class OpenAiKeywordService {
             if (POS_PAT.matcher(k.name()).find()){ posOut.add(k); toPos++; } else negOut.add(k);
         }
 
-        Function<List<KeywordItem>, List<KeywordItem>> mergeSortLimit = list -> list.stream()
-            .collect(Collectors.toMap(KeywordItem::name, KeywordItem::value, Integer::sum, LinkedHashMap::new))
-            .entrySet().stream()
-            .map(e -> new KeywordItem(e.getKey(), e.getValue()))
-            .sorted((a,b) -> Integer.compare(b.value(), a.value()))
-            .limit(20).toList();
+        // ★ 항상 15개로 고정
+        var posFixed = mergeSortLimitPad(posOut, POS_SEED, TARGET_K);
+        var negFixed = mergeSortLimitPad(negOut, NEG_SEED, TARGET_K);
 
-        var out = new KeywordResult(mergeSortLimit.apply(posOut), mergeSortLimit.apply(negOut));
-        log.info("[keywords] polarityGuard moved -> toPos={}, toNeg={}", toPos, toNeg);
-        return out;
+        log.info("[keywords] polarityGuard moved -> toPos={}, toNeg={}, pos={}, neg={}",
+                 toPos, toNeg, posFixed.size(), negFixed.size());
+        return new KeywordResult(posFixed, negFixed);
     }
 }

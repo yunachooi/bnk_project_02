@@ -61,10 +61,33 @@ document.addEventListener('DOMContentLoaded', () => {
       series:[{type:'bar',data:Object.values(data),itemStyle:blueBar(),emphasis:{itemStyle:{shadowBlur:12,shadowColor:'rgba(37,99,235,.28)'}}}]
     });
   }).catch(()=>{});
-  getOrInitChart('gender-pie')?.setOption({
-    color:['#3b82f6','#93c5fd'], legend:{bottom:0}, tooltip:{trigger:'item'},
-    series:[{type:'pie',radius:'60%',data:[{value:1600,name:'남성'},{value:1400,name:'여성'}]}]
-  });
+  // 성별 비율 
+  fetch('/api/genderStats')
+    .then(r => r.json())
+    .then(obj => {
+      const pieData = [
+        { name: '남성', value: Number(obj['남성'] ?? obj.male ?? 0) },
+        { name: '여성', value: Number(obj['여성'] ?? obj.female ?? 0) }
+      ];
+      const other = Number(obj['기타'] ?? obj.other ?? 0);
+      if (other > 0) pieData.push({ name: '기타', value: other });
+
+      // (선택) 리포트 빌드 폴백용 전역 백업
+      window.__genderPie = pieData;
+
+      getOrInitChart('gender-pie')?.setOption({
+        color:['#3b82f6','#93c5fd','#cbd5e1'],
+        legend:{bottom:0},
+        tooltip:{trigger:'item'},
+        series:[{ type:'pie', radius:'60%', data: pieData }]
+      });
+    })
+    .catch(() => {
+      // 실패 시 빈 파이로 유지
+      getOrInitChart('gender-pie')?.setOption({
+        legend:{bottom:0}, series:[{ type:'pie', radius:'60%', data: [] }]
+      });
+    });
 
   // 리뷰 통계
   (async function renderReviewCharts(){
@@ -131,51 +154,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ★ 워드클라우드 (좌/우 2개)
   (async function renderWordcloud(){
-    const posChart = getOrInitChart('kw-pos');
-    const negChart = getOrInitChart('kw-neg');
-    if (!posChart && !negChart) return;
+	  const posChart = getOrInitChart('kw-pos');
+	  const negChart = getOrInitChart('kw-neg');
+	  if (!posChart && !negChart) return;
 
-    try {
-      const r = await fetch('/api/reviews/keywords?months=3');
-      const { positive = [], negative = [] } = await r.json();
+	  try {
+	    const r = await fetch('/api/reviews/keywords?months=3');
+	    const { positive = [], negative = [] } = await r.json();
 
-      const pickTop = (arr, n = 30) => [...arr].sort((a,b)=>(b.value||1)-(a.value||1)).slice(0, n);
-      const toSeriesData = (arr, color) =>
-        pickTop(arr).filter(k => k && k.name && (k.value ?? 1) > 0)
-                    .map(k => ({ name: k.name, value: k.value || 1, textStyle: { color } }));
+	    // === 정확히 15개만 사용 ===
+	    const pickTop = (arr, n = 15) =>
+	      [...arr].sort((a,b)=>(b.value||1)-(a.value||1)).slice(0, n);
 
-      const base = (data, fontFamily) => ({
-        type: 'wordCloud',
-        left: '2%', right: '2%', top: '4%', bottom: '4%',
-        gridSize: 10, sizeRange: [16, 48], rotationRange: [0, 0],
-        layoutAnimation: false, shape: 'circle', drawOutOfBound: false,
-        textStyle: { fontFamily }, emphasis: { focus: 'self', textStyle: { fontWeight: 900 } },
-        data
-      });
+	    const toSeriesData = (arr, color) =>
+	      pickTop(arr, 15)
+	        .filter(k => k && k.name && (k.value ?? 1) > 0)
+	        .map(k => ({ name: k.name, value: k.value || 1, textStyle: { color } }));
 
-      if (posChart) {
-        posChart.setOption({ tooltip: {}, series: [ base(toSeriesData(positive, '#2563eb'), 'SUIT Variable, Pretendard, system-ui, sans-serif') ] });
-      }
-      if (negChart) {
-        negChart.setOption({ tooltip: {}, series: [ base(toSeriesData(negative, '#ef4444'), 'Pretendard, SUIT Variable, system-ui, sans-serif') ] });
-      }
+	    // === 자리 부족 방지: 글자/격자 축소 ===
+		const base = (data, fontFamily) => ({
+		  type: 'wordCloud',
+		  left: '6%', right: '6%', top: '8%', bottom: '8%', // 여백도 조금 더
+		  gridSize: 20,            // ★ 간격 키우는 핵심 (기존 8~10 → 20)
+		  sizeRange: [12, 24],     // ★ 글자 크기 조금 낮춰 15개 모두 들어가게
+		  rotationRange: [0, 0],
+		  layoutAnimation: false,
+		  shape: 'circle',
+		  drawOutOfBound: false,
+		  textStyle: { fontFamily },
+		  emphasis: { focus: 'self', textStyle: { fontWeight: 900 } },
+		  data
+		});
+	    if (posChart) {
+	      posChart.setOption({
+	        tooltip: {},
+	        series: [ base(toSeriesData(positive, '#2563eb'), 'SUIT Variable, Pretendard, system-ui, sans-serif') ]
+	      });
+	    }
+	    if (negChart) {
+	      negChart.setOption({
+	        tooltip: {},
+	        series: [ base(toSeriesData(negative, '#ef4444'), 'Pretendard, SUIT Variable, system-ui, sans-serif') ]
+	      });
+	    }
 
-      if ((!positive.length) && (!negative.length)) {
-        const setEmpty = (inst) => {
-          const dom = inst?.getDom?.(); if (!dom) return;
-          dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">표시할 키워드가 없습니다.</div>';
-        };
-        setEmpty(posChart); setEmpty(negChart);
-      }
-    } catch (e) {
-      console.warn('워드클라우드 로드 실패', e);
-      [posChart, negChart].forEach(ch => {
-        const dom = ch?.getDom?.(); if (!dom) return;
-        dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">키워드를 가져오지 못했습니다.</div>';
-      });
-    }
-  })();
-
+	    // 없는 경우 표시
+	    if ((!positive.length) && (!negative.length)) {
+	      const setEmpty = (inst) => {
+	        const dom = inst?.getDom?.(); if (!dom) return;
+	        dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">표시할 키워드가 없습니다.</div>';
+	      };
+	      setEmpty(posChart); setEmpty(negChart);
+	    }
+	  } catch (e) {
+	    console.warn('워드클라우드 로드 실패', e);
+	    [posChart, negChart].forEach(ch => {
+	      const dom = ch?.getDom?.(); if (!dom) return;
+	      dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">키워드를 가져오지 못했습니다.</div>';
+	    });
+	  }
+	})();
   // 최근 리뷰 테이블
   (async function renderRecentReviews(){
     const tbody = document.getElementById('review-list');
