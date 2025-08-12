@@ -30,9 +30,12 @@ public class Card {
     @Column(name = "cardno", length = 16)
     private String cardno;
 
+    @Column(name = "cano")
+    private String cano;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cano", referencedColumnName = "cano")
-    private ChildAccount childAccount;
+    @JoinColumn(name = "uid", referencedColumnName = "uid")
+    private User user;
 
     @Column(name = "cardcvc")
     private Integer cardcvc;
@@ -40,12 +43,6 @@ public class Card {
     @Column(name = "cardname")
     @Builder.Default
     private String cardname = "BNK 쇼핑환전체크카드";
-
-    @Column(name = "pano")
-    private String pano;
-
-    @Column(name = "cuno")
-    private String cuno;
 
     @Column(name = "cardstatus", length = 1)
     @Builder.Default
