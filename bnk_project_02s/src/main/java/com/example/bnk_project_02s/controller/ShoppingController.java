@@ -21,7 +21,7 @@ import com.example.bnk_project_02s.service.ShoppingService;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
-@RequestMapping("/shopping")
+@RequestMapping("/user/shopping")
 @CrossOrigin(origins = "*")
 public class ShoppingController {
 
