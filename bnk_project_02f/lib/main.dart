@@ -3,11 +3,11 @@ import 'login/signin.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const BNKApp());
+  runApp(const MyApp());
 }
 
-class BNKApp extends StatelessWidget {
-  const BNKApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
