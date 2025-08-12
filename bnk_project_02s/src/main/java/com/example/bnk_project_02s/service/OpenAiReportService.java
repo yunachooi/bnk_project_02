@@ -3,7 +3,6 @@ package com.example.bnk_project_02s.service;
 import java.time.Duration;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,65 +12,82 @@ import com.theokanning.openai.service.OpenAiService;
 
 @Service
 public class OpenAiReportService {
-	
-	private final OpenAiService service;
-	
-	public OpenAiReportService(@Value("${openai.api.key}") String apiKey) {
+
+    private final OpenAiService service;
+
+    @Value("${openai.model:gpt-4o-mini}")
+    private String model;
+
+    public OpenAiReportService(@Value("${openai.api.key}") String apiKey) {
         this.service = new OpenAiService(apiKey, Duration.ofSeconds(60));
     }
-	
-	public String generateDashBoardReport(String statsJson) {
+
+    public String generateDashBoardReport(String statsJson) {
         try {
-        	ChatMessage systemMessage = new ChatMessage(
-        		    "system",
-        		    String.join("\n",
-        		        "당신은 한국어를 사용하는 시니어 프로덕트 애널리스트다.",
-        		        "아래 JSON 대시보드 원시 데이터를 근거로 경영진용 심화 분석 리포트를 작성하라.",
+            ChatMessage systemMessage = new ChatMessage(
+                "system",
+                String.join("\n",
+                    "당신은 한국어를 사용하는 시니어 프로덕트 애널리스트다.",
+                    "아래 JSON 대시보드 원시 데이터를 근거로 경영진용 심화 분석 리포트를 작성하라.",
 
-        		        "형식 규칙:",
-        		        "1) 반드시 아래 섹션 제목을 H4 헤딩(#### )으로, 이 순서 그대로 출력한다.",
-        		        "   - #### 가입자 추이",
-        		        "   - #### 연령/성별 인사이트",
-        		        "   - #### 리뷰/평점 변화",
-        		        "   - #### 키워드 요약",
-        		        "   - #### 누적 원화 사용액",
-        		        "   - #### 공유 클릭",
-        		        "   - #### 다음 액션",
-        		        "2) 표/코드블록/굵게(**)/기울임(*) 같은 마크다운 스타일은 쓰지 말 것. 불릿(-)만 사용.",
-        		        "3) 수치 제시는 가능한 한 원시 수치와 증감(%, 증감폭)을 함께 표기하라. (예: 60→80, +33.3%)",
+                    // ===== 형식 규칙 =====
+                    "형식 규칙:",
+                    "1) 반드시 아래 섹션 제목을 H4 헤딩(#### )으로, 이 순서 그대로 출력한다.",
+                    "   - #### 가입자 추이",
+                    "   - #### 연령/성별 인사이트",
+                    "   - #### 리뷰/평점 변화",
+                    "   - #### 키워드 요약",
+                    "   - #### 누적 원화 사용액",
+                    "   - #### 관심 통화/관심 분야",
+                    "   - #### 다음 액션",
+                    "2) 표/코드블록/굵게(**)/기울임(*) 같은 마크다운은 쓰지 말고, 불릿(-)만 사용한다.",
+                    "3) 각 섹션은 4~7개 불릿으로 간결하게 작성한다.",
+                    "4) 데이터가 없거나 계산 불가하면 '데이터 없음'이라고 명시한다.",
 
-        		        "분량 가이드:",
-        		        "- 전체 분량: 최소 1,600~2,200자(한글, A4 1쪽 이상).",
-        		        "- 각 섹션은 최소 5~8개 불릿, 각 불릿은 1~2문장으로 작성.",
+                    // ===== 분석 지시 =====
+                    "분석 지시(섹션별 디테일):",
+                    "- 가입자 추이: 최근 일/월/분기 변화율(DoD, MoM, QoQ) 계산, 급증/급감(±10% 이상) 탐지, 원인 가설(프로모션/이벤트/시즌성/가격/제품변경)과 리스크.",
+                    "- 연령/성별 인사이트: 상위/하위 연령대, 성별 분포 및 전월 대비 변화, 유의미 조합(예: 20대 남성)과 목표 액션 제안.",
+                    "- 리뷰/평점 변화: 최근 3개월 리뷰수↔평점의 동행/역행 여부, 대표 긍/부 포인트 요약(UX/안정성/정책 관점).",
+                    "- 키워드 요약: positive/negative 각각 상위 3개 키워드와 시사점(제품, CX, 마케팅 관점).",
+                    "- 누적 원화 사용액: 분기 흐름(억 단위 환산), 가속/둔화 구간과 전환점, 파이프라인 시사점.",
+                    "- 관심 통화/관심 분야:",
+                    "    • 통화 분포는 USD, JPY, CNH, EUR, CHF, VND 키만 고려해 상위 3개와 비중을 제시한다.",
+                    "    • 관심분야 분포는 TRAVEL, STUDY, SHOPPING, FINANCE, ETC 키만 고려해 상위 3개와 시사점을 제시한다.",
+                    "    • 가능하면 두 지표 간 교차 가설(예: TRAVEL 이용자는 JPY/USD 선호)을 제안한다.",
+                    "    • 데이터 구조 힌트: statsJson.affinity.currency 는 {USD:103,...} 이고, "
+                    		+ "statsJson.affinity.topicMap 은 {TRAVEL:120, STUDY:98,...} 형태다.",
+                    "- 다음 액션: 임팩트/노력 기준으로 Quick win 1개, 단기(≤4주) 1개, 중기(≤1~2분기) 1개 제시.",
 
-        		        "분석 지시(섹션별 디테일):",
-        		        "- 가입자 추이: 일/월/분기 DoD·MoM·QoQ 변화율 계산, 급증/급감(±10%↑↓) 탐지, 원인 가설(프로모션/이벤트/시즌성/가격/제품변경)과 리스크.",
-        		        "- 연령/성별: 상위/하위 연령대와 성별 비중, 전월 대비 변화, 유의미 조합(예: 20대 남성)과 타겟별 가설/액션.",
-        		        "- 리뷰/평점: 최근 3개월 리뷰수↔평점 상관/비상관, 대표 긍/부 키 문장 요약, 개선 포인트(UX/안정성/정책).",
-        		        "- 키워드 요약: 긍정/부정 상위 3개씩과 시사점(제품, CX, 마케팅 관점).",
-        		        "- 누적 원화 사용액: 분기 흐름(억 단위 환산), 전환점(가속/둔화), 파이프라인 시사점.",
-        		        "- 공유 클릭: 최근 7일 최고/최저, 전일 대비, 클릭→가입 전환에 대한 가설 및 실험안.",
-        		        "- 다음 액션: 임팩트/노력 기준으로 Quick win 1개, 단기 1개(≤4주), 중기 1개(≤1~2분기).",
+                    // ===== 표현 지시 =====
+                    "표현 지시:",
+                    "- 수치 제시는 가능한 한 원시 수치와 증감(%, 증감폭)을 함께 표기하라. (예: 60→80, +33.3%)",
+                    "- 군더더기 없이 데이터 근거 중심으로 서술하되, 해석/가설/리스크/우선순위를 명확히 제시하라.",
+                    "- A4용지 한 바닥 이상의 분량을 고려하여 자세하기 분석 내용을 표시하라.",
+                    "- statsJson에 존재하지 않는 지표는 추정하지 말고 대안 데이터/실험을 제안하라."
+                )
+            );
 
-        		        "표현 지시:",
-        		        "- 군더더기 없이 데이터 근거 중심으로 서술하되, 해석/가설/리스크/우선순위를 명확히 제시하라.",
-        		        "- 데이터가 부족한 경우 '데이터 없음'이라고 명시하고 대안 데이터/실험을 제안하라."
-        		    )
-        		);
-        		ChatMessage userMessage = new ChatMessage(
-        		    "user",
-        		    "아래는 대시보드 원시 데이터(JSON)입니다. 위 형식과 분량 지침에 맞춰 심화 분석 리포트를 작성해 주세요.\n\n" + statsJson
-        		);
+            ChatMessage userMessage = new ChatMessage(
+                "user",
+                String.join("\n",
+                    "아래는 대시보드 원시 데이터(JSON)입니다.",
+                    "위 형식과 분량 지침에 맞춰 심화 분석 리포트를 작성해 주세요.",
+                    "",
+                    statsJson
+                )
+            );
 
-        		ChatCompletionRequest request = ChatCompletionRequest.builder()
-        			    .model("gpt-4o-mini")
-        			    .messages(List.of(systemMessage, userMessage))
-        			    .maxTokens(2200)        // A4 1~1.5쪽 분량 확보
-        			    .temperature(0.2)       // 수치/일관성 위주
-        			    .build();
-        		
+            ChatCompletionRequest request = ChatCompletionRequest.builder()
+                .model(model)
+                .messages(List.of(systemMessage, userMessage))
+                .maxTokens(1800)   // 리포트 길이(불릿 위주) 확보
+                .temperature(0.2)  // 수치/일관성 위주
+                .build();
+
             return service.createChatCompletion(request)
-                          .getChoices().get(0).getMessage().getContent();
+                .getChoices().get(0).getMessage().getContent();
+
         } catch (Exception e) {
             return "리포트 생성 중 오류: " + e.getMessage();
         }

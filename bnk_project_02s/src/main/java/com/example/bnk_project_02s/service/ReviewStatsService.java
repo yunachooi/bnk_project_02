@@ -33,35 +33,42 @@ public class ReviewStatsService {
           .toList();
       }
     
-    public MonthlyStatsDto Monthly(int months) {
-    	//기간 계산 (오늘 포함 과거 n-1개월)
-    	LocalDate end = LocalDate.now();
-    	LocalDate start = end.minusMonths(months-1).withDayOfMonth(1);
-    	List<Review> rows = reviewRepo.findByDateRange(start.toString(), end.toString());
-    	
-    	//월 키(yyyy-mm)
-    	Map<String, List<Double>> bucket = new LinkedHashMap<>();
-    	LocalDate cursor = start;
-    	for(int i = 0; i<months;i++) {
-    		String key = cursor.format(DateTimeFormatter.ofPattern("yyyy-MM"));
-    		bucket.put(key, new ArrayList<>());
-    		cursor = cursor.plusMonths(1);
-    	}
-    	rows.forEach(r -> {
-    	      String key = r.getRvdate().substring(0,7);
-    	      bucket.computeIfAbsent(key, k -> new ArrayList<>()).add(parseRating(r.getRvrating()));
-    	    });
+    public MonthlyStatsDto monthly(int months) {
+        // 기간: 최근 N개월의 시작일 00:00 ~ 오늘 다음날 00:00 미만
+        var today = LocalDate.now();
+        var startMonth = today.minusMonths(months - 1).withDayOfMonth(1);
+        var startDt = startMonth.atStartOfDay();
+        var endDtEx = today.plusDays(1).atStartOfDay();
 
-    	    List<String> labels = new ArrayList<>();
-    	    List<Integer> counts = new ArrayList<>();
-    	    List<Double> avgs   = new ArrayList<>();
-    	    bucket.forEach((k, list) -> {
-    	      labels.add(YearMonth.parse(k).getMonthValue()+"월");
-    	      counts.add(list.size());
-    	      avgs.add(list.isEmpty()? 0d : Math.round((list.stream().mapToDouble(x->x).average().orElse(0))*10.0)/10.0);
-    	    });
-    	    return new MonthlyStatsDto(labels, counts, avgs);
-    	  }
+        var rows = reviewRepo.findByDateRange(startDt, endDtEx);
+
+        // 월 버킷 구성 (yyyy-MM)
+        Map<String, List<Double>> bucket = new LinkedHashMap<>();
+        var cursor = startMonth;
+        for (int i = 0; i < months; i++) {
+            String key = cursor.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+            bucket.put(key, new ArrayList<>());
+            cursor = cursor.plusMonths(1);
+        }
+
+        rows.forEach(r -> {
+            // r.getRvdate()가 'yyyy-MM-dd ...' 형식이라고 가정
+            String key = r.getRvdate().substring(0, 7);
+            bucket.computeIfAbsent(key, k -> new ArrayList<>()).add(parseRating(r.getRvrating()));
+        });
+
+        List<String> labels = new ArrayList<>();
+        List<Integer> counts = new ArrayList<>();
+        List<Double> avgs = new ArrayList<>();
+        bucket.forEach((k, list) -> {
+            labels.add(YearMonth.parse(k).getMonthValue() + "월");
+            counts.add(list.size());
+            avgs.add(list.isEmpty() ? 0d
+                    : Math.round((list.stream().mapToDouble(x -> x).average().orElse(0)) * 10.0) / 10.0);
+        });
+
+        return new MonthlyStatsDto(labels, counts, avgs);
+    }
     
     private static double parseRating(String s) {
     	try { return Double.parseDouble(s.trim()); } catch(Exception e) {return 0.0;}
