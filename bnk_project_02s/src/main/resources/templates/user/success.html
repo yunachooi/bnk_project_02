@@ -5,8 +5,27 @@
   <title>가입 완료</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" th:href="@{/css/user.css}" />
+
+  <!-- CSRF 메타: _csrf가 있을 때만 렌더 -->
+  <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}" />
+  <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}" />
+
+  <style>
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000}
+    .modal{background:#fff;border-radius:16px;max-width:420px;width:90%;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:16px}
+    .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-size:14px}
+    .btn-primary{background:#0d6efd;color:#fff}
+    .btn-ghost{background:#f2f4f7;color:#333}
+    .hidden{display:none}
+  </style>
 </head>
 <body class="signup success">
+
+  <!-- 값 전달: 숨김 input -->
+  <input type="hidden" id="uidVal"     th:value="${uid}" />
+  <input type="hidden" id="pushUrlVal" th:value="@{/user/push-consent}" />
+
   <div class="container">
     <main class="success-wrap">
       <section class="success-box">
@@ -15,13 +34,70 @@
         <p>정상적으로 되었습니다.</p>
       </section>
 
-     <div class="form-actions">
-  <a th:href="@{/user/login}" class="btn btn-primary btn-cta btn-lg" aria-label="로그인 화면으로 이동">
-    <span class="btn-label">로그인 하러 가기</span>
-    <span class="btn-ico" aria-hidden="true">→</span>
-  </a>
-</div>
+      <div class="form-actions">
+        <a th:href="@{/user/login}" class="btn btn-primary btn-cta btn-lg" aria-label="로그인 화면으로 이동">
+          <span class="btn-label">로그인 하러 가기</span>
+          <span class="btn-ico" aria-hidden="true">→</span>
+        </a>
+      </div>
     </main>
   </div>
+
+  <!-- 푸시 동의 모달 -->
+  <div id="push-backdrop" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="push-title">
+    <div class="modal">
+      <h3 id="push-title" style="margin:0 0 8px;">푸시 알림을 받아보시겠어요?</h3>
+      <p style="margin:0 0 4px; color:#555;">환율 알림, 이벤트 소식을 알려드려요.</p>
+      <p style="margin:0; color:#888; font-size:13px;">* 동의 여부는 마이페이지에서 언제든 변경 가능합니다.</p>
+      <div class="actions">
+        <button id="btn-no"  class="btn btn-ghost" type="button">아니오</button>
+        <button id="btn-yes" class="btn btn-primary" type="button">예, 받을래요</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 값 읽기
+    const uid = document.getElementById('uidVal')?.value || null;
+    const url = document.getElementById('pushUrlVal')?.value || '';
+
+    // CSRF (있을 때만 사용)
+    const token = document.querySelector('meta[name="_csrf"]')?.content;
+    const hdr   = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    const backdrop = document.getElementById('push-backdrop');
+    const yesBtn   = document.getElementById('btn-yes');
+    const noBtn    = document.getElementById('btn-no');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (uid) {
+        backdrop.classList.remove('hidden');
+        setTimeout(() => yesBtn && yesBtn.focus(), 0);
+      }
+    });
+
+    async function sendConsent(consent) {
+      try {
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (token && hdr) headers[hdr] = token; // CSRF 헤더(있을 때만)
+
+        const body = new URLSearchParams({ uid, consent: String(consent) });
+        const res = await fetch(url, { method: 'POST', headers, body });
+
+        if (!res.ok) {
+          console.error('push-consent failed', res.status);
+          alert('알림 동의 저장에 실패했습니다. 나중에 마이페이지에서 설정해 주세요.');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('네트워크 오류입니다.');
+      } finally {
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    yesBtn && yesBtn.addEventListener('click', () => sendConsent(true));
+    noBtn  && noBtn.addEventListener('click',  () => sendConsent(false));
+  </script>
 </body>
 </html>

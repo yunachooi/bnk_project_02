@@ -78,6 +78,17 @@ class Product {
   String get displayDescription {
     return (spdescriptionKo != null && spdescriptionKo!.isNotEmpty) ? spdescriptionKo! : spdescription;
   }
+
+  String get formattedReviews {
+    return _addCommas(spreviews);
+  }
+
+  String _addCommas(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match match) => '${match[1]},',
+    );
+  }
 }
 
 class ApiService {
@@ -271,10 +282,11 @@ class ProductDetailPage extends StatelessWidget {
                   }),
                   SizedBox(width: 8),
                   Text(
-                    '(${product.spreviews})',
+                    '(${product.formattedReviews}개 리뷰)',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -1052,10 +1064,11 @@ class ProductCard extends StatelessWidget {
                       }),
                       SizedBox(width: 4),
                       Text(
-                        '(${product.spreviews})',
+                        '(${product.formattedReviews})',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey[600],
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -1076,7 +1089,8 @@ class ProductCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
+                        '${product.spprice.toStringAsFixed(2)} ${product
+                            .spcurrency}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.black,
@@ -1086,7 +1100,8 @@ class ProductCard extends StatelessWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '${(product.spprice * 0.9).toStringAsFixed(2)} ${product.spcurrency}',
+                        '${(product.spprice * 0.9).toStringAsFixed(2)} ${product
+                            .spcurrency}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

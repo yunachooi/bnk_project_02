@@ -1,17 +1,22 @@
 package com.example.bnk_project_02s.service;
 
-import com.example.bnk_project_02s.dto.UserDto;
-import com.example.bnk_project_02s.entity.User;
-import com.example.bnk_project_02s.repository.UserRepository;
-import com.example.bnk_project_02s.util.UserUtil;
-import lombok.RequiredArgsConstructor;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Optional;
+import com.example.bnk_project_02s.dto.UserDto;
+import com.example.bnk_project_02s.entity.User;
+import com.example.bnk_project_02s.repository.UserRepository;
+import com.example.bnk_project_02s.util.UserUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +40,23 @@ public class UserService {
     /** 주민등록번호 중복 여부(HMAC로 조회) */
     public boolean isRrnDuplicate(String front, String back) {
         String norm = userUtil.normalizeRrnParts(front, back);
-        if (!userUtil.isValidRrn13(norm)) return false; // 형식이 틀리면 여기선 중복 판단 안 함
+        if (!userUtil.isValidRrn13(norm)) return false; // 형식 틀리면 여기선 중복 판단 안 함
         String hmac = userUtil.hmacRrnHex(norm);
-        return userRepository.existsByUrrnHmac(hmac);   // ← 변경
+        return userRepository.existsByUrrnHmac(hmac);   // ← 레포지토리에 이 메서드가 있어야 함
+    }
+
+    /** 휴대번호 형식 검증(문자열 아무거나 받아도 내부에서 숫자만 비교) */
+    public boolean isValidPhone(String phone) {
+        String n = userUtil.normalizePhone(phone);
+        return userUtil.isValidPhone(n);
+    }
+
+    /** 휴대번호 중복 여부(HMAC로 조회) */
+    public boolean isPhoneDuplicate(String phone) {
+        String n = userUtil.normalizePhone(phone);
+        if (!userUtil.isValidPhone(n)) return false;
+        String h = userUtil.hmacPhoneHex(n);
+        return userRepository.existsByUphoneHmac(h);     // ← 레포지토리에 추가 예정
     }
 
     /* ===================== 가입 ===================== */
@@ -65,19 +84,31 @@ public class UserService {
             ubirth  = deriveBirthFromRrn(rrnNorm);  // YYYY-MM-DD
         }
 
-        // 4) 중복 체크(HMAC) → 레이스 대비 try-catch로 2차 방어
+        // 4) 주민번호 중복 체크(HMAC) → 레이스 대비 try-catch로 2차 방어
         String rrnEnc = null;
         String rrnHmac = null;
         if (userUtil.isValidRrn13(rrnNorm)) {
             rrnHmac = userUtil.hmacRrnHex(rrnNorm);
-            if (userRepository.existsByUrrnHmac(rrnHmac)) {   // ← 변경
+            if (userRepository.existsByUrrnHmac(rrnHmac)) {
                 throw new IllegalArgumentException("이미 등록된 주민등록번호입니다.");
             }
             rrnEnc = userUtil.encryptRrn(rrnNorm); // AES-GCM (IV 포함)
         }
 
-        // 5) 전화번호 정규화
-        String formattedPhone = normalizePhone(dto.getUphone());
+        // 5) 휴대폰 처리: 정규화 → 형식 검증 → HMAC 중복 체크 → AES 암호화
+        String phoneEnc = null;
+        String phoneHmac = null;
+        if (StringUtils.hasText(dto.getUphone())) {
+            String phoneNorm = userUtil.normalizePhone(dto.getUphone());
+            if (!userUtil.isValidPhone(phoneNorm)) {
+                throw new IllegalArgumentException("휴대폰 형식 오류(01로 시작, 10~11자리)");
+            }
+            phoneHmac = userUtil.hmacPhoneHex(phoneNorm);
+            if (userRepository.existsByUphoneHmac(phoneHmac)) {
+                throw new IllegalArgumentException("이미 등록된 휴대전화번호입니다.");
+            }
+            phoneEnc = userUtil.encryptPhone(phoneNorm); // "iv:ct"
+        }
 
         // 6) 엔티티 매핑
         User u = new User();
@@ -85,8 +116,9 @@ public class UserService {
         u.setUpw(hashed);
         u.setUname(dto.getUname());
         u.setUgender(StringUtils.hasText(ugender) ? ugender : "M");
-        u.setUbirth(ubirth); // 예: 1990-01-05
-        u.setUphone(formattedPhone);
+        u.setUbirth(ubirth);
+        // ⚠️ 평문 uphone은 더 이상 저장하지 않는 것을 권장
+        // u.setUphone(null); // 필요 시 제거/Transient 전환
         u.setUrole("ROLE_USER");
         u.setUcheck("N");
         u.setUshare(0L);
@@ -98,15 +130,18 @@ public class UserService {
                 ? String.join(",", dto.getUinterest()) : null);
 
         // AES/HMAC 저장
-        u.setUrrnEnc(rrnEnc);     // ← 변경
-        u.setUrrnHmac(rrnHmac);   // ← 변경
-        // ukeyVer는 엔티티 디폴트 'v1' 사용
+        u.setUrrnEnc(rrnEnc);
+        u.setUrrnHmac(rrnHmac);
+        u.setUphoneEnc(phoneEnc);   // ← 엔티티 필드 필요
+        u.setUphoneHmac(phoneHmac); // ← 엔티티 필드 필요
+        // ukeyVer는 엔티티 디폴트 'v1'을 사용한다면 그대로
 
         try {
             return userRepository.save(u).getUid();
         } catch (DataIntegrityViolationException e) {
-            // 동시 가입 레이스로 UNIQUE(rrn_hmac) 위반 시
-            throw new IllegalArgumentException("이미 등록된 주민등록번호입니다.");
+            // UNIQUE 제약 위반(주민번호 또는 휴대폰 HMAC)
+            // 스키마에 어떤 제약이 걸렸는지에 따라 메시지를 분기해도 됨
+            throw new IllegalArgumentException("이미 등록된 정보가 있습니다.");
         }
     }
 
@@ -126,20 +161,6 @@ public class UserService {
     }
 
     /* ===================== Helpers ===================== */
-
-    private String normalizePhone(String phone) {
-        if (!StringUtils.hasText(phone)) return null;
-        String digits = phone.replaceAll("\\D", ""); // 숫자만
-        if (digits.startsWith("010")) {
-            if (digits.length() == 11) { // 010-####-####
-                return digits.substring(0,3) + "-" + digits.substring(3,7) + "-" + digits.substring(7);
-            } else if (digits.length() == 10) { // 010-####-###
-                return digits.substring(0,3) + "-" + digits.substring(3,7) + "-" + digits.substring(7);
-            }
-        }
-        if (phone.matches("^010-\\d{4}-\\d{3,4}$")) return phone; // 이미 포맷이면 유지
-        return phone; // 그 외는 입력 유지(원하면 여기서 null로 막아도 됨)
-    }
 
     private String deriveGenderFromRrn(String rrnDigits13) {
         if (rrnDigits13 == null || rrnDigits13.length() != 13) return null;
@@ -166,5 +187,17 @@ public class UserService {
         };
         if (century == null) return null;
         return century + yy + "-" + mm + "-" + dd;
+    }
+    
+    /** 알림푸쉬 권한 관련*/
+    @Transactional
+    public void updatePushConsent(String uid, boolean consent) {
+        User u = userRepository.findById(uid)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음: " + uid));
+        u.setUpush(consent ? "Y" : "N");
+        String nowKst = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        u.setUpushdate(nowKst);
+        userRepository.save(u);
     }
 }
