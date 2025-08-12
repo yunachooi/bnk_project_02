@@ -1,253 +1,309 @@
 // static/js/echarts-dashboard.js
 
-/* ================== 0) ECharts 파란 테마 등록 + 유틸 ================== */
+/* ================== 0) ECharts 파란 테마 ================== */
 (function registerBlueTheme(){
   if (typeof echarts === 'undefined') return;
-  const BLUE_THEME = {
-    color: ['#3b82f6','#60a5fa','#93c5fd','#1d4ed8','#38bdf8','#818cf8'],
-    backgroundColor: 'transparent',
-    textStyle: { color: '#0f172a' },
-    legend: { textStyle: { color: '#334155' } },
-    tooltip: {
-      backgroundColor: '#fff',
-      borderColor: '#dbeafe',
-      borderWidth: 1,
-      textStyle: { color: '#0f172a' },
-      shadowBlur: 8,
-      shadowColor: 'rgba(37,99,235,.12)'
-    },
-    axisPointer:{ lineStyle:{ color:'#3b82f6' } },
-    grid: { left: 30, right: 20, top: 32, bottom: 28, containLabel: true },
-    categoryAxis: {
-      axisLine: { lineStyle: { color:'#9db2d7' } },
-      axisTick: { show:false },
-      axisLabel:{ color:'#476082' },
-      splitLine:{ show:false }
-    },
-    valueAxis: {
-      axisLine: { show:false },
-      axisTick: { show:false },
-      axisLabel:{ color:'#476082' },
-      splitLine:{ show:true, lineStyle:{ color:'#eaf1ff' } }
-    },
-    line: { lineStyle:{ width:3 }, symbol:'circle', symbolSize:6, smooth:true },
-    bar:  { itemStyle:{ borderRadius:[8,8,0,0] } },
-    pie:  { itemStyle:{ borderColor:'#fff', borderWidth:2 }, label:{ color:'#0f172a' } }
+  const BLUE = {
+    color:['#3b82f6','#60a5fa','#93c5fd','#1d4ed8','#38bdf8','#818cf8'],
+    backgroundColor:'transparent', textStyle:{color:'#0f172a'},
+    legend:{textStyle:{color:'#334155'}},
+    tooltip:{backgroundColor:'#fff',borderColor:'#dbeafe',borderWidth:1,textStyle:{color:'#0f172a'},shadowBlur:8,shadowColor:'rgba(37,99,235,.12)'},
+    axisPointer:{lineStyle:{color:'#3b82f6'}},
+    grid:{left:30,right:20,top:32,bottom:28,containLabel:true},
+    categoryAxis:{axisLine:{lineStyle:{color:'#9db2d7'}},axisTick:{show:false},axisLabel:{color:'#476082'},splitLine:{show:false}},
+    valueAxis:{axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#476082'},splitLine:{show:true,lineStyle:{color:'#eaf1ff'}}},
+    line:{lineStyle:{width:3},symbol:'circle',symbolSize:6,smooth:true},
+    bar:{itemStyle:{borderRadius:[8,8,0,0]}},
+    pie:{itemStyle:{borderColor:'#fff',borderWidth:2},label:{color:'#0f172a'}}
   };
-  echarts.registerTheme('blue', BLUE_THEME);
+  echarts.registerTheme('blue', BLUE);
 })();
-
-// 그래픽 헬퍼(그라데이션, 막대 스타일)
 const G = echarts.graphic;
-const blueArea = (cTop='#93c5fd') =>
-  ({ color: new G.LinearGradient(0,0,0,1,[{offset:0,color:cTop},{offset:1,color:'rgba(147,197,253,0.06)'}]) });
-const blueBar = () =>
-  ({ color: new G.LinearGradient(0,0,0,1,[{offset:0,color:'#60a5fa'},{offset:1,color:'#3b82f6'}]),
-     shadowBlur:8, shadowColor:'rgba(37,99,235,.18)', shadowOffsetY:4, borderRadius:[8,8,0,0] });
+const blueArea = (top='#93c5fd') => ({ color:new G.LinearGradient(0,0,0,1,[{offset:0,color:top},{offset:1,color:'rgba(147,197,253,0.06)'}]) });
+const blueBar  = () => ({ color:new G.LinearGradient(0,0,0,1,[{offset:0,color:'#60a5fa'},{offset:1,color:'#3b82f6'}]),
+                           shadowBlur:8,shadowColor:'rgba(37,99,235,.18)',shadowOffsetY:4,borderRadius:[8,8,0,0] });
 
+function getOrInitChart(id){
+  const el=document.getElementById(id);
+  if(!el) return null;
+  return echarts.getInstanceByDom(el)||echarts.init(el,'blue');
+}
+const maskUid = s=>{s=String(s||'');return s.length<=3?s+'***':s.slice(0,3)+'***';};
 
 /* ================== 1) 차트 렌더 ================== */
 document.addEventListener('DOMContentLoaded', () => {
+  const today=new Date();
+  const lastNDays=n=>Array.from({length:n},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-(n-1-i));return `${d.getMonth()+1}/${d.getDate()}`;});
+  const lastNQuarters=n=>Array.from({length:n},(_,i)=>{const d=new Date(today);d.setMonth(today.getMonth()-3*(n-1-i));const q=Math.floor(d.getMonth()/3)+1;return `${d.getFullYear()} Q${q}`;});
+  const dailyLabels=lastNDays(7), quarterlyLabels=lastNQuarters(6);
 
-  /* ───────────── 날짜 유틸 ───────────── */
-  const today = new Date();
-  const lastNDays = (n) =>
-    Array.from({ length: n }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() - (n - 1 - i));
-      return `${d.getMonth() + 1}/${d.getDate()}`;
-    });
-  const lastNQuarters = (n) =>
-    Array.from({ length: n }, (_, i) => {
-      const d = new Date(today);
-      d.setMonth(today.getMonth() - 3 * (n - 1 - i));
-      const q = Math.floor(d.getMonth() / 3) + 1;
-      return `${d.getFullYear()} Q${q}`;
-    });
-  const lastNMonths = (n) =>
-    Array.from({ length: n }, (_, i) => {
-      const d = new Date(today);
-      d.setMonth(today.getMonth() - (n - 1 - i));
-      return `${d.getMonth() + 1}월`;
-    });
-
-  const dailyLabels     = lastNDays(7);
-  const monthlyLabels   = lastNMonths(6);
-  const quarterlyLabels = lastNQuarters(6);
-
-  /* ── 가입자수 라인 (일/월/분기) ── */
-  const dailyChart = echarts.init(document.getElementById('chart-daily'), 'blue');
-  dailyChart.setOption({
-    xAxis:{ type:'category', data: dailyLabels },
-    yAxis:{ type:'value' },
-    tooltip:{ trigger:'axis', formatter: p => `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명` },
-    series:[{ type:'line', data:[5,9,6,7,10], areaStyle: blueArea('#93c5fd'),
-              itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)'} }]
+  // 가입자수
+  getOrInitChart('chart-daily')?.setOption({
+    xAxis:{type:'category',data:dailyLabels}, yAxis:{type:'value'},
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
+    series:[{type:'line',data:[5,9,6,7,10,8,12],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
+  });
+  getOrInitChart('chart-monthly')?.setOption({
+    xAxis:{type:'category',data:['3월','4월','5월','6월','7월','8월']}, yAxis:{type:'value'},
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
+    series:[{type:'line',data:[30,50,60,80,120,140],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
+  });
+  getOrInitChart('chart-quarterly')?.setOption({
+    xAxis:{type:'category',data:quarterlyLabels}, yAxis:{type:'value'},
+    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
+    series:[{type:'line',data:[100,180,240,300,380,460],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
   });
 
-  const monthlyChart = echarts.init(document.getElementById('chart-monthly'), 'blue');
-  monthlyChart.setOption({
-    xAxis:{ type:'category', data: monthlyLabels },
-    yAxis:{ type:'value' },
-    tooltip:{ trigger:'axis', formatter: p => `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명` },
-    series:[{ type:'line', data:[30,50,60,80,120], areaStyle: blueArea('#93c5fd'),
-              itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)'} }]
+  // 연령/성별
+  fetch('/api/ageStats').then(r=>r.json()).then(data=>{
+    getOrInitChart('age-bar')?.setOption({
+      xAxis:{type:'category',data:Object.keys(data)}, yAxis:{type:'value'}, tooltip:{trigger:'axis'},
+      series:[{type:'bar',data:Object.values(data),itemStyle:blueBar(),emphasis:{itemStyle:{shadowBlur:12,shadowColor:'rgba(37,99,235,.28)'}}}]
+    });
+  }).catch(()=>{});
+  getOrInitChart('gender-pie')?.setOption({
+    color:['#3b82f6','#93c5fd'], legend:{bottom:0}, tooltip:{trigger:'item'},
+    series:[{type:'pie',radius:'60%',data:[{value:1600,name:'남성'},{value:1400,name:'여성'}]}]
   });
 
-  const quarterlyChart = echarts.init(document.getElementById('chart-quarterly'), 'blue');
-  quarterlyChart.setOption({
-    xAxis:{ type:'category', data: quarterlyLabels },
-    yAxis:{ type:'value' },
-    tooltip:{ trigger:'axis', formatter: p => `${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명` },
-    series:[{ type:'line', data:[100,180,240], areaStyle: blueArea('#93c5fd'),
-              itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)'} }]
+  // 리뷰 통계
+  (async function renderReviewCharts(){
+    try{
+      const r=await fetch('/api/reviews/statsMonthly?months=6');
+      const {labels,counts,avgRatings}=await r.json();
+      getOrInitChart('review-count-bar')?.setOption({
+        tooltip:{trigger:'axis'}, xAxis:{type:'category',data:labels}, yAxis:{type:'value'},
+        series:[{type:'bar',data:counts,itemStyle:blueBar(),emphasis:{itemStyle:{shadowBlur:12,shadowColor:'rgba(37,99,235,.28)'}}}]
+      });
+      getOrInitChart('rating-line')?.setOption({
+        tooltip:{trigger:'axis'}, xAxis:{type:'category',data:labels}, yAxis:{type:'value',max:5,min:0},
+        series:[{type:'line',data:avgRatings,areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
+      });
+    }catch(e){console.warn('리뷰 월별 통계 로드 실패',e);}
+  })();
+
+  // 누적 사용액
+  getOrInitChart('krw-area')?.setOption({
+    tooltip:{trigger:'axis'}, xAxis:{type:'category',data:quarterlyLabels},
+    yAxis:{type:'value',axisLabel:v=>(v/1e8)+'억'},
+    series:[{type:'line',data:[5e8,8e8,1.3e9,1.9e9,2.5e9,3.2e9],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
   });
 
-  /* ── 연령/성별 ── */
-  fetch('/api/ageStats')
-    .then(res => res.json())
+  // 고정 라벨(정렬 보장)
+  const CUR_ORDER   = ['USD','JPY','CNH','EUR','CHF','VND'];
+  const TOPIC_ORDER = ['TRAVEL','STUDY','SHOPPING','FINANCE','ETC'];
+
+  // 관심 통화 (도넛 파이)
+  fetch('/api/interests/currencies')
+    .then(r => r.json())
     .then(data => {
-      echarts.init(document.getElementById('age-bar'), 'blue').setOption({
-        xAxis:{ type:'category', data:Object.keys(data) },
-        yAxis:{ type:'value' },
-        tooltip:{ trigger:'axis' },
-        series:[{ name:'가입자', type:'bar', data:Object.values(data),
-          itemStyle: blueBar(), emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(37,99,235,.28)' } }
+      const seriesData = CUR_ORDER.map(k => ({ name: k, value: Number(data?.[k] || 0) }));
+      getOrInitChart('currency-pie')?.setOption({
+        tooltip: { trigger: 'item' },
+        legend: { bottom: 0 },
+        series: [{
+          type: 'pie', radius: ['45%','70%'], avoidLabelOverlap: true,
+          label: { show: true, formatter: '{b}: {c}' },
+          data: seriesData
         }]
       });
-    });
+    })
+    .catch(()=>{});
 
-  echarts.init(document.getElementById('gender-pie'), 'blue').setOption({
-    color:['#3b82f6','#93c5fd'],
-    tooltip:{ trigger:'item' },
-    legend:{ bottom:0 },
-    series:[{ type:'pie', radius:'60%', data:[
-      { value:1600, name:'남성' }, { value:1400, name:'여성' }
-    ]}]
-  });
+  // 관심 분야 (가로 막대)
+  fetch('/api/interests/topics')
+    .then(r => r.json())
+    .then(data => {
+      const labels = TOPIC_ORDER;
+      const values = labels.map(k => Number(data?.[k] || 0));
+      getOrInitChart('interest-bar')?.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 40, right: 20, top: 20, bottom: 28, containLabel: true },
+        xAxis: { type: 'value' },
+        yAxis: { type: 'category', data: labels },
+        series: [{
+          type: 'bar', data: values, itemStyle: blueBar(),
+          emphasis: { itemStyle: { shadowBlur: 12, shadowColor:'rgba(37,99,235,.28)' } }
+        }]
+      });
+    })
+    .catch(()=>{});
 
-  /* ── 리뷰 지표 ── */
-  echarts.init(document.getElementById('review-count-bar'), 'blue').setOption({
-    tooltip:{ trigger:'axis' },
-    xAxis:{ type:'category', data: monthlyLabels },
-    yAxis:{ type:'value' },
-    series:[{ type:'bar', data:[18,32,26,44,38,51], itemStyle: blueBar(),
-             emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(37,99,235,.28)' } } }]
-  });
+  // ★ 워드클라우드 (좌/우 2개)
+  (async function renderWordcloud(){
+    const posChart = getOrInitChart('kw-pos');
+    const negChart = getOrInitChart('kw-neg');
+    if (!posChart && !negChart) return;
 
-  echarts.init(document.getElementById('rating-line'), 'blue').setOption({
-    tooltip:{ trigger:'axis' },
-    xAxis:{ type:'category', data: monthlyLabels },
-    yAxis:{ type:'value', max:5, min:0 },
-    series:[{ type:'line', data:[4.1,4.2,4.0,4.3,4.4,4.5], areaStyle: blueArea('#93c5fd'),
-             itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)' } }]
-  });
+    try {
+      const r = await fetch('/api/reviews/keywords?months=3');
+      const { positive = [], negative = [] } = await r.json();
 
-  /* ── 누적 원화 & 공유 클릭 ── */
-  echarts.init(document.getElementById('krw-area'), 'blue').setOption({
-    tooltip:{ trigger:'axis' },
-    xAxis:{ type:'category', data: quarterlyLabels },
-    yAxis:{ type:'value', axisLabel: v => (v/1e8)+'억' },
-    series:[{ type:'line', data:[5e8,8e8,1.3e9,1.9e9,2.5e9,3.2e9], areaStyle: blueArea('#93c5fd'),
-             itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)' } }]
-  });
+      const pickTop = (arr, n = 30) => [...arr].sort((a,b)=>(b.value||1)-(a.value||1)).slice(0, n);
+      const toSeriesData = (arr, color) =>
+        pickTop(arr).filter(k => k && k.name && (k.value ?? 1) > 0)
+                    .map(k => ({ name: k.name, value: k.value || 1, textStyle: { color } }));
 
-  echarts.init(document.getElementById('share-gauge'), 'blue').setOption({
-    tooltip:{ trigger:'axis' },
-    xAxis:{ type:'category', data: dailyLabels },
-    yAxis:{ type:'value' },
-    series:[{ name:'클릭 수', type:'line', smooth:true, areaStyle: blueArea('#93c5fd'),
-              data:[502,640,735,812,955,1023,982], itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)' } }]
-  });
+      const base = (data, fontFamily) => ({
+        type: 'wordCloud',
+        left: '2%', right: '2%', top: '4%', bottom: '4%',
+        gridSize: 10, sizeRange: [16, 48], rotationRange: [0, 0],
+        layoutAnimation: false, shape: 'circle', drawOutOfBound: false,
+        textStyle: { fontFamily }, emphasis: { focus: 'self', textStyle: { fontWeight: 900 } },
+        data
+      });
 
-  /* ── 최근 리뷰 더미 테이블 ── */
-  const reviews = [
-    { date:'2025-08-01', nick:'kfx***',  rate:4.5, text:'환전 수수료가 낮아져서 만족합니다.' },
-    { date:'2025-07-29', nick:'blue***', rate:3.5, text:'앱이 가끔 끊겨요. 개선되면 좋겠습니다.' },
-    { date:'2025-07-20', nick:'hana***', rate:5.0, text:'해외 송금 속도가 빨라서 편해요!' }
-  ];
-  const tbody = document.getElementById('review-list');
-  if (tbody) {
-    reviews.forEach(r => {
-      tbody.insertAdjacentHTML('beforeend', `
-        <tr>
-          <td>${r.date}</td>
-          <td>${r.nick}</td>
-          <td>${r.rate}</td>
-          <td>${r.text}</td>
-        </tr>`);
+      if (posChart) {
+        posChart.setOption({ tooltip: {}, series: [ base(toSeriesData(positive, '#2563eb'), 'SUIT Variable, Pretendard, system-ui, sans-serif') ] });
+      }
+      if (negChart) {
+        negChart.setOption({ tooltip: {}, series: [ base(toSeriesData(negative, '#ef4444'), 'Pretendard, SUIT Variable, system-ui, sans-serif') ] });
+      }
+
+      if ((!positive.length) && (!negative.length)) {
+        const setEmpty = (inst) => {
+          const dom = inst?.getDom?.(); if (!dom) return;
+          dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">표시할 키워드가 없습니다.</div>';
+        };
+        setEmpty(posChart); setEmpty(negChart);
+      }
+    } catch (e) {
+      console.warn('워드클라우드 로드 실패', e);
+      [posChart, negChart].forEach(ch => {
+        const dom = ch?.getDom?.(); if (!dom) return;
+        dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">키워드를 가져오지 못했습니다.</div>';
+      });
+    }
+  })();
+
+  // 최근 리뷰 테이블
+  (async function renderRecentReviews(){
+    const tbody = document.getElementById('review-list');
+    if (!tbody) return;
+    try {
+      const res  = await fetch('/api/reviews/recent?limit=20');
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      tbody.innerHTML = items.length
+        ? items.map(r => {
+            const date = r.rvdate ?? r.rvDate ?? r.date ?? r.createdAt ?? '';
+            const nick = r.nickname ?? r.nick ?? r.userName ?? r.uid ?? '';
+            const rate = r.rating ?? r.rvscore ?? r.score ?? r.rvScore ?? '';
+            const text = r.content ?? r.rvcontent ?? r.review ?? r.text ?? '';
+            const masked = (nick && nick.length > 3) ? (nick.slice(0,3) + '***') : (nick + '***');
+            return `<tr><td>${date}</td><td>${masked}</td><td>${rate}</td><td>${text}</td></tr>`;
+          }).join('')
+        : `<tr><td colspan="4">최근 리뷰가 없습니다.</td></tr>`;
+    } catch (e) {
+      console.warn('최근 리뷰 로드 실패', e);
+      tbody.innerHTML = `<tr><td colspan="4">최근 리뷰를 불러오지 못했습니다.</td></tr>`;
+    }
+  })();
+
+  function resizeCharts(ids){
+    ids.forEach(id=>{
+      const el = document.getElementById(id);
+      const inst = el && echarts.getInstanceByDom(el);
+      inst && inst.resize();
     });
   }
-}); // DOMContentLoaded
+  setTimeout(()=>resizeCharts(['kw-pos','kw-neg']), 0);
+  window.addEventListener('resize', ()=>resizeCharts(['kw-pos','kw-neg']));
+});
 
-
-/* ================== 2) 데이터 추출 & 리포트 빌드 유틸 ================== */
+/* ================== 2) 리포트 생성 공통 유틸 ================== */
 function extractSeriesDataByDomId(domId, seriesIndex = 0) {
-  const el = document.getElementById(domId);
-  if (!el) return null;
-  const inst = echarts.getInstanceByDom(el);
-  if (!inst) return null;
+  const el = document.getElementById(domId); if (!el) return null;
+  const inst = echarts.getInstanceByDom(el); if (!inst) return null;
   const opt = inst.getOption() || {};
-  const labels = (opt.xAxis && opt.xAxis[0] && opt.xAxis[0].data) ? opt.xAxis[0].data : [];
-  const series = (opt.series && opt.series[seriesIndex] && opt.series[seriesIndex].data) ? opt.series[seriesIndex].data : [];
-  return { labels, data: series };
+
+  const s = (opt.series && opt.series[seriesIndex]) ? opt.series[seriesIndex] : null;
+  let rawData = Array.isArray(s?.data) ? s.data : [];
+
+  // 라벨: xAxis->yAxis 순서로 시도, 없으면 series의 name 사용
+  let labels = [];
+  if (opt.xAxis?.[0]?.data?.length) labels = opt.xAxis[0].data;
+  else if (opt.yAxis?.[0]?.data?.length) labels = opt.yAxis[0].data;
+  else if (rawData.length && typeof rawData[0] === 'object' && 'name' in rawData[0]) {
+    labels = rawData.map(d => d.name);
+  }
+
+  // 값: 객체면 value, 아니면 원시값
+  const data = rawData.map(v => (typeof v === 'object' && v !== null && 'value' in v) ? v.value : v);
+
+  return { labels, data };
+}
+function extractPieAsObject(domId){
+  const el = document.getElementById(domId);
+  const inst = el && echarts.getInstanceByDom(el);
+  if (!inst) return null;
+  const data = inst.getOption()?.series?.[0]?.data || [];
+  const out = {};
+  data.forEach(d => out[d.name] = d.value);
+  return out;
 }
 
 async function buildStatsJson() {
+  let reviewsCountMonthly = extractSeriesDataByDomId('review-count-bar');
+  let ratingMonthly       = extractSeriesDataByDomId('rating-line');
+
+  if (!reviewsCountMonthly?.labels?.length || !ratingMonthly?.labels?.length) {
+    try {
+      const res = await fetch('/api/reviews/statsMonthly?months=6');
+      const { labels, counts, avgRatings } = await res.json();
+      if (!reviewsCountMonthly?.labels?.length) reviewsCountMonthly = { labels, data: counts };
+      if (!ratingMonthly?.labels?.length)       ratingMonthly       = { labels, data: avgRatings };
+    } catch(_) {}
+  }
+
   const subscribers = {
-    daily: extractSeriesDataByDomId('chart-daily'),
-    monthly: extractSeriesDataByDomId('chart-monthly'),
+    daily:     extractSeriesDataByDomId('chart-daily'),
+    monthly:   extractSeriesDataByDomId('chart-monthly'),
     quarterly: extractSeriesDataByDomId('chart-quarterly')
   };
 
-  // 연령대 (API)
+  // 연령/성별
   let ageStats = null;
-  try {
-    const res = await fetch('/api/ageStats');
-    if (res.ok) ageStats = await res.json();
-  } catch (_) {}
-
-  // 성별 (pie에서)
+  try { const res = await fetch('/api/ageStats'); if (res.ok) ageStats = await res.json(); } catch (_) {}
   let gender = null;
   const gInst = echarts.getInstanceByDom(document.getElementById('gender-pie'));
   if (gInst) {
-    const gopt = gInst.getOption();
-    const arr = (gopt.series && gopt.series[0] && gopt.series[0].data) ? gopt.series[0].data : [];
+    const arr = (gInst.getOption().series?.[0]?.data) || [];
     gender = arr.reduce((acc, cur) => (acc[cur.name] = cur.value, acc), {});
   }
 
-  const reviewsCountMonthly = extractSeriesDataByDomId('review-count-bar');
-  const ratingMonthly      = extractSeriesDataByDomId('rating-line');
+  // 누적 사용액
+  const krwCumulative = extractSeriesDataByDomId('krw-area');
 
-  let keywords = null;
-  const wcEl = document.getElementById('sentiment-wordcloud');
-  if (wcEl) {
-    const wcInst = echarts.getInstanceByDom(wcEl);
-    if (wcInst) {
-      const wopt = wcInst.getOption();
-      keywords = (wopt.series && wopt.series[0] && wopt.series[0].data) ? wopt.series[0].data : null;
+  // 관심 지표
+  const currencyDist = extractPieAsObject('currency-pie');      // { USD: n, ... }
+  const topicSeries  = extractSeriesDataByDomId('interest-bar'); // { labels:[...], data:[...] }
+  const topicMap = (() => {
+    const m = {};
+    if (topicSeries?.labels?.length) {
+      topicSeries.labels.forEach((lab, i) => m[lab] = Number(topicSeries.data?.[i] || 0));
     }
-  }
+    return m;
+  })();
 
-  const krwCumulative    = extractSeriesDataByDomId('krw-area');
-  const shareClicksDaily = extractSeriesDataByDomId('share-gauge');
-
+  // 최근 리뷰 테이블
   const recentReviews = Array.from(document.querySelectorAll('#review-list tr')).map(tr => {
     const tds = tr.querySelectorAll('td');
-    return {
-      date: tds[0]?.textContent?.trim(),
-      nick: tds[1]?.textContent?.trim(),
-      rate: tds[2]?.textContent?.trim(),
-      text: tds[3]?.textContent?.trim(),
-    };
+    return { date: tds[0]?.textContent?.trim(), nick: tds[1]?.textContent?.trim(),
+             rate: tds[2]?.textContent?.trim(), text: tds[3]?.textContent?.trim() };
   });
 
   return {
     generatedAt: new Date().toISOString(),
     subscribers,
     demographics: { age: ageStats, gender },
-    reviews: { countMonthly: reviewsCountMonthly, ratingMonthly, recentReviews, keywords },
-    usage: { krwCumulative, shareClicksDaily }
+    reviews: { countMonthly: reviewsCountMonthly, ratingMonthly, recentReviews, keywords: null },
+    usage: { krwCumulative },
+    affinity: {
+      currency: currencyDist,
+      topic: { labels: topicSeries?.labels || [], data: topicSeries?.data || [] },
+      topicMap // { TRAVEL: n, STUDY: n, ... }
+    }
   };
 }
 
@@ -270,83 +326,62 @@ function markdownToHtml(md){
   return `<p>${html}</p>`;
 }
 
-/* ===== 섹션 ↔ 차트 매핑 & 이미지 생성 ===== */
+/* ===== 섹션 ↔ 차트 매핑(리포트 이미지용) ===== */
 const CHART_META = {
-  'chart-daily':        { label:'최근 7일 가입자수' },
-  'chart-monthly':      { label:'최근 6개월 가입자수' },
-  'chart-quarterly':    { label:'최근 6분기 가입자수' },
-  'age-bar':            { label:'연령대 분포' },
-  'gender-pie':         { label:'성별 비율' },
-  'review-count-bar':   { label:'월별 리뷰 수' },
-  'rating-line':        { label:'월별 평균 평점' },
-  'sentiment-wordcloud':{ label:'키워드 워드클라우드' },
-  'krw-area':           { label:'누적 원화 사용액' },
-  'share-gauge':        { label:'공유 클릭 수(일별)' },
+  'chart-daily':      { label:'최근 7일 가입자수' },
+  'chart-monthly':    { label:'최근 6개월 가입자수' },
+  'chart-quarterly':  { label:'최근 6분기 가입자수' },
+  'age-bar':          { label:'연령대 분포' },
+  'gender-pie':       { label:'성별 비율' },
+  'review-count-bar': { label:'월별 리뷰 수' },
+  'rating-line':      { label:'월별 평균 평점' },
+  'krw-area':         { label:'누적 원화 사용액' },
+  'currency-pie':     { label:'관심 통화 분포' },
+  'interest-bar':     { label:'관심 분야 분포' },
 };
-
 function getChartIdsForTitle(title='') {
   const t = title.toLowerCase();
   const ids = new Set();
   if (t.includes('가입자')) { ids.add('chart-daily'); ids.add('chart-monthly'); ids.add('chart-quarterly'); }
   if (t.includes('연령') || t.includes('성별')) { ids.add('age-bar'); ids.add('gender-pie'); }
   if (t.includes('리뷰') || t.includes('평점')) { ids.add('review-count-bar'); ids.add('rating-line'); }
-  if (t.includes('키워드')) { ids.add('sentiment-wordcloud'); }
   if (t.includes('사용액') || t.includes('누적') || t.includes('원화')) { ids.add('krw-area'); }
-  if (t.includes('공유') || t.includes('클릭')) { ids.add('share-gauge'); }
+  if (t.includes('관심') || t.includes('통화') || t.includes('분야')) { ids.add('currency-pie'); ids.add('interest-bar'); }
   return [...ids];
 }
-
-function getChartImageById(domId) {
-  const el = document.getElementById(domId);
-  if (!el) return null;
-  const inst = echarts.getInstanceByDom(el);
-  if (!inst) return null;
-  try {
-    return inst.getDataURL({ pixelRatio: 2, backgroundColor: '#fff' });
-  } catch {
-    return null;
-  }
+function getChartImageById(domId){
+  const el=document.getElementById(domId); if(!el) return null;
+  const inst=echarts.getInstanceByDom(el); if(!inst) return null;
+  try{ return inst.getDataURL({ pixelRatio:2, backgroundColor:'#fff' }); }catch{ return null; }
 }
-
-function parseReportSections(mdText='') {
-  const parts = mdText.replace(/\r/g,'').split(/\n####\s*/);
-  const sections = [];
-  for (let i = 1; i < parts.length; i++) {
-    const block = parts[i];
-    const nl = block.indexOf('\n');
-    const title = (nl === -1 ? block : block.slice(0, nl)).trim();
-    const content = (nl === -1 ? '' : block.slice(nl + 1)).trim();
+function parseReportSections(mdText=''){
+  const parts = mdText.replace(/\r/g,'').split(/\n####\s*/); const sections=[];
+  for(let i=1;i<parts.length;i++){
+    const block=parts[i]; const nl=block.indexOf('\n');
+    const title=(nl===-1?block:block.slice(0,nl)).trim();
+    const content=(nl===-1?'':block.slice(nl+1)).trim();
     sections.push({ title, content });
   }
-  return sections.length ? sections : [{ title:'리포트', content: mdText }];
+  return sections.length?sections:[{ title:'리포트', content: mdText }];
 }
-
-async function getChartsForSectionTitles(titles=[]) {
-  const map = {};
-  for (const title of titles) {
-    const ids = getChartIdsForTitle(title);
-    const images = ids.map(id => {
-      const src = getChartImageById(id);
-      return src ? { id, src, label: (CHART_META[id]?.label || id) } : null;
+async function getChartsForSectionTitles(titles=[]){
+  const map={};
+  for(const title of titles){
+    const ids=getChartIdsForTitle(title);
+    map[title]=ids.map(id=>{
+      const src=getChartImageById(id);
+      return src?{id,src,label:(CHART_META[id]?.label||id)}:null;
     }).filter(Boolean);
-    map[title] = images;
   }
   return map;
 }
-
-function buildStructuredReportHtml(sections=[], chartsByTitle={}) {
-  const css = `
-  <style>
-    .report-wrap{line-height:1.6}
-    .report-sec{margin:18px 0 10px;padding-bottom:8px;border-bottom:1px dashed #e6efff}
-    .report-sec:last-child{border-bottom:0}
-    .report-sec h3{margin:0 0 8px;font-size:18px;color:#1e40af}
-    .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:6px 0 10px}
-    .chart-card{border:1px solid rgba(37,99,235,.18);border-radius:10px;padding:10px;background:#fff;box-shadow:0 12px 28px rgba(37,99,235,.08), inset 0 1px 0 #fff}
-    .chart-card img{width:100%;display:block;border-radius:6px}
-    .chart-cap{margin-top:6px;font-size:12px;color:#64748b}
-    .report-sec ul{margin:6px 0 10px 18px}
-  </style>`;
+function buildStructuredReportHtml(sections=[], chartsByTitle={}){
+  const css=`<style>.report-wrap{line-height:1.6}.report-sec{margin:18px 0 10px;padding-bottom:8px;border-bottom:1px dashed #e6efff}
+  .report-sec:last-child{border-bottom:0}.report-sec h3{margin:0 0 8px;font-size:18px;color:#1e40af}
+  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:6px 0 10px}
+  .chart-card{border:1px solid rgba(37,99,235,.18);border-radius:10px;padding:10px;background:#fff;box-shadow:0 12px 28px rgba(37,99,235,.08), inset 0 1px 0 #fff}
+  .chart-card img{width:100%;display:block;border-radius:6px}.chart-cap{margin-top:6px;font-size:12px;color:#64748b}
+  .report-sec ul{margin:6px 0 10px 18px}</style>`;
   let html = `<div class="report-wrap">${css}`;
   for (const sec of sections) {
     const imgs = chartsByTitle[sec.title] || [];
@@ -358,312 +393,258 @@ function buildStructuredReportHtml(sections=[], chartsByTitle={}) {
     }
     html += markdownToHtml(sec.content) + `</section>`;
   }
-  html += `</div>`;
-  return html;
+  return html + `</div>`;
 }
 
-
-/* ================== 3) 모달 & 버튼 동작 + 동의 게이트 ================== */
+/* ================== 3) 모달 & 리포트 버튼 ================== */
 const generateBtn = document.getElementById('btn-generate-report');
 const statusEl    = document.getElementById('report-status');
-
-let lastReportText = '';
-let lastReportHtml = '';
-let lastSections = [];
-let lastChartsByTitle = {};
-let lastStatsJson  = null;
+let lastReportText='', lastReportHtml='', lastSections=[], lastChartsByTitle={}, lastStatsJson=null;
 
 function openReportModal(html){
-  const modal = document.getElementById('ai-report-modal');
-  const body  = document.getElementById('ai-report-body');
-  if (!modal || !body) return;
-  body.innerHTML = html || '(빈 리포트)';
-  modal.style.display = 'block';
-  document.body.style.overflow = 'hidden';
+  const modal=document.getElementById('ai-report-modal');
+  const body=document.getElementById('ai-report-body');
+  if(!modal||!body) return;
+  body.innerHTML=html||'(빈 리포트)';
+  modal.style.display='block';
+  document.body.style.overflow='hidden';
+  bindReportActions(); // 모달 열릴 때마다 버튼 바인딩 보강
 }
 function closeReportModal(){
-  const modal = document.getElementById('ai-report-modal');
-  if (!modal) return;
-  modal.style.display = 'none';
-  document.body.style.overflow = '';
+  const m=document.getElementById('ai-report-modal');
+  if(!m) return;
+  m.style.display='none'; document.body.style.overflow='';
 }
 document.getElementById('ai-modal-close')?.addEventListener('click', closeReportModal);
 document.querySelector('#ai-report-modal .ai-modal__backdrop')?.addEventListener('click', closeReportModal);
-window.addEventListener('keydown', e => { if (e.key === 'Escape') closeReportModal(); });
+window.addEventListener('keydown', e=>{ if(e.key==='Escape') closeReportModal(); });
 
-/* ===== 동의 모달 로직 ===== */
-const CONSENT_KEY = 'dashboard_report_consent_v1';
-let __onConsentOk = null;
+async function startReportAnalysis(){
+  try{
+    if(!generateBtn) return;
+    generateBtn.disabled=true;
+    const old=generateBtn.textContent;
+    generateBtn.textContent='분석 중…';
+    if(statusEl) statusEl.textContent='분석 중…';
 
-function openConsentModal(startCb){
-  __onConsentOk = startCb;
-  const m = document.getElementById('consent-modal');
-  if (!m) { // 모달이 없으면 바로 진행
-    startReportAnalysis(null);
-    return;
+    const stats=await buildStatsJson(); lastStatsJson=stats;
+    const res=await fetch('/api/generateReport',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(stats)
+    });
+    lastReportText=(await res.text()) || '비어 있는 응답입니다.';
+    const sections=parseReportSections(lastReportText);
+    const chartsByTitle=await getChartsForSectionTitles(sections.map(s=>s.title));
+    lastSections=sections; lastChartsByTitle=chartsByTitle; lastReportHtml=buildStructuredReportHtml(sections, chartsByTitle);
+
+    if(statusEl) statusEl.textContent='완료';
+    openReportModal(lastReportHtml);
+    setTimeout(()=>{ if(statusEl) statusEl.textContent=''; }, 1000);
+    generateBtn.textContent=old; generateBtn.disabled=false;
+  }catch(e){
+    if(statusEl) statusEl.textContent='실패';
+    openReportModal(markdownToHtml('리포트 생성 실패: ' + (e?.message || e)));
+    if(generateBtn){ generateBtn.textContent='리포트 분석'; generateBtn.disabled=false; }
   }
-  m.style.display = 'block';
-  document.body.style.overflow = 'hidden';
-  document.getElementById('consent-form')?.reset();
-  const confirmBtn = document.getElementById('consent-confirm');
-  if (confirmBtn) confirmBtn.disabled = true;
 }
-function closeConsentModal(){
-  const m = document.getElementById('consent-modal');
-  if (!m) return;
-  m.style.display = 'none';
+
+/* ================== 동의 모달 (매번 요구) ================== */
+const consentModal  = document.getElementById('consent-modal');
+const consentForm   = document.getElementById('consent-form');
+const nameEl        = document.getElementById('consent-name');
+const birthEl       = document.getElementById('consent-birth');
+const purposeEl     = document.getElementById('consent-purpose');
+const agreeEl       = document.getElementById('consent-agree');
+const btnConfirm    = document.getElementById('consent-confirm');
+const btnCancel     = document.getElementById('consent-cancel');
+const btnClose      = document.getElementById('consent-close');
+
+function openConsentModal() {
+  if (!consentModal) return;
+  consentForm?.reset();                  // 매번 새로 입력
+  btnConfirm?.setAttribute('disabled','');
+  consentModal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeConsentModal() {
+  if (!consentModal) return;
+  consentModal.style.display = 'none';
   document.body.style.overflow = '';
 }
-
-document.getElementById('consent-close')?.addEventListener('click', closeConsentModal);
-document.getElementById('consent-cancel')?.addEventListener('click', closeConsentModal);
-
-// 입력 유효성 → 버튼 활성화
-['consent-name','consent-birth','consent-purpose','consent-agree'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('input', ()=>{
-    const ok = (document.getElementById('consent-name')?.value || '').trim() &&
-               (document.getElementById('consent-birth')?.value || '') &&
-               (document.getElementById('consent-purpose')?.value || '').trim() &&
-               (document.getElementById('consent-agree')?.checked || false);
-    const btn = document.getElementById('consent-confirm');
-    if (btn) btn.disabled = !ok;
-  });
-});
-
-// 동의 후 진행
-document.getElementById('consent-confirm')?.addEventListener('click', ()=>{
-  const form = document.getElementById('consent-form');
-  if (form && !form.checkValidity()) { form.reportValidity(); return; }
-
-  const consent = {
-    name: (document.getElementById('consent-name')?.value || '').trim(),
-    birth: document.getElementById('consent-birth')?.value || '',
-    purpose: (document.getElementById('consent-purpose')?.value || '').trim(),
-    agreed: !!document.getElementById('consent-agree')?.checked,
-    ts: new Date().toISOString()
-  };
-  closeConsentModal();
-  __onConsentOk && __onConsentOk(consent);
-});
-
-/* ===== 리포트 분석 시작(기존 클릭 로직을 함수화) ===== */
-async function startReportAnalysis(consent){
-  try {
-    if (!generateBtn) return;
-    generateBtn.disabled = true;
-    const oldText = generateBtn.textContent;
-    generateBtn.textContent = '분석 중…';
-    if (statusEl) statusEl.textContent = '분석 중…';
-
-    const stats = await buildStatsJson();
-    lastStatsJson = stats;
-
-    // 백엔드에 동의정보를 보내고 싶지 않다면 아래 한 줄은 제거 ※
-    const payload = { ...stats};
-
-    const res = await fetch('/api/generateReport', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    lastReportText = (await res.text()) || '비어 있는 응답입니다.';
-
-    const sections = parseReportSections(lastReportText);
-    const chartsByTitle = await getChartsForSectionTitles(sections.map(s => s.title));
-    lastSections = sections;
-    lastChartsByTitle = chartsByTitle;
-    lastReportHtml = buildStructuredReportHtml(sections, chartsByTitle);
-
-    if (statusEl) statusEl.textContent = '완료';
-    openReportModal(lastReportHtml);
-
-    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
-    generateBtn.textContent = oldText;
-    generateBtn.disabled = false;
-
-  } catch (e) {
-    if (statusEl) statusEl.textContent = '실패';
-    openReportModal(markdownToHtml('리포트 생성 실패: ' + (e?.message || e)));
-    if (generateBtn) {
-      generateBtn.textContent = '리포트 분석';
-      generateBtn.disabled = false;
-    }
-  }
+function validateConsent() {
+  const ok = !!nameEl?.value.trim() && !!birthEl?.value && !!purposeEl?.value.trim() && !!agreeEl?.checked;
+  if (ok) btnConfirm?.removeAttribute('disabled'); else btnConfirm?.setAttribute('disabled','');
 }
-
-/* ===== 버튼 클릭 → 동의 모달 게이트 ===== */
-generateBtn?.addEventListener('click', () => {
-  openConsentModal(startReportAnalysis);
+[nameEl, birthEl, purposeEl].forEach(el => el?.addEventListener('input', validateConsent));
+agreeEl?.addEventListener('change', validateConsent);
+btnClose   ?.addEventListener('click', closeConsentModal);
+btnCancel  ?.addEventListener('click', closeConsentModal);
+document.querySelector('#consent-modal .ai-modal__backdrop')?.addEventListener('click', closeConsentModal);
+// 확인 → 동의값 검증 후 분석 시작(저장 안 함)
+btnConfirm?.addEventListener('click', (e) => {
+  e.preventDefault();
+  validateConsent();
+  if (btnConfirm?.hasAttribute('disabled')) return;
+  closeConsentModal();
+  startReportAnalysis();
 });
-
+// "리포트 분석" 버튼을 누를 때는 무조건 모달을 띄움
+generateBtn?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (generateBtn.disabled) return;
+  openConsentModal();
+});
+// (선택) 저장값 미사용 → 안전하게 null 반환하는 스텁
+function getStoredConsent(){ return null; }
+(function prefillConsentForm() {
+  const c = getStoredConsent(); if (!c) return;
+  if (nameEl && !nameEl.value) nameEl.value = c.name || '';
+  if (birthEl && !birthEl.value) birthEl.value = c.birth || '';
+  if (purposeEl && !purposeEl.value) purposeEl.value = c.purpose || '';
+  if (agreeEl) agreeEl.checked = false;
+})();
 
 /* ================== 4) 인쇄 / 엑셀 / 새 창 ================== */
-// 인쇄(PDF)
-document.getElementById('ai-modal-print')?.addEventListener('click', () => {
-  if (!lastReportHtml) { alert('먼저 리포트를 생성하세요.'); return; }
-  const html = `
-  <html><head><meta charset="utf-8"><title>AI 리포트</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px}</style></head>
-  <body>${lastReportHtml}
-  <script>window.onload=()=>setTimeout(()=>print(),200)</script></body></html>`;
-  const w = window.open('about:blank','_blank'); w.document.write(html); w.document.close();
-});
+function bindReportActions(){
+  const once = (el, ev, fn) => { if(!el) return; if(el._b){ el.removeEventListener(ev, el._b); } el._b=fn; el.addEventListener(ev, fn); };
 
-/* ====== XLSX(표 레이아웃) 내보내기 — 차트 제외, 분석요약+데이터 표 (MD 제거) ====== */
-document.getElementById('ai-modal-excel')?.addEventListener('click', async () => {
-  if (!lastStatsJson) { alert('먼저 리포트를 생성하세요.'); return; }
+  const printBtn = document.getElementById('ai-modal-print');
+  const excelBtn = document.getElementById('ai-modal-excel');
+  const popBtn   = document.getElementById('ai-modal-popout');
 
-  // --- 마크다운 제거 헬퍼 ---
-  const stripMdTitleText = (s='') =>
-    s.replace(/^#{1,6}\s*/, '').replace(/[*_`~]+/g, '').trim();
+  // 인쇄(PDF)
+  once(printBtn, 'click', () => {
+    if (!lastReportHtml) { alert('먼저 리포트를 생성하세요.'); return; }
+    const html = `<html><head><meta charset="utf-8"><title>AI 리포트</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px}</style></head>
+      <body>${lastReportHtml}<script>window.onload=()=>setTimeout(()=>print(),200)</script></body></html>`;
+    const w = window.open('about:blank','_blank'); w.document.write(html); w.document.close();
+  });
 
-  const mdToPlainLines = (md='') => {
-    let s = md;
-    s = s.replace(/```[\s\S]*?```/g, '');
-    s = s.replace(/^>+\s?/gm, '');
-    s = s.replace(/!\[[^\]]*]\([^)]+\)/g, '');
-    s = s.replace(/\[([^\]]+)]\([^)]+\)/g, '$1');
-    s = s.replace(/\*\*(.*?)\*\*/g, '$1')
-         .replace(/__(.*?)__/g, '$1')
-         .replace(/\*(.*?)\*/g, '$1')
-         .replace(/_(.*?)_/g, '$1')
-         .replace(/`([^`]+)`/g, '$1');
-    s = s.replace(/^#{1,6}\s*/gm, '');
-    s = s.replace(/^\s*[-*+]\s+/gm, '• ');
-    s = s.replace(/^\s*\d+\.\s+/gm, '• ');
-    return s.split('\n').map(t => t.trim()).filter(Boolean);
-  };
+  // 엑셀 (ExcelJS 없으면 CSV)
+  once(excelBtn, 'click', async () => {
+    if (!lastStatsJson) { alert('먼저 리포트를 생성하세요.'); return; }
+    if (window.ExcelJS) {
+      const wb = new ExcelJS.Workbook(); wb.created = new Date();
 
-  if (window.ExcelJS) {
-    const wb = new ExcelJS.Workbook();
-    wb.created = new Date();
+      const wsSum = wb.addWorksheet('요약', { views:[{ showGridLines:false }] });
+      wsSum.columns = [{width:4},{width:28},{width:80},{width:8}];
+      wsSum.mergeCells(2,2,2,3);
+      const h = wsSum.getCell(2,2);
+      h.value = 'AI 리포트 분석 요약';
+      h.font = { name:'Segoe UI', size:20, bold:true, color:{argb:'FF1E3A8A'} };
+      h.alignment = { vertical:'middle' };
+      wsSum.getRow(2).height = 26;
 
-    // 시트1: 요약
-    const wsSum = wb.addWorksheet('요약', { views:[{ showGridLines:false }] });
-    wsSum.columns = [{width:4},{width:28},{width:80},{width:8}];
-    wsSum.mergeCells(2,2,2,3);
-    const h = wsSum.getCell(2,2);
-    h.value = 'AI 리포트 분석 요약';
-    h.font = { name:'Segoe UI', size:20, bold:true, color:{argb:'FF1E3A8A'} };
-    h.alignment = { vertical:'middle' };
-    wsSum.getRow(2).height = 26;
+      let r = 4;
+      const secs = lastSections?.length ? lastSections : parseReportSections(lastReportText);
+      const mdToLines = (md='') => md
+        .replace(/```[\s\S]*?```/g,'').replace(/^>+\s?/gm,'').replace(/!\[[^\]]*]\([^)]+\)/g,'')
+        .replace(/\[([^\]]+)]\([^)]+\)/g,'$1').replace(/\*\*(.*?)\*\*/g,'$1')
+        .replace(/__(.*?)__/g,'$1').replace(/\*(.*?)\*/g,'$1').replace(/_(.*?)_/g,'$1')
+        .replace(/`([^`]+)`/g,'$1').replace(/^#{1,6}\s*/gm,'').split('\n').map(t=>t.trim()).filter(Boolean);
 
-    let r = 4;
-    const secs = lastSections?.length ? lastSections : parseReportSections(lastReportText);
-    secs.forEach(sec => {
-      wsSum.mergeCells(r,2,r,3);
-      const th = wsSum.getCell(r,2);
-      th.value = stripMdTitleText(sec.title || '섹션');
-      th.font = { bold:true, size:14, color:{argb:'FF1E3A8A'} };
-      th.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFF6FF'} };
-      r++;
-      const lines = mdToPlainLines(sec.content || '');
-      if (lines.length === 0) { r++; return; }
-      lines.forEach(line => {
+      secs.forEach(sec => {
         wsSum.mergeCells(r,2,r,3);
-        const c = wsSum.getCell(r,2);
-        c.value = line;
-        c.alignment = { wrapText:true };
+        const th = wsSum.getCell(r,2);
+        th.value = (sec.title || '').replace(/^#{1,6}\s*/, '');
+        th.font = { bold:true, size:14, color:{argb:'FF1E3A8A'} };
+        th.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFF6FF'} };
         r++;
+        mdToLines(sec.content || '').forEach(line => {
+          wsSum.mergeCells(r,2,r,3);
+          const c = wsSum.getCell(r,2);
+          c.value = line; c.alignment = { wrapText:true }; r++;
+        });
+        r += 1;
       });
-      r += 1;
-    });
 
-    // 시트2: 데이터
-    const ws = wb.addWorksheet('데이터', { views:[{ showGridLines:false, state:'frozen', ySplit:1 }] });
-    ws.columns = [{width:24},{width:18},{width:10}];
+      const ws = wb.addWorksheet('데이터', { views:[{ showGridLines:false, state:'frozen', ySplit:1 }] });
+      ws.columns = [{width:24},{width:18},{width:10}];
 
-    const addTitle = (row, text) => {
-      ws.mergeCells(row,1,row,3);
-      const c = ws.getCell(row,1);
-      c.value = text;
-      c.font = { bold:true, size:13, color:{argb:'FF1E3A8A'} };
-      c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFF6FF'} };
-      ws.getRow(row).height = 20;
-      return row + 1;
-    };
+      const addTitle = (row, text) => {
+        ws.mergeCells(row,1,row,3);
+        const c = ws.getCell(row,1);
+        c.value = text; c.font = { bold:true, size:13, color:{argb:'FF1E3A8A'} };
+        c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFEFF6FF'} };
+        ws.getRow(row).height = 20; return row + 1;
+      };
+      const toPairs = obj => (obj?.labels && obj?.data) ? obj.labels.map((lab,i)=> [lab, Number(obj.data[i])]) : [];
+      let cur = 2;
 
-    let cur = 2;
-    const addTable = (name, rows, unit, numFmt) => {
-      if (!rows || rows.length === 0) return;
-      cur = addTitle(cur, `${name} (단위: ${unit})`);
-      const ref = `A${cur}`;
-      ws.addTable({
-        name: `T_${name.replace(/\W+/g,'_')}_${cur}`,
-        ref,
-        headerRow: true,
-        style: { theme: 'TableStyleMedium9', showRowStripes: true },
-        columns: [{name:'라벨'},{name:'값'},{name:'단위'}],
-        rows: rows.map(([lab, val]) => [lab, (val ?? ''), unit])
-      });
-      const start = cur + 1, end = cur + rows.length;
-      for (let rr = start; rr <= end; rr++) ws.getCell(rr, 2).numFmt = numFmt;
-      cur = end + 3;
-    };
+      const addTable = (name, rows, unit, numFmt) => {
+        if (!rows || !rows.length) return;
+        cur = addTitle(cur, `${name} (단위: ${unit})`);
+        const ref = `A${cur}`;
+        ws.addTable({
+          name: `T_${name.replace(/\W+/g,'_')}_${cur}`,
+          ref, headerRow: true, style: { theme: 'TableStyleMedium9', showRowStripes: true },
+          columns: [{name:'라벨'},{name:'값'},{name:'단위'}],
+          rows: rows.map(([lab, val]) => [lab, (val ?? ''), unit])
+        });
+        const start = cur + 1, end = cur + rows.length;
+        for (let rr = start; rr <= end; rr++) ws.getCell(rr, 2).numFmt = numFmt;
+        cur = end + 3;
+      };
 
-    const toPairs = obj => (obj?.labels && obj?.data)
-      ? obj.labels.map((lab,i)=> [lab, Number(obj.data[i])])
-      : [];
+      addTable('가입자-일별',   toPairs(lastStatsJson.subscribers?.daily),     '명', '#,##0');
+      addTable('가입자-월별',   toPairs(lastStatsJson.subscribers?.monthly),   '명', '#,##0');
+      addTable('가입자-분기별', toPairs(lastStatsJson.subscribers?.quarterly), '명', '#,##0');
+      if (lastStatsJson.demographics?.age)
+        addTable('연령대', Object.entries(lastStatsJson.demographics.age).map(([k,v])=>[k,Number(v)]), '명', '#,##0');
+      if (lastStatsJson.demographics?.gender)
+        addTable('성별', Object.entries(lastStatsJson.demographics.gender).map(([k,v])=>[k,Number(v)]), '명', '#,##0');
+      addTable('리뷰-월별갯수', toPairs(lastStatsJson.reviews?.countMonthly),   '건', '#,##0');
+      addTable('평점-월별평균', toPairs(lastStatsJson.reviews?.ratingMonthly), '점', '0.0');
+      addTable('누적 원화 사용액', toPairs(lastStatsJson.usage?.krwCumulative), '원', '#,##0');
 
-    addTable('가입자-일별',   toPairs(lastStatsJson.subscribers?.daily),     '명', '#,##0');
-    addTable('가입자-월별',   toPairs(lastStatsJson.subscribers?.monthly),   '명', '#,##0');
-    addTable('가입자-분기별', toPairs(lastStatsJson.subscribers?.quarterly), '명', '#,##0');
+      // 관심 통화/분야
+      if (lastStatsJson.affinity?.currency) {
+        const rows = Object.entries(lastStatsJson.affinity.currency).map(([k,v]) => [k, Number(v)]);
+        addTable('관심 통화 분포', rows, '명', '#,##0');
+      }
+      if (lastStatsJson.affinity?.topic?.labels && lastStatsJson.affinity?.topic?.data) {
+        const rows = lastStatsJson.affinity.topic.labels.map((lab, i) => [lab, Number(lastStatsJson.affinity.topic.data[i])]);
+        addTable('관심 분야 분포', rows, '명', '#,##0');
+      }
 
-    if (lastStatsJson.demographics?.age) {
-      addTable('연령대', Object.entries(lastStatsJson.demographics.age).map(([k,v]) => [k, Number(v)]), '명', '#,##0');
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `AI_리포트_표_${new Date().toISOString().slice(0,10)}.xlsx`;
+      a.click(); setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
+      return;
     }
-    if (lastStatsJson.demographics?.gender) {
-      addTable('성별', Object.entries(lastStatsJson.demographics.gender).map(([k,v]) => [k, Number(v)]), '명', '#,##0');
-    }
 
-    addTable('리뷰-월별갯수', toPairs(lastStatsJson.reviews?.countMonthly),   '건', '#,##0');
-    addTable('평점-월별평균', toPairs(lastStatsJson.reviews?.ratingMonthly), '점', '0.0');
-    addTable('누적 원화 사용액', toPairs(lastStatsJson.usage?.krwCumulative), '원', '#,##0');
-    addTable('공유 클릭(일별)', toPairs(lastStatsJson.usage?.shareClicksDaily), '회', '#,##0');
+    // ExcelJS 없으면 CSV
+    const rows = []; rows.push(['섹션','라벨','값','단위']);
+    const pushSeries = (section, obj, unit) => { if (!obj?.labels || !obj?.data) return; obj.labels.forEach((lab,i)=> rows.push([section, lab, obj.data[i], unit])); };
+    pushSeries('가입자-일별',   lastStatsJson.subscribers?.daily,     '명');
+    pushSeries('가입자-월별',   lastStatsJson.subscribers?.monthly,   '명');
+    pushSeries('가입자-분기별', lastStatsJson.subscribers?.quarterly, '명');
+    if (lastStatsJson.demographics?.age) Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v, '명']));
+    if (lastStatsJson.demographics?.gender) Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v, '명']));
+    pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly, '건');
+    pushSeries('평점-월별평균', lastStatsJson.reviews?.ratingMonthly, '점');
+    pushSeries('누적원화',      lastStatsJson.usage?.krwCumulative,  '원');
+    if (lastStatsJson.affinity?.currency)
+      Object.entries(lastStatsJson.affinity.currency).forEach(([k,v]) => rows.push(['관심 통화 분포', k, v, '명']));
+    if (lastStatsJson.affinity?.topic?.labels && lastStatsJson.affinity?.topic?.data)
+      lastStatsJson.affinity.topic.labels.forEach((lab,i)=> rows.push(['관심 분야 분포', lab, lastStatsJson.affinity.topic.data[i], '명']));
 
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `AI_리포트_표_${new Date().toISOString().slice(0,10)}.xlsx`;
-    a.click();
-    setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
-    return;
-  }
+    const csv = '\uFEFF' + rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `dashboard-report_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); setTimeout(()=> URL.revokeObjectURL(url), 1000);
+  });
 
-  // ExcelJS 없으면 CSV
-  const rows = [];
-  rows.push(['섹션','라벨','값','단위']);
-  const pushSeries = (section, obj, unit) => {
-    if (!obj?.labels || !obj?.data) return;
-    obj.labels.forEach((lab,i)=> rows.push([section, lab, obj.data[i], unit]));
-  };
-  pushSeries('가입자-일별',   lastStatsJson.subscribers?.daily,     '명');
-  pushSeries('가입자-월별',   lastStatsJson.subscribers?.monthly,   '명');
-  pushSeries('가입자-분기별', lastStatsJson.subscribers?.quarterly, '명');
-  if (lastStatsJson.demographics?.age)
-    Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v, '명']));
-  if (lastStatsJson.demographics?.gender)
-    Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v, '명']));
-  pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly, '건');
-  pushSeries('평점-월별평균', lastStatsJson.reviews?.ratingMonthly, '점');
-  pushSeries('누적원화',      lastStatsJson.usage?.krwCumulative,  '원');
-  pushSeries('공유클릭-일별', lastStatsJson.usage?.shareClicksDaily,'회');
-
-  const csv = '\uFEFF' + rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `dashboard-report_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  setTimeout(()=> URL.revokeObjectURL(url), 1000);
-});
-
-// 새 창
-document.getElementById('ai-modal-popout')?.addEventListener('click', () => {
-  if (!lastReportHtml) { alert('먼저 리포트를 생성하세요.'); return; }
-  const w = window.open('about:blank','_blank');
-  w.document.write(`<html><head><meta charset="utf-8"><title>AI 리포트</title></head><body style="font-family:Arial,Helvetica,sans-serif;margin:24px">${lastReportHtml}</body></html>`);
-  w.document.close();
-});
+  // 새 창
+  once(popBtn, 'click', () => {
+    if (!lastReportHtml) { alert('먼저 리포트를 생성하세요.'); return; }
+    const w = window.open('about:blank','_blank');
+    w.document.write(`<html><head><meta charset="utf-8"><title>AI 리포트</title></head><body style="font-family:Arial,Helvetica,sans-serif;margin:24px">${lastReportHtml}</body></html>`);
+    w.document.close();
+  });
+}
