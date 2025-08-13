@@ -9,10 +9,10 @@ import lombok.Data;
 @Builder
 public class CardDto {
     private String cardno;
+    private String cano;
+    private String uid;
     private Integer cardcvc;
     private String cardname;
-    private String pano;
-    private String cuno;
     private String cardstatus;
     private LocalDateTime carddate;
 }
