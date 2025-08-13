@@ -13,7 +13,7 @@
     body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--fg);background:var(--bg)}
     .wrap{max-width:420px;margin:0 auto;padding:12px 16px 28px}
 
-    .back{color:var(--danger);font-weight:700;cursor:pointer;margin:6px 0 10px}
+    .back{color:#2563eb ;font-weight:700;cursor:pointer;margin:6px 0 10px}
 
     .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:700;margin-bottom:10px}
 
@@ -21,7 +21,7 @@
     .progress{display:flex;gap:8px;align-items:center;margin:2px 0 12px}
     .seg{flex:1;height:6px;border-radius:6px;background:#eee;position:relative;overflow:hidden}
     .seg::after{
-      content:"";position:absolute;inset:0;background:var(--accent);
+      content:"";position:absolute;inset:0;background:#2563eb;
       transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
     }
     .seg.done::after{transform:scaleX(1)}
@@ -71,7 +71,7 @@
     .meta{margin-top:10px}
     .meta .row{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
     .meta .row b{font-size:15px}
-    .save{color:var(--accent);font-weight:900;font-size:17px}
+    .save{color: #2563eb; font-weight:900;font-size:17px}
 
     /* 키패드 */
     .num{
@@ -91,7 +91,7 @@
     }
     .key:active::after{width:180%;height:180%;opacity:1}
     .confirm{
-      display:block;width:200px;margin:6px auto 0;background:var(--accent);color:#fff;border:none;border-radius:12px;
+      display:block;width:200px;margin:6px auto 0;background:#2563eb;color:#fff;border:none;border-radius:12px;
       padding:12px 8px;font-weight:800;cursor:pointer;font-size:16px
     }
 
@@ -224,6 +224,18 @@
   </div>
 </div>
 
+<!-- 경고 모달: 금액 미입력 -->
+<div class="modal-backdrop" id="warnBackdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="warnTitle">
+    <span class="close" id="closeWarn">닫기 ✕</span>
+    <h3 id="warnTitle">안내</h3>
+    <div class="explain">
+      <p style="font-weight:700; margin:6px 0 0 0;">금액을 입력해주세요.</p>
+      <div class="tip">키패드에서 금액을 입력한 뒤 확인을 눌러주세요.</div>
+    </div>
+  </div>
+</div>
+
 <script th:inline="javascript">
   // ---------- 서버 값 ----------
   const CODE   = /*[['' + ${rate.ccode}]]*/ 'USD';
@@ -276,6 +288,14 @@
     document.getElementById('mAppliedSpread').textContent = fmt2(appliedSpread);
     document.getElementById('mFinal').textContent         = fmt2(CFINAL);
   }
+  
+//---------- 경고 모달(0원) ----------
+  const warnBackdrop = document.getElementById('warnBackdrop');
+  const openWarn  = () => { warnBackdrop.style.display = 'flex'; warnBackdrop.setAttribute('aria-hidden','false'); };
+  const closeWarn = () => { warnBackdrop.style.display = 'none';  warnBackdrop.setAttribute('aria-hidden','true'); };
+
+  document.getElementById('closeWarn').addEventListener('click', closeWarn);
+  warnBackdrop.addEventListener('click', (e)=>{ if(e.target === warnBackdrop) closeWarn(); });
 
   // 입력
   function tap(ch){
@@ -304,18 +324,23 @@
 
   // 확인 → 2단계로 이동 (폼 제출)
   function submitExchange(){
-    const fxNum  = Number(input || '0');
-    const krwInt = Math.floor(fxNum * (isFinite(CFINAL) ? CFINAL : 0));
-    const saveInt= Math.floor(fxNum * (TTS - CFINAL));
+  const fxNum  = Number(input || '0');
 
-    // 값 주입
-    document.getElementById('fxAmount').value  = fxNum.toFixed(DECIMAL_PLACES);
-    document.getElementById('krwAmount').value = krwInt;
-    document.getElementById('savedFee').value  = saveInt;
-
-    // 제출
-    document.getElementById('exchangeForm').submit();
+  // ✅ 0원 체크 → 모달 열기
+  if (fxNum <= 0) {
+    openWarn();
+    return;
   }
+
+  const krwInt = Math.floor(fxNum * (isFinite(CFINAL) ? CFINAL : 0));
+  const saveInt= Math.floor(fxNum * (TTS - CFINAL));
+
+  document.getElementById('fxAmount').value  = fxNum.toFixed(DECIMAL_PLACES);
+  document.getElementById('krwAmount').value = krwInt;
+  document.getElementById('savedFee').value  = saveInt;
+
+  document.getElementById('exchangeForm').submit();
+}
 
   // 초기 렌더 + 진행바(1단계)
   render();
