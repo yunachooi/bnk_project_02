@@ -36,4 +36,9 @@ public class AccountController {
 		return "account/foreign5";
 	}
 	
+	@GetMapping("/foreign6") // 가입 2/3단계
+	public String foregin6() {
+		return "account/foreign6";
+	}
+	
 }
