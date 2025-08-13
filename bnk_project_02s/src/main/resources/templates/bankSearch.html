@@ -11,50 +11,54 @@
       --branch:#d81b60;   /* 일반 지점 */
       --digital:#14b8a6;  /* 디지털 지점 */
       --card:#ffffff; --wash:#fafafa;
-      --accent:#111827;
+      --accent:#111827;   /* 활성 탭 테두리 */
+      --radius:12px;
+      --shadow:0 1px 0 rgba(0,0,0,.04);
+      --shadow-lg:0 8px 18px rgba(0,0,0,.08);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;color:var(--ink);background:var(--bg)}
-    .app{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
+
+    /* 다른 페이지와 맞춘 좁은 폭 */
+    .wrap{max-width:420px;margin:0 auto;padding:12px 16px 28px}
 
     .topbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0;z-index:10}
     .title{flex:1;text-align:center;font-weight:800}
-    .section{padding:10px 12px;border-bottom:1px solid var(--border);font-weight:800;text-align:center;background:#fff}
+    .bar{margin:8px 0 12px;padding:10px 0;text-align:center;font-weight:800;border-radius:12px;background:#fafafa;border:1px solid var(--border);box-shadow:var(--shadow)}
 
-    .main{display:grid;grid-template-columns:1fr;gap:12px;padding:12px}
-    @media (min-width: 900px){
-      .main{grid-template-columns:1.1fr .9fr;align-items:start}
-    }
+    /* 카드 공통 */
+    .card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow)}
 
-    .map-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff}
-    #map{height:45vh;width:100%}
-    @media (min-width: 900px){
-      #map{height:60vh}
-    }
+    /* 지도 */
+    #map{height:clamp(300px,44vh,420px);width:100%}
     .legend{display:flex;gap:10px;padding:8px 12px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);align-items:center}
     .chip{display:inline-flex;align-items:center;gap:6px}
     .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
 
-    .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
-    .cta{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#fff;cursor:pointer;border:1px solid var(--border);font-weight:800}
+    /* 컨트롤(지도 하단) */
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+    .cta{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#fff;cursor:pointer;border:1px solid var(--border);font-weight:800;transition:.2s ease}
     .cta.active{outline:2px solid var(--accent)}
+    .cta:hover{box-shadow:var(--shadow-lg)}
     .sub{display:block;font-size:12px;color:var(--muted);font-weight:600}
     .search{grid-column:1/-1;display:flex;gap:8px}
     .search input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px}
 
-    .list-card{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+    /* 리스트 */
+    .list-card{border-top:1px solid var(--border);background:#fff}
     .list-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);background:#fff}
     .list{display:flex;flex-direction:column}
-    .item{border-bottom:1px solid var(--border);padding:12px;background:#fff;cursor:pointer}
+    .item{border-bottom:1px solid var(--border);padding:12px;background:#fff;cursor:pointer;transition:background .15s ease}
     .item:last-child{border-bottom:none}
     .item:hover{background:#fcfcfc}
     .i-name{font-weight:800;display:flex;align-items:center;gap:6px}
     .i-addr,.i-phone{font-size:13px;color:var(--muted);margin-top:3px}
     .badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--digital);color:#fff}
     .badge.hq{background:#111827}
-    .empty{padding:20px;color:var(--muted);text-align:center;background:var(--wash)}
+    .empty{padding:20px;color:var(--muted);text-align:center;background:#fafafa}
 
+    /* 페이지네이션 */
     .pager{display:flex;gap:6px;justify-content:center;align-items:center;padding:12px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap}
     .pg-btn{border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:14px}
     .pg-btn[disabled]{opacity:.4;cursor:not-allowed}
@@ -131,6 +135,12 @@
     }
 
     async function initMap(){
+      /* ❗ 네이버 콜백이 head에서 먼저 실행될 수 있어 DOM이 준비 안 된 경우가 있음 */
+      if (!document.getElementById('map')) {
+        document.addEventListener('DOMContentLoaded', initMap, { once:true });
+        return;
+      }
+
       if (!window.naver || !naver.maps) { setTimeout(initMap, 50); return; }
 
       map = new naver.maps.Map('map', {
@@ -138,26 +148,31 @@
         zoom: 15, zoomControl: true
       });
 
-      document.getElementById('btn-branch').addEventListener('click', () => setFilter('branch'));
-      document.getElementById('btn-digital').addEventListener('click', () => setFilter('digital'));
+      /* 요소가 없으면 NPE 방지 */
+      const btnBranch  = document.getElementById('btn-branch');
+      const btnDigital = document.getElementById('btn-digital');
+      const qInput     = document.getElementById('q');
 
-      const q = document.getElementById('q');
-      let t;
-      q.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          searchTerm = q.value.trim();
-          currentPage = 1;
-          applySearch();
-          renderMapAndList();
-        }, 150);
-      });
+      btnBranch  && btnBranch.addEventListener('click', () => setFilter('branch'));
+      btnDigital && btnDigital.addEventListener('click', () => setFilter('digital'));
+
+      if (qInput){
+        let t;
+        qInput.addEventListener('input', () => {
+          clearTimeout(t);
+          t = setTimeout(() => {
+            searchTerm = qInput.value.trim();
+            currentPage = 1;
+            applySearch();
+            renderMapAndList();
+          }, 150);
+        });
+      }
 
       await loadBranches(false);
       applySearch();
       renderMapAndList();
       ensureHQMarker();                 /* ⬅️ 본점 마커 항상 추가 */
-      // setTimeout(()=>{ hqInfo?.open(map, hqMarker); }, 150); // (선택) 초기 자동 오픈
     }
 
     async function loadBranches(digitalOnly){
@@ -186,9 +201,12 @@
 
     function setFilter(type){
       filter = type;
-      document.getElementById('btn-branch').classList.toggle('active', type==='branch');
-      document.getElementById('btn-digital').classList.toggle('active', type==='digital');
-      currentPage = 1; searchTerm = ''; document.getElementById('q').value = '';
+      const btnBranch  = document.getElementById('btn-branch');
+      const btnDigital = document.getElementById('btn-digital');
+      btnBranch  && btnBranch.classList.toggle('active', type==='branch');
+      btnDigital && btnDigital.classList.toggle('active', type==='digital');
+      currentPage = 1; searchTerm = '';
+      const q = document.getElementById('q'); if (q) q.value = '';
       loadBranches(type==='digital').then(() => {
         applySearch();
         map.setCenter(new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng));
@@ -245,9 +263,12 @@
       const total = filtered.length;
       const startN = total ? ( (currentPage-1)*PAGE_SIZE + 1 ) : 0;
       const endN = Math.min(currentPage*PAGE_SIZE, total);
-      document.getElementById('countLabel').textContent = `표시: ${startN}-${endN} / ${total}개`;
+      const countLabel = document.getElementById('countLabel');
+      if (countLabel) countLabel.textContent = `표시: ${startN}-${endN} / ${total}개`;
 
       const list = document.getElementById('branchList');
+      if (!list) return;
+
       if (!pageRows.length) {
         list.innerHTML = `<div class="empty">표시할 지점이 없습니다.</div>`;
       } else {
@@ -281,6 +302,8 @@
 
     function renderPager(){
       const pager = document.getElementById('pager');
+      if (!pager) return;
+
       const total = filtered.length;
       const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
       const prevDisabled = currentPage <= 1;
@@ -309,47 +332,47 @@
       });
     }
 
+    /* 전역 콜백으로 등록 (네이버 스크립트에서 호출) */
     window.initMap = initMap;
   </script>
 
+  <!-- 실제 키로 교체하세요 -->
   <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=t4sef40746&callback=initMap"></script>
 </head>
 <body>
-<div class="app">
+<div class="wrap">
   <div class="topbar">
-    <div style="color:#ef4444;font-weight:800;cursor:pointer" onclick="history.back()">&lt; 뒤로가기</div>
-    
+    <div class="title">영업점 찾기</div>
     <div style="width:56px"></div>
   </div>
 
-  <div class="section">영업점 찾기</div>
 
-  <div class="main">
-    <div class="map-card">
-      <div id="map"></div>
-      <div class="legend">
-        <span class="chip"><span class="dot" style="background:var(--branch)"></span>지점</span>
-        <span class="chip"><span class="dot" style="background:var(--digital)"></span>디지털</span>
-        <span style="margin-left:auto" id="countLabel"></span>
+  <!-- 지도 카드 -->
+  <div class="card" style="margin-bottom:12px">
+    <div id="map"></div>
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background:var(--branch)"></span>지점</span>
+      <span class="chip"><span class="dot" style="background:var(--digital)"></span>디지털</span>
+      <span style="margin-left:auto" id="countLabel"></span>
+    </div>
+  </div>
+
+  <!-- 지도 하단: 탭/검색/리스트 -->
+  <div class="card">
+    <div class="controls">
+      <button class="cta active" id="btn-branch">🏦 지점 <span class="sub">모든 부산은행 지점</span></button>
+      <button class="cta" id="btn-digital">💻 디지털 데스크 지점 <span class="sub">영상연결로 업무 가능</span></button>
+      <div class="search">
+        <input id="q" type="search" placeholder="지점명·주소·전화로 검색" aria-label="지점 검색"/>
       </div>
     </div>
 
-    <div class="side">
-      <div class="controls">
-        <button class="cta active" id="btn-branch">🏦 지점 <span class="sub">모든 부산은행 지점</span></button>
-        <button class="cta" id="btn-digital">💻 디지털 데스크 지점 <span class="sub">영상연결로 업무 가능</span></button>
-        <div class="search">
-          <input id="q" type="search" placeholder="지점명·주소·전화로 검색" aria-label="지점 검색"/>
-        </div>
+    <div class="list-card">
+      <div class="list-head">
+        <div class="list-title" style="font-weight:800">지점 리스트</div>
       </div>
-
-      <div class="list-card" style="margin-top:12px">
-        <div class="list-head">
-          <div class="list-title" style="font-weight:800">지점 리스트</div>
-        </div>
-        <div id="branchList" class="list"></div>
-        <div id="pager" class="pager"></div>
-      </div>
+      <div id="branchList" class="list"></div>
+      <div id="pager" class="pager"></div>
     </div>
   </div>
 </div>
