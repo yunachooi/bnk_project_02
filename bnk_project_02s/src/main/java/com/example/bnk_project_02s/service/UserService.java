@@ -31,32 +31,28 @@ public class UserService {
         return StringUtils.hasText(uid) && userRepository.existsByUid(uid);
     }
 
-    /** rrnFront+rrnBack 형식 검증 (숫자 6 + 7) */
     public boolean isValidRrn(String front, String back) {
         String norm = userUtil.normalizeRrnParts(front, back);
         return userUtil.isValidRrn13(norm);
     }
 
-    /** 주민등록번호 중복 여부(HMAC로 조회) */
     public boolean isRrnDuplicate(String front, String back) {
         String norm = userUtil.normalizeRrnParts(front, back);
-        if (!userUtil.isValidRrn13(norm)) return false; // 형식 틀리면 여기선 중복 판단 안 함
+        if (!userUtil.isValidRrn13(norm)) return false;
         String hmac = userUtil.hmacRrnHex(norm);
-        return userRepository.existsByUrrnHmac(hmac);   // ← 레포지토리에 이 메서드가 있어야 함
+        return userRepository.existsByUrrnHmac(hmac);
     }
 
-    /** 휴대번호 형식 검증(문자열 아무거나 받아도 내부에서 숫자만 비교) */
     public boolean isValidPhone(String phone) {
         String n = userUtil.normalizePhone(phone);
         return userUtil.isValidPhone(n);
     }
 
-    /** 휴대번호 중복 여부(HMAC로 조회) */
     public boolean isPhoneDuplicate(String phone) {
         String n = userUtil.normalizePhone(phone);
         if (!userUtil.isValidPhone(n)) return false;
         String h = userUtil.hmacPhoneHex(n);
-        return userRepository.existsByUphoneHmac(h);     // ← 레포지토리에 추가 예정
+        return userRepository.existsByUphoneHmac(h);
     }
 
     /* ===================== 가입 ===================== */
@@ -69,45 +65,36 @@ public class UserService {
                 : null;
 
         // 2) 주민번호 정규화
-        String rrnNorm;
-        if (StringUtils.hasText(dto.getRrn())) {
-            rrnNorm = userUtil.normalizeRrn(dto.getRrn());
-        } else {
-            rrnNorm = userUtil.normalizeRrnParts(dto.getRrnFront(), dto.getRrnBack());
+        String rrnNorm = StringUtils.hasText(dto.getRrn())
+                ? userUtil.normalizeRrn(dto.getRrn())
+                : userUtil.normalizeRrnParts(dto.getRrnFront(), dto.getRrnBack());
+
+        // 3) 주민번호 형식 강제 검증 (rrn_enc NOT NULL 대응)
+        if (!userUtil.isValidRrn13(rrnNorm)) {
+            throw new IllegalArgumentException("주민등록번호 형식 오류(앞 6자리 + 뒤 7자리).");
         }
 
-        // 3) 성별/생년월일 유도 (가능한 경우)
-        String ugender = null;
-        String ubirth  = null;
-        if (userUtil.isValidRrn13(rrnNorm)) {
-            ugender = deriveGenderFromRrn(rrnNorm); // 'M' / 'F'
-            ubirth  = deriveBirthFromRrn(rrnNorm);  // YYYY-MM-DD
+        // 3-1) 성별/생년월 유도
+        String ugender = deriveGenderFromRrn(rrnNorm); // 'M' / 'F' or null
+        String ubirth  = deriveBirthFromRrn(rrnNorm);  // YYYY-MM-DD or null
+
+        // 4) 주민번호 중복 체크(HMAC)
+        String rrnHmacForCheck = userUtil.hmacRrnHex(rrnNorm);
+        if (userRepository.existsByUrrnHmac(rrnHmacForCheck)) {
+            throw new IllegalArgumentException("이미 등록된 주민등록번호입니다.");
         }
 
-        // 4) 주민번호 중복 체크(HMAC) → 레이스 대비 try-catch로 2차 방어
-        String rrnEnc = null;
-        String rrnHmac = null;
-        if (userUtil.isValidRrn13(rrnNorm)) {
-            rrnHmac = userUtil.hmacRrnHex(rrnNorm);
-            if (userRepository.existsByUrrnHmac(rrnHmac)) {
-                throw new IllegalArgumentException("이미 등록된 주민등록번호입니다.");
-            }
-            rrnEnc = userUtil.encryptRrn(rrnNorm); // AES-GCM (IV 포함)
-        }
-
-        // 5) 휴대폰 처리: 정규화 → 형식 검증 → HMAC 중복 체크 → AES 암호화
-        String phoneEnc = null;
-        String phoneHmac = null;
+        // 5) 휴대폰: 정규화 → 형식 검증 → 중복 체크(HMAC) (선택값)
+        String phoneNorm = null;
         if (StringUtils.hasText(dto.getUphone())) {
-            String phoneNorm = userUtil.normalizePhone(dto.getUphone());
+            phoneNorm = userUtil.normalizePhone(dto.getUphone());
             if (!userUtil.isValidPhone(phoneNorm)) {
-                throw new IllegalArgumentException("휴대폰 형식 오류(01로 시작, 10~11자리)");
+                throw new IllegalArgumentException("휴대폰 형식 오류(01로 시작, 10~11자리).");
             }
-            phoneHmac = userUtil.hmacPhoneHex(phoneNorm);
-            if (userRepository.existsByUphoneHmac(phoneHmac)) {
+            String phoneHmacForCheck = userUtil.hmacPhoneHex(phoneNorm);
+            if (userRepository.existsByUphoneHmac(phoneHmacForCheck)) {
                 throw new IllegalArgumentException("이미 등록된 휴대전화번호입니다.");
             }
-            phoneEnc = userUtil.encryptPhone(phoneNorm); // "iv:ct"
         }
 
         // 6) 엔티티 매핑
@@ -117,8 +104,6 @@ public class UserService {
         u.setUname(dto.getUname());
         u.setUgender(StringUtils.hasText(ugender) ? ugender : "M");
         u.setUbirth(ubirth);
-        // ⚠️ 평문 uphone은 더 이상 저장하지 않는 것을 권장
-        // u.setUphone(null); // 필요 시 제거/Transient 전환
         u.setUrole("ROLE_USER");
         u.setUcheck("N");
         u.setUshare(0L);
@@ -129,18 +114,28 @@ public class UserService {
         u.setUinterest(dto.getUinterest() != null && !dto.getUinterest().isEmpty()
                 ? String.join(",", dto.getUinterest()) : null);
 
-        // AES/HMAC 저장
-        u.setUrrnEnc(rrnEnc);
-        u.setUrrnHmac(rrnHmac);
-        u.setUphoneEnc(phoneEnc);   // ← 엔티티 필드 필요
-        u.setUphoneHmac(phoneHmac); // ← 엔티티 필드 필요
-        // ukeyVer는 엔티티 디폴트 'v1'을 사용한다면 그대로
+        // 7) AES-GCM 컨버터 + HMAC 리스너 자동 처리(핵심 4줄)
+        u.setUrrnEnc(rrnNorm);        // 평문 → @Convert(AES-GCM)가 DB 저장 시 암호화
+        u.setRrnPlain(rrnNorm);       // 평문 → @HmacOf 리스너가 urrnHmac 자동 세팅
+
+        if (phoneNorm != null) {
+            u.setUphoneEnc(phoneNorm);   // 평문 → 컨버터가 암호화
+            u.setPhonePlain(phoneNorm);  // 평문 → 리스너가 uphoneHmac 자동 세팅
+        } else {
+            u.setUphoneEnc(null);
+            u.setPhonePlain(null);
+        }
+
+        // 🔧 HOTFIX: 리스너 실패 대비 — 서비스에서 한 번 더 직접 세팅 (NULL 방지)
+        u.setUrrnHmac(userUtil.hmacRrnHex(rrnNorm));
+        if (phoneNorm != null) {
+            u.setUphoneHmac(userUtil.hmacPhoneHex(phoneNorm));
+        }
 
         try {
             return userRepository.save(u).getUid();
         } catch (DataIntegrityViolationException e) {
-            // UNIQUE 제약 위반(주민번호 또는 휴대폰 HMAC)
-            // 스키마에 어떤 제약이 걸렸는지에 따라 메시지를 분기해도 됨
+            // UNIQUE 제약 위반(주민번호/휴대폰 HMAC 등)
             throw new IllegalArgumentException("이미 등록된 정보가 있습니다.");
         }
     }
@@ -188,8 +183,8 @@ public class UserService {
         if (century == null) return null;
         return century + yy + "-" + mm + "-" + dd;
     }
-    
-    /** 알림푸쉬 권한 관련*/
+
+    /** 알림푸쉬 권한 관련 */
     @Transactional
     public void updatePushConsent(String uid, boolean consent) {
         User u = userRepository.findById(uid)
