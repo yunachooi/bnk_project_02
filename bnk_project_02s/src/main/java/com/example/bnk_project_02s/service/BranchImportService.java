@@ -29,10 +29,8 @@ public class BranchImportService {
 
     private final BankRepository repo;
 
-    // 필요시 @Bean 주입으로 교체 가능
     private final RestTemplate rest = new RestTemplate();
 
-    // 환경변수 VWORLD_API_KEY 로도 대체 가능
     @Value("${vworld.api-key:${VWORLD_API_KEY:}}")
     private String vworldApiKey;
 
@@ -77,10 +75,10 @@ public class BranchImportService {
 
                 if (bno == null || bname == null || baddress == null) continue;
 
-                // 저장은 정제본으로(원본 보존이 필요하면 별도 컬럼 추가 권장)
+                // 저장은 정제본으로(원본 보존 필요하면 별도 raw 컬럼 추가 권장)
                 String cleaned = cleanAddress(baddress);
 
-                // 타입 결정(도로명 추정) → VWorld 호출 (ROAD → 실패시 PARCEL)
+                // 타입 결정 → VWorld 호출 (ROAD → 실패시 PARCEL)
                 String type = looksLikeRoad(cleaned) ? "ROAD" : "PARCEL";
                 double[] latlng = geocodeVWorld(cleaned, type);
                 if (latlng == null) latlng = geocodeVWorld(cleaned, "PARCEL".equals(type) ? "ROAD" : "PARCEL");
@@ -110,18 +108,22 @@ public class BranchImportService {
         return processed;
     }
 
-    /* ============ ② DB에 이미 있는 데이터 중 좌표 NULL만 채우기 ============ */
+    /* ============ ② DB에 이미 있는 데이터 중 좌표 NULL/빈문자만 채우기 ============ */
 
-    /** 좌표가 비어있는 레코드만 지오코딩해서 업데이트 */
+    /** 좌표가 비어있는 레코드만 지오코딩해서 업데이트 (null 또는 빈문자 포함) */
     @Transactional
     public int fillMissingCoordsFromDb() {
-        var targets = repo.findAllMissingCoords(); // ← 성능상 이 쿼리 사용
+        // 엔티티의 위경도 타입이 String이므로: null + ""(또는 공백)까지 포함해서 필터
+        var targets = repo.findAll().stream()
+                .filter(b -> isBlank(b.getBlatitude()) || isBlank(b.getBlongitude()))
+                .toList();
+
         log.info("🔎 targets to geocode = {}", targets.size());
 
         int updated = 0;
         for (var b : targets) {
             String base = b.getBaddress();
-            String query = cleanAddress(base);           // 안전빵으로 한 번 더 정리
+            String query = cleanAddress(base);           // 안전하게 한 번 더 정리
             if (query.isBlank()) {
                 log.warn("skip empty address: bno={}", b.getBno());
                 continue;
@@ -162,13 +164,13 @@ public class BranchImportService {
                     .queryParam("key", vworldApiKey)
                     .queryParam("format", "json")
                     .queryParam("errorFormat", "json")
-                    .queryParam("simple", "true")   // 간략 응답 → point 바로 접근
-                    .queryParam("refine", "true")   // 주소 정제
-                    .queryParam("crs", "EPSG:4326") // WGS84
+                    .queryParam("simple", "true")
+                    .queryParam("refine", "true")
+                    .queryParam("crs", "EPSG:4326")
                     .queryParam("type", typeUpper)  // "ROAD" or "PARCEL"
                     .queryParam("address", address)
-                    .build()                                     // ⚠️ 기본 빌드
-                    .encode(StandardCharsets.UTF_8)              // ✅ 반드시 인코딩
+                    .build()
+                    .encode(StandardCharsets.UTF_8)  // ✅ 한글 주소 인코딩 필수
                     .toUri();
 
             ResponseEntity<VWorldResp> resp = rest.getForEntity(uri, VWorldResp.class);
