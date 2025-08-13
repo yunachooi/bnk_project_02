@@ -22,10 +22,9 @@ public class UserConfig implements WebMvcConfigurer {
               "/user/signup/**",
               "/user/check-uid",
               "/user/check-rrn",
-              "/user/check-phone",    // ★ 추가: 휴대폰 중복확인
-              "/user/push-consent",   // ★ 추가: 푸시 동의 저장
+              "/user/check-phone",
+              "/user/push-consent",
 
-              // 정적/공통
               "/css/**", "/js/**", "/images/**",
               "/favicon.ico", "/error"
           )

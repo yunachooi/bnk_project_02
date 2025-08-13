@@ -1,6 +1,6 @@
 package com.example.bnk_project_02s.entity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Random;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,60 +19,45 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "bnk_card")
+@Table(name = "bnk_parent_account")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Card {
+public class ParentAccount {
 
     @Id
-    @Column(name = "cardno", length = 16)
-    private String cardno;
-
-    @Column(name = "cano")
-    private String cano;
+    @Column(name = "pano", length = 12)
+    private String pano;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uid", referencedColumnName = "uid")
     private User user;
 
-    @Column(name = "cardcvc")
-    private Integer cardcvc;
-
-    @Column(name = "cardname")
+    @Column(name = "fno")
     @Builder.Default
-    private String cardname = "BNK 쇼핑환전체크카드";
-
-    @Column(name = "cardstatus", length = 1)
-    @Builder.Default
-    private String cardstatus = "Y";
+    private Integer fno = 1;
 
     @CreationTimestamp
-    @Column(name = "carddate")
-    private LocalDateTime carddate;
+    @Column(name = "pajoin")
+    private LocalDate pajoin;
+
+    @Column(name = "pabank")
+    private String pabank;
 
     @PrePersist
     public void prePersist() {
-        if (this.cardno == null) {
-            this.cardno = generateCardNumber();
-        }
-        if (this.cardcvc == null) {
-            this.cardcvc = generateCvc();
+        if (this.pano == null) {
+            this.pano = generateAccountNumber();
         }
     }
 
-    private String generateCardNumber() {
+    private String generateAccountNumber() {
         Random random = new Random();
-        StringBuilder sb = new StringBuilder("4000");
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 12; i++) {
             sb.append(random.nextInt(10));
         }
         return sb.toString();
-    }
-
-    private Integer generateCvc() {
-        Random random = new Random();
-        return 100 + random.nextInt(900);
     }
 }

@@ -8,11 +8,11 @@ import lombok.Data;
 @Data
 @Builder
 public class CardDto {
+    private String cardno;
     private String cano;
-    private Integer cacvc;
-    private String caname;
-    private String pano;
-    private String cuno;
-    private String castatus;
-    private LocalDateTime cadate;
+    private String uid;
+    private Integer cardcvc;
+    private String cardname;
+    private String cardstatus;
+    private LocalDateTime carddate;
 }

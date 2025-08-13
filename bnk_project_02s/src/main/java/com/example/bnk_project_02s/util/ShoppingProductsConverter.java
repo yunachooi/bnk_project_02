@@ -1,12 +1,12 @@
 package com.example.bnk_project_02s.util;
 
-import com.example.bnk_project_02s.dto.ShoppingProductDto;
-import com.example.bnk_project_02s.entity.ShoppingProduct;
+import com.example.bnk_project_02s.dto.ShoppingProductsDto;
+import com.example.bnk_project_02s.entity.ShoppingProducts;
 
-public class ShoppingProductConverter {
+public class ShoppingProductsConverter {
     
-    public static ShoppingProductDto toDto(ShoppingProduct entity) {
-        ShoppingProductDto dto = new ShoppingProductDto();
+    public static ShoppingProductsDto toDto(ShoppingProducts entity) {
+        ShoppingProductsDto dto = new ShoppingProductsDto();
         dto.setSpno(entity.getSpno());
         dto.setSpname(entity.getSpname());
         dto.setSpnameKo(entity.getSpnameKo());
@@ -22,8 +22,8 @@ public class ShoppingProductConverter {
         return dto;
     }
     
-    public static ShoppingProduct toEntity(ShoppingProductDto dto) {
-        ShoppingProduct entity = new ShoppingProduct();
+    public static ShoppingProducts toEntity(ShoppingProductsDto dto) {
+        ShoppingProducts entity = new ShoppingProducts();
         entity.setSpno(dto.getSpno());
         entity.setSpname(dto.getSpname());
         entity.setSpnameKo(dto.getSpnameKo());

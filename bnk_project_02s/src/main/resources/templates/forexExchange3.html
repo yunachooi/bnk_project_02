@@ -1,10 +1,199 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>구매 완료</title>
+  <style>
+    :root{
+      --accent:#e35353; --fg:#222; --muted:#666; --border:#e5e5e5; --bar:#dcdcdc;
+      --bg:#fff; --card:#f6f6f6;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--fg);background:var(--bg)}
+    .wrap{max-width:420px;margin:0 auto;padding:12px 16px 28px}
+
+    .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:700;margin-bottom:16px}
+
+    .progress{display:flex;gap:10px;align-items:center;justify-content:center;margin:6px 0 18px}
+    .seg{flex:0 0 64px;height:6px;border-radius:999px;background:#eee;position:relative;overflow:hidden}
+    .seg::after{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .28s ease}
+    .seg.done::after{transform:scaleX(1)}
+    .seg.current{height:8px}
+    .seg.current::after{transform:scaleX(1)}
+
+    .check{
+      width:72px;height:72px;border-radius:50%;margin:10px auto;background:#fff;border:2px solid #e8e8e8;
+      display:flex;align-items:center;justify-content:center;font-size:34px;color:#19a15f;box-shadow:0 1px 0 rgba(0,0,0,.03);
+    }
+    .title{font-weight:900;text-align:center;margin:10px 0 14px}
+
+    .summary{
+      background:#f7f7f7;border:1px solid var(--border);border-radius:16px;padding:14px;
+      box-shadow:0 1px 0 rgba(0,0,0,.03); margin-top:6px
+    }
+    .row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 2px}
+    .row+.row{border-top:1px dashed #e9e9e9}
+    .label{color:#444}
+    .value{font-weight:800;color:#c13d3d;text-align:right}
+
+    /* ===============================
+       수령 가능한 영업점 찾기 버튼 (업그레이드)
+       =============================== */
+    .finder{margin-top:16px}
+    .big-btn{
+      width:100%; min-height:60px; border-radius:16px;
+      background:linear-gradient(135deg, #f8f8f8, #ececec);
+      color:#222; font-weight:800; font-size:15px;
+      border:1px solid #ddd; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      box-shadow:0 4px 8px rgba(0,0,0,.04);
+      transition:background .25s ease, box-shadow .25s ease, transform .15s ease;
+      position:relative; overflow:hidden;
+    }
+    /* 은은한 하이라이트 글로스 */
+    .big-btn::before{
+      content:""; position:absolute; top:-120%; left:-30%; width:60%; height:300%;
+      background:linear-gradient(120deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 100%);
+      transform:rotate(12deg);
+      transition:transform .6s ease;
+      pointer-events:none;
+    }
+    .big-btn:hover{
+      background:linear-gradient(135deg, #f2f2f2, #e5e5e5);
+      box-shadow:0 8px 18px rgba(0,0,0,.10);
+      transform:translateY(-2px);
+    }
+    .big-btn:hover::before{
+      transform:translateX(280%) rotate(12deg);
+    }
+    .big-btn:active{
+      transform:translateY(0);
+      box-shadow:0 3px 10px rgba(0,0,0,.06);
+    }
+    .big-btn:focus-visible{
+      outline:3px solid #9ecbff; outline-offset:3px;
+    }
+
+    .ico{
+      width:20px; height:20px; display:inline-block; fill:#e35353;
+      transition:transform .25s ease, filter .25s ease;
+      filter:drop-shadow(0 1px 0 rgba(0,0,0,.05));
+    }
+    .big-btn:hover .ico{ transform:scale(1.12) rotate(-6deg) }
+
+    /* 진행 화살표 */
+    .arrow{
+      display:inline-flex; align-items:center; gap:6px; font-weight:800; color:#333;
+    }
+    .arrow svg{
+      width:18px; height:18px; fill:#666; transform:translateX(0);
+      transition:transform .25s ease, fill .25s ease;
+    }
+    .big-btn:hover .arrow svg{ transform:translateX(4px); fill:#111 }
+
+    /* 하단 버튼 */
+    .btns{display:flex;gap:12px;margin-top:18px}
+    .btn{
+      flex:1;height:46px;border-radius:14px;font-weight:800;cursor:pointer;border:2px solid transparent;
+      background:var(--accent);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.05);
+      transition:transform .1s ease, box-shadow .2s ease;
+    }
+    .btn:hover{ box-shadow:0 6px 14px rgba(227,83,83,.25); transform:translateY(-1px) }
+    .btn:active{ transform:translateY(0) }
+    .btn.light{background:#fff;color:var(--accent);border-color:var(--accent)}
+  </style>
 </head>
 <body>
+<div class="wrap">
+  <div class="bar">구매 완료</div>
 
+  <div class="progress" aria-label="구매 진행 상황">
+    <div class="seg done"></div>
+    <div class="seg done"></div>
+    <div class="seg current done"></div>
+  </div>
+
+  <div class="check">✓</div>
+  <div class="title">환전 신청이 완료되었습니다</div>
+
+  <div class="summary">
+    <div class="row">
+      <div class="label">환전 금액</div>
+      <div class="value">
+        <span th:text="${fxAmount} + ' ' + ${rateCode}">10,000.00 USD</span>
+        <span> → </span>
+        <!-- 정수 KRW: Double로 파싱 후 소수 0자리 -->
+        <span th:text="${#numbers.formatDecimal(T(java.lang.Double).parseDouble(krwAmount), 1, 0)} + ' 원'">
+          1,939,650 원
+        </span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">적용 환율</div>
+      <div class="value">
+        <!-- 환율: 소수 2자리 -->
+        <span th:text="${#numbers.formatDecimal(T(java.lang.Double).parseDouble(finalRate), 1, 2)} + '원'">
+          1,939.65원
+        </span>
+      </div>
+    </div>
+
+    <div class="row" th:if="${accountMasked != null}">
+      <div class="label">출금 계좌</div>
+      <div class="value" th:text="${accountMasked}">112-****-****-08</div>
+    </div>
+
+    <div class="row" th:if="${savedFee != null}">
+      <div class="label">수수료 절감액</div>
+      <div class="value">
+        <!-- 절감액도 정수 -->
+        <span th:text="${#numbers.formatDecimal(T(java.lang.Double).parseDouble(savedFee), 1, 0)} + ' 원'">
+          9,650 원
+        </span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">고시 기준</div>
+      <div class="value" th:text="${rateDate} + ' ' + ${rateRound} + '회차'">
+        2025-08-11 1회차
+      </div>
+    </div>
+  </div>
+
+  <!-- 수령 가능한 영업점 찾기 버튼 (아이콘 + 진행 화살표 애니메이션) -->
+  <div class="finder">
+    <button class="big-btn" type="button" aria-label="수령 가능한 영업점 찾기" onclick="goFindBranch()">
+      <!-- 위치 아이콘 -->
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+      </svg>
+      <span>수령 가능한 영업점 찾기</span>
+      <!-- 진행 화살표 -->
+      <span class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12h12M13 6l6 6-6 6" />
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div class="btns">
+    <button class="btn light" type="button" onclick="history.back()">이전</button>
+    <button class="btn" type="button" onclick="location.href='/'">메인으로</button>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  function goFindBranch(){
+    // 전체 탭 기본
+    location.href = /*[[@{/branches}]]*/ '/branches';
+
+    // 디지털 탭으로 바로 열고 싶으면:
+    // location.href = /*[[@{/branches(tab='digital')}]]*/ '/branches?tab=digital';
+  }
+</script>
 </body>
 </html>
