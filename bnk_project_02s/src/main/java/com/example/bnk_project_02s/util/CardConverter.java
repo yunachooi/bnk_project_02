@@ -4,11 +4,9 @@ import org.springframework.stereotype.Component;
 
 import com.example.bnk_project_02s.dto.CardDto;
 import com.example.bnk_project_02s.entity.Card;
-import com.example.bnk_project_02s.entity.User;
 
 @Component
 public class CardConverter {
-    
     public CardDto toDto(Card card) {
         if (card == null) {
             return null;
@@ -30,7 +28,7 @@ public class CardConverter {
             return null;
         }
         
-        Card card = Card.builder()
+        return Card.builder()
                 .cardno(cardDto.getCardno())
                 .cano(cardDto.getCano())
                 .cardcvc(cardDto.getCardcvc())
@@ -38,13 +36,5 @@ public class CardConverter {
                 .cardstatus(cardDto.getCardstatus())
                 .carddate(cardDto.getCarddate())
                 .build();
-        
-        if (cardDto.getUid() != null) {
-            User user = new User();
-            user.setUid(cardDto.getUid());
-            card.setUser(user);
-        }
-        
-        return card;
     }
 }

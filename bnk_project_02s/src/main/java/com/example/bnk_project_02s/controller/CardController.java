@@ -5,7 +5,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -20,12 +19,14 @@ import jakarta.servlet.http.HttpSession;
 @CrossOrigin(origins = "*")
 public class CardController {
     
+    private static final String LOGIN_USER = "LOGIN_USER";
+    
     @Autowired
     private CardService cardService;
     
     @GetMapping("")
     public String showCardManagement(Model model, HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return "redirect:/user/login";
         }
@@ -44,7 +45,7 @@ public class CardController {
     @GetMapping("/info")
     @ResponseBody
     public CardDto getCardInfo(HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             throw new RuntimeException("로그인이 필요합니다.");
         }
@@ -52,10 +53,10 @@ public class CardController {
         return cardService.getCardByUserId(loginUser.getUid());
     }
     
-    @PostMapping("/toggle-status")
+    @GetMapping("/toggle-status")
     @ResponseBody
     public String toggleCardStatus(HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return "로그인이 필요합니다.";
         }
@@ -71,7 +72,7 @@ public class CardController {
     @GetMapping("/full-number")
     @ResponseBody
     public String getFullCardNumber(HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return "로그인이 필요합니다.";
         }
@@ -80,38 +81,6 @@ public class CardController {
             return cardService.getFullCardNumber(loginUser.getUid());
         } catch (Exception e) {
             return "카드번호 조회 중 오류가 발생했습니다: " + e.getMessage();
-        }
-    }
-    
-    @PostMapping("/report-lost")
-    @ResponseBody
-    public String reportLostCard(HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
-        if (loginUser == null) {
-            return "로그인이 필요합니다.";
-        }
-        
-        try {
-            boolean result = cardService.reportLostCard(loginUser.getUid());
-            return result ? "카드 분실신고가 완료되었습니다." : "분실신고에 실패했습니다.";
-        } catch (Exception e) {
-            return "분실신고 중 오류가 발생했습니다: " + e.getMessage();
-        }
-    }
-    
-    @PostMapping("/cancel-lost")
-    @ResponseBody
-    public String cancelLostReport(HttpSession session) {
-        User loginUser = (User) session.getAttribute("LOGIN_USER");
-        if (loginUser == null) {
-            return "로그인이 필요합니다.";
-        }
-        
-        try {
-            boolean result = cardService.cancelLostReport(loginUser.getUid());
-            return result ? "카드 분실해제가 완료되었습니다." : "분실해제에 실패했습니다.";
-        } catch (Exception e) {
-            return "분실해제 중 오류가 발생했습니다: " + e.getMessage();
         }
     }
 }
