@@ -16,7 +16,7 @@
     <div class="stepper" th:insert="~{fragments/stepper :: stepper(current=1)}"></div>
     <h1 class="title">회원가입</h1>
 
-    <!-- 서버 검증 전제: novalidate 유지(브라우저 기본 검증 off) -->
+    <!-- 서버 검증 전제: novalidate로 브라우저 기본검증 off -->
     <form th:action="@{/user/signup/step1}" th:object="${userDto}" method="post" class="form" novalidate>
 
       <!-- ID + 중복확인 -->
@@ -27,7 +27,6 @@
           <button type="button" id="btnCheckUid" class="btn">중복확인</button>
         </div>
         <p id="uidMsg" class="err"></p>
-        <!-- 서버 검증 메시지 -->
         <p id="err-uid" class="err"
            th:text="${#fields.hasErrors('uid')} ? ${#fields.errors('uid')[0]} : ''"></p>
       </div>
@@ -45,11 +44,16 @@
       <div class="field">
         <label for="confirmUpw">PW 확인</label>
         <input th:field="*{confirmUpw}" id="confirmUpw" type="password" class="input" th:errorclass="th-invalid" />
-        <!-- 전역(비번 불일치 등) 서버 에러 -->
-        <p id="err-global" class="err"
-           th:text="${#fields.hasGlobalErrors()} ? ${#fields.globalErrors()[0]} : ''"></p>
+
+        <!-- @AssertTrue(passwordConfirmed) 에러 -->
+        <p id="err-passwordConfirmed" class="err"
+           th:if="${#fields.hasErrors('passwordConfirmed')}"
+           th:errors="*{passwordConfirmed}"></p>
+
+        <!-- confirmUpw 자체 필드 에러(있는 경우) -->
         <p id="err-confirmUpw" class="err"
-           th:text="${#fields.hasErrors('confirmUpw')} ? ${#fields.errors('confirmUpw')[0]} : ''"></p>
+           th:if="${#fields.hasErrors('confirmUpw')}"
+           th:errors="*{confirmUpw}"></p>
       </div>
 
       <!-- 이름 -->
@@ -64,10 +68,9 @@
       <div class="field">
         <label>주민등록번호</label>
         <div class="row row-rrn">
-          <!-- UI 보조용 maxlength만 유지(검증은 서버) -->
-          <input th:field="*{rrnFront}" class="input" maxlength="6" placeholder="생년월일" inputmode="numeric" th:errorclass="th-invalid" />
+          <input th:field="*{rrnFront}" name="rrnFront" class="input" maxlength="6" placeholder="생년월일" inputmode="numeric" th:errorclass="th-invalid" />
           <span class="sep">-</span>
-          <input th:field="*{rrnBack}" class="input" maxlength="7" placeholder="뒷자리" inputmode="numeric" th:errorclass="th-invalid" />
+          <input th:field="*{rrnBack}"  name="rrnBack"  class="input" maxlength="7" placeholder="뒷자리"   inputmode="numeric" th:errorclass="th-invalid" />
         </div>
         <p id="err-rrnFront" class="err"
            th:text="${#fields.hasErrors('rrnFront')} ? ${#fields.errors('rrnFront')[0]} : ''"></p>
@@ -79,7 +82,7 @@
       <div class="field">
         <label for="uphone">휴대전화</label>
         <input th:field="*{uphone}" id="uphone" class="input"
-               placeholder="010-0000-0000" inputmode="tel" th:errorclass="th-invalid" />
+               placeholder="010-0000-0000" inputmode="tel" maxlength="13" th:errorclass="th-invalid" />
         <p id="err-uphone" class="err"
            th:text="${#fields.hasErrors('uphone')} ? ${#fields.errors('uphone')[0]} : ''"></p>
       </div>
@@ -90,9 +93,10 @@
     </form>
   </div>
 
-  <!-- ID 중복확인(UX용) & 입력 시 메시지 초기화 -->
+  <!-- UX 스크립트: ID 중복확인 + PW 즉시검증 + 휴대전화 마스킹/제한 + 입력 시 서버에러 정리 -->
   <script>
     (function () {
+      // ===== ID 중복확인 =====
       const btn = document.getElementById('btnCheckUid');
       const uidInput = document.getElementById('uid');
       const uidMsgEl = document.getElementById('uidMsg');
@@ -100,6 +104,9 @@
       uidInput?.addEventListener('input', () => {
         uidMsgEl.textContent = '';
         uidMsgEl.classList.remove('ok');
+        const uidErr = document.getElementById('err-uid');
+        if (uidErr) uidErr.textContent = '';
+        uidInput.classList.remove('th-invalid');
       });
 
       btn?.addEventListener('click', async () => {
@@ -120,6 +127,75 @@
           uidMsgEl.classList.remove('ok');
         }
       });
+
+      // ===== PW 일치 즉시 검증 =====
+      const pw = document.getElementById('upw');
+      const confirmPw = document.getElementById('confirmUpw');
+      const errPw = document.getElementById('err-upw');
+      const errConfirm = document.getElementById('err-confirmUpw');
+      const errConfirmed = document.getElementById('err-passwordConfirmed'); // @AssertTrue 메시지
+
+      function clearPasswordErrorsIfMatched() {
+        if (!pw || !confirmPw) return;
+        const v1 = pw.value || '';
+        const v2 = confirmPw.value || '';
+        if (v1 && v2 && v1 === v2) {
+          if (errConfirmed) errConfirmed.textContent = '';
+          if (errConfirm)   errConfirm.textContent   = '';
+          pw.classList.remove('th-invalid');
+          confirmPw.classList.remove('th-invalid');
+        }
+      }
+
+      pw?.addEventListener('input', () => {
+        if (errPw) errPw.textContent = '';
+        pw.classList.remove('th-invalid');
+        clearPasswordErrorsIfMatched();
+      });
+
+      confirmPw?.addEventListener('input', () => {
+        if (errConfirm)   errConfirm.textContent   = '';
+        if (errConfirmed) errConfirmed.textContent = '';
+        confirmPw.classList.remove('th-invalid');
+        clearPasswordErrorsIfMatched();
+      });
+
+      // ===== 휴대전화 마스킹/제한 (최대 010-1234-5678) =====
+      const phone = document.getElementById('uphone');
+      const errPhone = document.getElementById('err-uphone');
+
+      phone?.addEventListener('input', () => {
+        // 1) 숫자만 추출
+        let digits = phone.value.replace(/[^0-9]/g, '');
+
+        // 2) 최대 11자리 제한 (010 + 4 + 4)
+        if (digits.length > 11) digits = digits.slice(0, 11);
+
+        // 3) 자동 하이픈
+        if (digits.length <= 3) {
+          phone.value = digits;
+        } else if (digits.length <= 7) {
+          phone.value = digits.slice(0, 3) + '-' + digits.slice(3);
+        } else {
+          phone.value = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        }
+
+        // 4) 서버 에러 문구/시각적 상태 정리
+        if (errPhone) errPhone.textContent = '';
+        phone.classList.remove('th-invalid');
+      });
+
+      // ===== 기타 필드: 입력 시 서버 에러 제거(UX 개선) =====
+      function clearFieldErrorOnInput(inputEl, errElId) {
+        inputEl?.addEventListener('input', () => {
+          const el = document.getElementById(errElId);
+          if (el) el.textContent = '';
+          inputEl.classList.remove('th-invalid');
+        });
+      }
+      clearFieldErrorOnInput(document.getElementById('uname'), 'err-uname');
+      clearFieldErrorOnInput(document.querySelector('[name="rrnFront"]'), 'err-rrnFront');
+      clearFieldErrorOnInput(document.querySelector('[name="rrnBack"]'),  'err-rrnBack');
     })();
   </script>
 </body>
