@@ -47,7 +47,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     """, nativeQuery = true)
     List<Object[]> countByAgeGroup();
     
- // ✅ 관심 통화: CSV에서 각 토큰을 개별 카운트 (공백 무시)
+    // ✅ 관심 통화: CSV에서 각 토큰을 개별 카운트 (공백 무시)
     @Query(value = """
         SELECT t.k AS k,
                COALESCE(SUM(
@@ -86,5 +86,5 @@ public interface UserRepository extends JpaRepository<User, String> {
             from User u
             group by upper(trim(u.ugender))
             """)
-     List<Object[]> countByGenderRaw();
+    List<Object[]> countByGenderRaw();
 }
