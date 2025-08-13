@@ -1,25 +1,59 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 
 void main() {
-  runApp(MenuManagementApp());
+  runApp(MaterialApp(
+    title: '카드 관리',
+    theme: ThemeData(
+      primarySwatch: Colors.blue,
+      primaryColor: Color(0xFF1976D2),
+    ),
+    home: CardManagementScreen(),
+    debugShowCheckedModeBanner: false,
+  ));
 }
 
-class MenuManagementApp extends StatelessWidget {
-  const MenuManagementApp({super.key});
+class HttpClient {
+  static final HttpClient _instance = HttpClient._internal();
+  factory HttpClient() => _instance;
+  HttpClient._internal();
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '카드 관리',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: Color(0xFF1976D2),
-      ),
-      home: CardManagementScreen(),
-      debugShowCheckedModeBanner: false,
-    );
+  late Dio dio;
+  final CookieJar cookieJar = CookieJar();
+
+  void init() {
+    dio = Dio();
+    dio.interceptors.add(CookieManager(cookieJar));
+
+    dio.options.baseUrl = 'http://10.0.2.2:8093';
+    dio.options.connectTimeout = Duration(seconds: 10);
+    dio.options.receiveTimeout = Duration(seconds: 10);
+    dio.options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print('🔗 요청: ${options.method} ${options.uri}');
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print('✅ 응답: ${response.statusCode}');
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        print('❌ 에러: ${error.message}');
+        handler.next(error);
+      },
+    ));
+  }
+
+  Future<Response> get(String path) async {
+    return await dio.get(path);
+  }
+
+  Future<Response> post(String path, {dynamic data}) async {
+    return await dio.post(path, data: data);
   }
 }
 
@@ -67,11 +101,10 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
   bool showingFullNumber = false;
   CardInfo? cardInfo;
 
-  final String baseUrl = 'http://localhost:8080';
-
   @override
   void initState() {
     super.initState();
+    HttpClient().init();
     _loadCardInfo();
   }
 
@@ -81,19 +114,26 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/user/card/info'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      print('카드 정보 요청 중...');
+      Response response = await HttpClient().get('/user/card/info');
+
+      print('카드 정보 응답 상태: ${response.statusCode}');
+      print('카드 정보 응답 데이터: ${response.data}');
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        cardInfo = CardInfo.fromJson(jsonData);
+        cardInfo = CardInfo.fromJson(response.data);
         isCardActivated = cardInfo!.cardstatus == 'Y';
+        print('카드 정보 로딩 성공: ${cardInfo!.cardname}');
+      } else if (response.statusCode == 401) {
+        print('인증 실패 - 로그인 필요');
+        _showMessage('로그인이 필요합니다.');
+        _createDefaultCard();
       } else {
+        print('카드 정보 로딩 실패 - 기본값 사용');
         _createDefaultCard();
       }
     } catch (e) {
+      print('카드 정보 로딩 에러: $e');
       _createDefaultCard();
     }
 
@@ -105,8 +145,8 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
   void _createDefaultCard() {
     cardInfo = CardInfo(
       cardno: '4***-****-****-1234',
-      cano: 'default_USD',
-      uid: 'user',
+      cano: '',
+      uid: '',
       cardcvc: 123,
       cardname: 'BNK 쇼핑환전체크카드',
       cardstatus: 'Y',
@@ -117,42 +157,48 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
 
   Future<void> _toggleCardStatus() async {
     try {
-      await http.post(
-        Uri.parse('$baseUrl/user/card/toggle-status'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      print('카드 상태 변경 요청 중...');
+      Response response = await HttpClient().post('/user/card/toggle-status');
 
-      setState(() {
-        isCardActivated = !isCardActivated;
-      });
+      print('카드 상태 변경 응답: ${response.statusCode}');
 
-      _showMessage('카드 상태가 변경되었습니다.');
+      if (response.statusCode == 200) {
+        setState(() {
+          isCardActivated = !isCardActivated;
+        });
+        _showMessage('카드 상태가 변경되었습니다.');
+      } else if (response.statusCode == 401) {
+        _showMessage('로그인이 필요합니다.');
+      } else {
+        _showMessage('카드 상태 변경에 실패했습니다.');
+      }
     } catch (e) {
-      setState(() {
-        isCardActivated = !isCardActivated;
-      });
-      _showMessage('카드 상태가 변경되었습니다.');
+      print('카드 상태 변경 에러: $e');
+      _showMessage('카드 상태 변경 중 오류가 발생했습니다.');
     }
   }
 
   Future<void> _toggleCardNumber() async {
     if (!showingFullNumber) {
       try {
-        final response = await http.get(
-          Uri.parse('$baseUrl/user/card/full-number'),
-          headers: {'Content-Type': 'application/json'},
-        );
+        print('전체 카드번호 요청 중...');
+        Response response = await HttpClient().get('/user/card/full-number');
+
+        print('전체 카드번호 응답: ${response.statusCode}');
 
         if (response.statusCode == 200) {
           setState(() {
             showingFullNumber = true;
           });
+        } else if (response.statusCode == 401) {
+          _showMessage('로그인이 필요합니다.');
         } else {
           setState(() {
             showingFullNumber = true;
           });
         }
       } catch (e) {
+        print('카드번호 조회 에러: $e');
         setState(() {
           showingFullNumber = true;
         });
@@ -168,7 +214,7 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF1976D2),
         duration: Duration(seconds: 2),
       ),
     );
@@ -207,6 +253,11 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
     }
     return '4';
   }
+
+  void _showCardBenefits() {}
+  void _reportLostCard() {}
+  void _cancelCard() {}
+  void _changePaymentDate() {}
 
   @override
   Widget build(BuildContext context) {
@@ -256,8 +307,6 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-
-                // 카드 비주얼
                 Center(
                   child: Container(
                     width: 160,
@@ -317,8 +366,6 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                     ),
                   ),
                 ),
-
-                // 카드 정보
                 Center(
                   child: Column(
                     children: [
@@ -362,10 +409,7 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                     ],
                   ),
                 ),
-
                 SizedBox(height: 30),
-
-                // 카드 상세 정보
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -376,7 +420,6 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 카드번호 섹션
                       Container(
                         padding: EdgeInsets.all(16),
                         child: Column(
@@ -467,10 +510,7 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                           ],
                         ),
                       ),
-
                       Divider(height: 1, color: Colors.grey[300]),
-
-                      // 카드 활성화
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         child: Row(
@@ -492,51 +532,48 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                           ],
                         ),
                       ),
-
                       Divider(height: 1, color: Colors.grey[300]),
-
-                      // 결제일 변경
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '결제일 변경',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                      GestureDetector(
+                        onTap: _changePaymentDate,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '결제일 변경',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  paymentCycle,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                              Row(
+                                children: [
+                                  Text(
+                                    paymentCycle,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ],
-                            ),
-                          ],
+                                  SizedBox(width: 8),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-
                 SizedBox(height: 20),
-
-                // 메뉴 섹션
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -545,15 +582,14 @@ class _CardManagementScreenState extends State<CardManagementScreen> {
                   ),
                   child: Column(
                     children: [
-                      _buildMenuTile('내 카드 혜택', onTap: () {}),
+                      _buildMenuTile('내 카드 혜택', onTap: _showCardBenefits),
                       Divider(height: 1, color: Colors.grey[200]),
-                      _buildMenuTile('분실신고/해제', onTap: () {}),
+                      _buildMenuTile('분실신고/해제', onTap: _reportLostCard),
                       Divider(height: 1, color: Colors.grey[200]),
-                      _buildMenuTile('카드해지', onTap: () {}),
+                      _buildMenuTile('카드해지', onTap: _cancelCard),
                     ],
                   ),
                 ),
-
                 SizedBox(height: 40),
               ],
             ),
