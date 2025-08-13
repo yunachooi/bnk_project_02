@@ -69,76 +69,85 @@
     .modal-button.primary:hover { background:#1d4ed8; }
 
     /* Terms pages fill modal height */
-    .terms-page { display:none; height:100%; }
-    .terms-page.active { display:flex; flex-direction:column; height:100%; }
+    .terms-page { display:none; height:100%; flex-direction:column; }
+    .terms-page.active { display:flex; height:100%; }
+
     /* Summary page scrollable */
-    .summary-scroll { padding:1rem 1.25rem; overflow:auto; -webkit-overflow-scrolling:touch; }
+    .summary-scroll { padding:1rem 1.25rem; overflow:auto; -webkit-overflow-scrolling:touch; flex-grow: 1; }
     .summary-list { list-style:none; padding:0; margin:0; }
     .summary-list li {
-      background:#fff; /* White background for list items */
-      border:2px solid #3b82f6; /* Blue border */
-      border-radius:.75rem; /* More rounded corners */
+      background:#fff;
+      border:2px solid #3b82f6;
+      border-radius:.75rem;
       padding:1rem; margin-bottom:.75rem; color:#4b5563; line-height:1.5;
-      box-shadow:0 2px 8px rgba(0,0,0,.08); /* Subtle shadow */
+      box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
     .summary-num { font-weight:800; color:#111827; margin-right:.5rem; }
     .summary-title { font-weight:700; color:#111827; }
     .summary-content { display:block; margin-top:.35rem; }
 
     /* PDF viewer fills remaining space */
-    .pdf-viewer-iframe { flex:1 1 auto; width:100%; height:100%; border:0; background-color: white; /* Attempt to set background to white */ }
+    .pdf-viewer-iframe {
+      flex:1 1 auto;
+      width:100%;
+      height:100%; /* Ensures it takes full available height within its flex container */
+      border: 1px solid #e0e0e0; /* Subtle border for better visual separation */
+      border-radius: .5rem; /* Rounded corners */
+      box-shadow: 0 2px 8px rgba(0,0,0,.05); /* Soft shadow */
+      background-color: #fff; /* Explicitly white background */
+    }
 
     /* Custom scrollable content within list item */
     .scrollable-content-wrapper {
-      max-height: 500px; /* Increased to allow more content and trigger scroll if needed */
+      max-height: 70vh; /* Increased height for customer check item 4 scroll */
       overflow-y: auto;
-      padding-right: 0.5rem; /* Space for scrollbar */
-      margin-top: 0.5rem; /* Spacing from title */
+      padding-right: 0.5rem;
+      margin-top: 0.5rem;
     }
     .scrollable-content-wrapper p,
     .scrollable-content-wrapper ul {
-      margin-bottom: 0.75rem; /* Spacing between paragraphs and lists */
+      margin-bottom: 0.75rem;
     }
     .scrollable-content-wrapper p:last-child,
     .scrollable-content-wrapper ul:last-child {
-      margin-bottom: 0; /* No bottom margin for the last element */
+      margin-bottom: 0;
     }
     .scrollable-content-wrapper h4 {
       font-weight: 600;
       color: #1f2937;
       margin-bottom: 0.5rem;
-      margin-top: 1rem; /* Spacing for sub-headings */
+      margin-top: 1rem;
+      text-align: center; /* Contract title center alignment */
     }
     .scrollable-content-wrapper h4:first-child {
-      margin-top: 0; /* No top margin for the first sub-heading */
+      margin-top: 0;
     }
 
     /* Grouped content box style */
     .grouped-content-box {
         background:#fff;
-        border:2px solid #3b82f6; /* Added back the border for the outer box */
+        border:2px solid #3b82f6;
         border-radius:.75rem;
         padding:1rem;
-        margin-bottom:0.75rem; /* Standard margin */
-        box-shadow:0 2px 8px rgba(0,0,0,.08); /* Added back shadow */
+        margin-bottom:0.75rem;
+        box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
     .grouped-content-box h4 {
-      margin-top: 0 !important; /* Override default h4 top margin within this box */
+      margin-top: 0 !important;
     }
     .grouped-content-box ul {
-      margin-left: 1.25rem; /* Indent list items */
-      list-style: disc; /* Ensure disc bullet points are visible */
+      margin-left: 1.25rem;
+      list-style: disc;
     }
-    /* Styles to remove inner borders/shadows/margins from list items within grouped boxes */
     .grouped-content-box ul li {
         border: none;
         box-shadow: none;
         background: none;
-        padding: 0; /* Remove inner padding */
-        margin-bottom: 0.25rem; /* Reduce spacing between inner list items */
+        padding: 0;
+        margin-bottom: 0.25rem;
     }
     .grouped-content-box ul li:last-child {
-        margin-bottom: 0; /* No bottom margin for the last inner list item */
+        margin-bottom: 0;
     }
   </style>
 </head>
@@ -190,17 +199,26 @@
               <input type="number" id="enrollmentAmount" placeholder="가입 금액을 입력해주세요">
             </div>
             <div class="form-group">
+              <label for="currencySelect">통화 선택</label>
+              <select id="currencySelect">
+                <option value="">통화를 선택해주세요</option>
+                <option value="USD">USD - 미국 달러</option>
+                <option value="JPY">JPY - 일본 엔</option>
+                <option value="EUR">EUR - 유로</option>
+                <option value="GBP">GBP - 영국 파운드</option>
+                <option value="CNY">CNY - 중국 위안</option>
+                <option value="KRW">KRW - 대한민국 원</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="withdrawalEstimate">원화출금 예상액 조회</label>
-              <input type="text" id="withdrawalEstimate" placeholder="원화출금 예상액" readonly>
-              <button class="w-full bg-gray-200 text-gray-700 py-2 mt-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors">조회하기</button>
+              <input type="text" id="withdrawalEstimate" placeholder="조회하기 버튼을 눌러주세요" readonly>
+              <button id="lookupEstimateBtn" class="w-full bg-gray-200 text-gray-700 py-2 mt-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors">조회하기</button>
             </div>
             <div class="form-group">
               <label for="withdrawalAccount">출금 계좌</label>
-              <select id="withdrawalAccount">
-                <option value="">출금 계좌를 선택해주세요</option>
-                <option value="bank1">BNK부산은행 123-456-7890</option>
-                <option value="bank2">BNK경남은행 987-654-3210</option>
-              </select>
+              <!-- 출금 계좌를 입력 필드로 변경 및 readonly 설정 -->
+              <input type="text" id="withdrawalAccount" value="BNK부산은행 112-4567-7890-01" readonly class="bg-gray-200 cursor-not-allowed">
             </div>
           </div>
         </div>
@@ -210,7 +228,7 @@
     <!-- Bottom -->
     <footer class="bottom-bar">
       <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
-      <button id="nextButton" class="bg-gray-400 text-white cursor-not-allowed" disabled>가입 완료</button>
+      <button id="nextButton" class="bg-gray-400 text-white cursor-not-allowed" disabled>다음으로</button>
     </footer>
   </div>
 
@@ -225,7 +243,7 @@
         <!-- Page 1: 요약본 -->
         <div id="termsPage1" class="terms-page active">
           <div class="summary-scroll">
-            <h4 class="font-bold text-gray-800 text-lg mb-4">요약본</h4>
+            <h4 class="font-bold text-gray-800 text-lg mb-4 text-center">요약본</h4>
             <ol class="summary-list">
               <li>
                 <span class="summary-num">1.</span>
@@ -253,21 +271,25 @@
 
         <!-- Page 2 -->
         <div id="termsPage2" class="terms-page">
+          <!-- H4 tag will be dynamically added here by JS for centering -->
           <iframe src="https://drive.google.com/file/d/1GClaAcMVQeXwKBSUZDZD-CrrCMWC2PJd/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
 
         <!-- Page 3 -->
         <div id="termsPage3" class="terms-page">
+          <!-- H4 tag will be dynamically added here by JS for centering -->
           <iframe src="https://drive.google.com/file/d/15wwn9df-I70sL1TSLHv5m9KHFWOS1yuZ/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
 
         <!-- Page 4 -->
         <div id="termsPage4" class="terms-page">
+          <!-- H4 tag will be dynamically added here by JS for centering -->
           <iframe src="https://drive.google.com/file/d/1iI2juipDYmW_Ok9c_VGhaHtXi8OEpGIC/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
 
         <!-- Page 5 -->
         <div id="termsPage5" class="terms-page">
+          <!-- H4 tag will be dynamically added here by JS for centering -->
           <iframe src="https://drive.google.com/file/d/10RBKoscPB6Zz93y476Hg12GNZ44Le6tT/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
       </div>
@@ -340,8 +362,8 @@
                     <li>계약기간, 이자의 지급시기 및 지급제한 사유</li>
                     <li>이자율(기본+우대), 중도해지이자율, 만기해지이자율, 만기후이자율, 수익률 및 산출근거 등</li>
                     <li>수수료 등 부대비용, 일반 금융소비자 계약해지 시 불이익</li>
-                    <li>이용 제한사항(계좌이체 제한 등)</li>
-                    <li>인용한 자료의 출처</li>
+                    <li>이용 제한사항(계좌이체 제한 등)</li> <!-- 추가된 내용 -->
+                    <li>인용한 자료의 출처</li> <!-- 추가된 내용 -->
                   </ul>
                 </div>
 
@@ -354,7 +376,11 @@
                     <li>연계, 제휴서비스 등의 내용변경 및 그 사유 등을 일반금융소비자에게 알린다는 사실 및 그 고지방법 등 내용</li>
                   </ul>
                 </div>
-                <p class="summary-content mt-4 text-center">본인은 약관 및 상품설명서를 제공받고 그 내용을 충분히 이해하며 본 상품에 가입함을 확인합니다.</p>
+                <p class="summary-content mt-4 text-center">
+                  본인은 약관 및 상품설명서를 제공받고<br>
+                  그 내용을 충분히 이해하며<br>
+                  본 상품에 가입함을 확인합니다.
+                </p>
               </div>
             </li>
           </ul>
@@ -385,6 +411,12 @@
     const enrollmentContentCheckmark = document.getElementById('enrollmentContentCheckmark');
     const enrollmentContentInner = document.getElementById('enrollmentContentInner');
 
+    const enrollmentAmountInput = document.getElementById('enrollmentAmount');
+    const currencySelect = document.getElementById('currencySelect');
+    const withdrawalEstimateInput = document.getElementById('withdrawalEstimate');
+    const lookupEstimateBtn = document.getElementById('lookupEstimateBtn');
+    const withdrawalAccountInput = document.getElementById('withdrawalAccount');
+
     const termsModal = document.getElementById('termsModal');
     const termsModalTitle = document.getElementById('termsModalTitle');
     const termsPages = document.querySelectorAll('.terms-page');
@@ -398,10 +430,15 @@
 
     // 상태 변수
     let isTermsAndExplanationsAgreed = false;
-    let isCustomerCheckConfirmed = false; // This now means both parts are confirmed
+    let isCustomerCheckConfirmed = false;
+    let isEnrollmentAmountFilled = false;
+    let isCurrencySelected = false;
+    let isWithdrawalEstimateLookedUp = false;
+    let isWithdrawalAccountFilled = true; // 출금 계좌는 자동 입력되므로 기본값 true
+
     let termsCurrentPage = 0;
 
-    // 약관 모달 페이지별 제목 (동적으로 페이지 번호 추가)
+    // 약관 모달 페이지별 제목
     const termsBaseTitles = [
       '약관 및 설명서 요약',
       '상품별적용약관',
@@ -415,30 +452,36 @@
      */
     function initializeUI() {
       encouragementMessageDiv.textContent = '중요한 내용이니 꼼꼼히 확인해 주세요! 😎';
+
       agreementConsentContent.classList.remove('collapsed');
       agreementConsentTitle.classList.add('rotated');
+
       enrollmentContentInner.classList.add('collapsed');
-      enrollmentContentTitle.classList.remove('rotated');
+      enrollmentContentTitle.classList.remove('rotated'); 
+      
       updateNextButtonState();
       updateAgreementConsentSectionStatus();
-      updateAgreementButtonsState(); // 초기 버튼 상태 업데이트
+      updateAgreementButtonsState();
+      updateEnrollmentContentStatus();
     }
 
     /**
-     * '다음' 버튼 (가입 완료) 활성화/비활성화 상태 업데이트
+     * '다음' 버튼 활성화/비활성화 상태 및 응원 메시지 업데이트
      */
     function updateNextButtonState() {
-      if (isTermsAndExplanationsAgreed && isCustomerCheckConfirmed) {
+      if (isTermsAndExplanationsAgreed && isCustomerCheckConfirmed &&
+          isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp) {
         nextButton.disabled = false;
         nextButton.classList.remove('bg-gray-400','cursor-not-allowed');
         nextButton.classList.add('bg-blue-600','hover:bg-blue-700');
-        nextButton.textContent = '가입 완료';
-        encouragementMessageDiv.textContent = '이제 거의 다 왔어요! 다음으로 이동해 주세요. 😄';
+        nextButton.textContent = '다음으로';
+        // 두 번째 응원 문구 변경 및 줄바꿈 적용
+        encouragementMessageDiv.textContent = '모든 정보가 입력되었습니다! 🎉\n마지막 단계로 이동해 주세요.';
       } else {
         nextButton.disabled = true;
         nextButton.classList.add('bg-gray-400','cursor-not-allowed');
         nextButton.classList.remove('bg-blue-600','hover:bg-blue-700');
-        nextButton.textContent = '가입 완료';
+        nextButton.textContent = '다음으로';
         encouragementMessageDiv.textContent = '중요한 내용이니 꼼꼼히 확인해 주세요! 😎';
       }
     }
@@ -447,7 +490,6 @@
      * 약관 및 고객 확인 버튼의 활성화/비활성화 상태를 개별적으로 관리
      */
     function updateAgreementButtonsState() {
-      // 약관 및 설명서 동의 버튼
       if (isTermsAndExplanationsAgreed) {
         openTermsModalBtn.disabled = true;
         openTermsModalBtn.classList.remove('bg-blue-500','hover:bg-blue-600');
@@ -458,7 +500,6 @@
         openTermsModalBtn.classList.remove('bg-gray-400','cursor-not-allowed');
       }
 
-      // 고객 확인 사항 확인 버튼
       if (isCustomerCheckConfirmed) {
         openCustomerCheckModalBtn.disabled = true;
         openCustomerCheckModalBtn.classList.remove('bg-blue-500','hover:bg-blue-600');
@@ -488,10 +529,21 @@
      */
     function showTermsPage(idx){
       termsPages.forEach((p,i)=>p.classList.toggle('active', i===idx));
-      // 동적으로 페이지 번호를 포함하여 제목 업데이트
-      termsModalTitle.textContent = `${termsBaseTitles[idx]} (${idx + 1} / ${termsPages.length})`;
+      termsModalTitle.textContent = `약관 및 설명서 동의 (${idx + 1} / ${termsPages.length})`;
 
-      // 첫 페이지 버튼 텍스트 변경
+      const currentPageElement = termsPages[idx];
+      const currentTitle = termsBaseTitles[idx];
+      // 첫 페이지는 요약본이므로 기존 h4를 사용하고, 나머지 페이지에 h4를 동적으로 추가
+      if (idx > 0 && !currentPageElement.querySelector('h4')) {
+        const h4Element = document.createElement('h4');
+        h4Element.classList.add('font-bold', 'text-gray-800', 'text-lg', 'mb-4', 'text-center'); // 가운데 정렬 추가
+        h4Element.textContent = currentTitle;
+        currentPageElement.prepend(h4Element);
+      } else if (idx === 0) {
+        // 첫 페이지의 기존 h4에도 가운데 정렬 적용
+        currentPageElement.querySelector('h4').classList.add('text-center');
+      }
+      
       if (idx === 0) {
         termsAgreeBtn.textContent = '동의 및 확인 시작';
       } else {
@@ -509,11 +561,12 @@
       } else {
         isTermsAndExplanationsAgreed = true;
         closeModal('termsModal');
-        console.log('약관 및 설명서 동의가 완료되었습니다. ✅'); // alert 대체
-        termsCurrentPage = 0; // 모달을 닫고 나면 다음 번에 열릴 때 첫 페이지로 초기화
+        console.log('약관 및 설명서 동의가 완료되었습니다. ✅');
+        termsCurrentPage = 0;
         showTermsPage(termsCurrentPage); // 페이지 상태 초기화
         updateAgreementConsentSectionStatus();
-        updateAgreementButtonsState(); // 약관 동의 후 버튼 비활성화
+        updateAgreementButtonsState();
+        updateNextButtonState();
       }
     }
 
@@ -521,8 +574,8 @@
      * 고객 확인 사항 동의 (Part 1) 버튼 클릭 핸들러
      */
     function handleCustomerCheckAgreeBtn(){
-      closeModal('customerCheckModal'); // 첫 번째 모달 닫기
-      openModal('customerCheckModalPart2'); // 두 번째 모달 열기
+      closeModal('customerCheckModal');
+      openModal('customerCheckModalPart2');
       console.log('고객 확인 사항 (1/2) 동의 완료. 다음 단계로 이동합니다.');
     }
 
@@ -530,11 +583,12 @@
      * 고객 확인 사항 동의 (Part 2) 버튼 클릭 핸들러
      */
     function handleCustomerCheckAgreeBtnPart2(){
-      isCustomerCheckConfirmed = true; // 최종 동의 완료
-      closeModal('customerCheckModalPart2'); // 두 번째 모달 닫기
-      console.log('고객 확인 사항 (2/2) 모두 동의 완료되었습니다. ✅'); // alert 대체
+      isCustomerCheckConfirmed = true;
+      closeModal('customerCheckModalPart2');
+      console.log('고객 확인 사항 (2/2) 모두 동의 완료되었습니다. ✅');
       updateAgreementConsentSectionStatus();
-      updateAgreementButtonsState(); // 고객 확인 후 버튼 비활성화
+      updateAgreementButtonsState();
+      updateNextButtonState();
     }
 
     /**
@@ -545,25 +599,41 @@
         agreementConsentCheckmark.style.display = 'inline-block';
         agreementConsentSection.classList.add('confirmed');
 
-        // 동의 완료 후 동의 섹션 축소 및 가입 내용 섹션 확장
         setTimeout(()=>{
           agreementConsentContent.classList.add('collapsed');
           agreementConsentTitle.classList.remove('rotated');
           enrollmentContentInner.classList.remove('collapsed');
           enrollmentContentTitle.classList.add('rotated');
-        },500); // 부드러운 전환을 위한 딜레이
+        },500);
+      }
+      updateNextButtonState();
+    }
+
+    /**
+     * 가입 내용 섹션의 전체적인 상태 (체크마크 표시) 업데이트
+     */
+    function updateEnrollmentContentStatus() {
+      isEnrollmentAmountFilled = enrollmentAmountInput.value.trim() !== '' && parseInt(enrollmentAmountInput.value) > 0;
+      isCurrencySelected = currencySelect.value.trim() !== '';
+      isWithdrawalEstimateLookedUp = withdrawalEstimateInput.value.trim() !== '' && withdrawalEstimateInput.value.includes('원');
+      // isWithdrawalAccountFilled는 항상 true이므로 별도 검사 불필요
+
+      if (isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled) {
+        enrollmentContentCheckmark.style.display = 'inline-block';
+        enrollmentContentSection.classList.add('confirmed');
+      } else {
+        enrollmentContentCheckmark.style.display = 'none';
+        enrollmentContentSection.classList.remove('confirmed');
       }
       updateNextButtonState();
     }
 
     // --- 이벤트 리스너 ---
 
-    // DOMContentLoaded 이벤트: 문서 로드 완료 시 UI 초기화
     document.addEventListener('DOMContentLoaded', () => {
       initializeUI();
     });
 
-    // 가입 내용 섹션 제목 클릭 시 내용 확장/축소
     document.getElementById('enrollmentContentSection')
       .querySelector('.section-title')
       .addEventListener('click', ()=>{
@@ -571,7 +641,6 @@
         enrollmentContentTitle.classList.toggle('rotated');
       });
 
-    // 동의 섹션 제목 클릭 시 내용 확장/축소 (이미 동의 완료된 경우 제외)
     agreementConsentTitle.addEventListener('click', ()=>{
       if(!agreementConsentSection.classList.contains('confirmed')){
         agreementConsentContent.classList.toggle('collapsed');
@@ -579,39 +648,59 @@
       }
     });
 
-    // '홈으로' 버튼 클릭 시 페이지 이동
     homeButton.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='/foreign0'; });
-
-    // '이전' 버튼 클릭 시 페이지 이동
     prevButton.addEventListener('click', ()=>{ window.location.href='/foreign4'; });
 
-    // '가입 완료' 버튼 클릭 시
     nextButton.addEventListener('click', ()=>{
-      if(isTermsAndExplanationsAgreed && isCustomerCheckConfirmed){
-        console.log('BNK 쇼핑환전통장 가입이 완료되었습니다! 🥳'); // alert 대체
+      if(isTermsAndExplanationsAgreed && isCustomerCheckConfirmed &&
+         isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled){
+        console.log('BNK 쇼핑환전통장 가입이 완료되었습니다! 🥳');
         window.location.href='/foreign6';
       }else{
         let m='상품 가입을 완료하려면 다음 사항을 확인해야 합니다:\\n';
         if(!isTermsAndExplanationsAgreed) m+='- 약관 및 설명서 동의\\n';
         if(!isCustomerCheckConfirmed) m+='- 고객 확인 사항 확인\\n';
-        console.log(m); // alert 대체
+        if(!(isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp)) m+='- 가입 내용을 모두 입력 및 확인\\n';
+        console.log(m);
       }
     });
 
-    // '약관 및 설명서 동의' 버튼 클릭 시 모달 열기
     document.getElementById('openTermsModalBtn').addEventListener('click', ()=>{ showTermsPage(0); openModal('termsModal'); });
-
-    // 약관 모달 내 '동의하기' (또는 '동의 및 확인 시작'/'동의 완료') 버튼 클릭 시
     document.getElementById('termsAgreeBtn').addEventListener('click', handleTermsAgreeButton);
-
-    // '고객 확인 사항 확인' 버튼 클릭 시 첫 번째 고객 확인 모달 열기
     document.getElementById('openCustomerCheckModalBtn').addEventListener('click', ()=>openModal('customerCheckModal'));
-
-    // 고객 확인 모달 (Part 1) 내 '모두 동의 (1 / 2)' 버튼 클릭 시
     customerCheckAgreeBtn.addEventListener('click', handleCustomerCheckAgreeBtn);
-
-    // 고객 확인 모달 (Part 2) 내 '모두 동의 (2 / 2)' 버튼 클릭 시
     customerCheckAgreeBtnPart2.addEventListener('click', handleCustomerCheckAgreeBtnPart2);
+
+    enrollmentAmountInput.addEventListener('input', updateEnrollmentContentStatus);
+    currencySelect.addEventListener('change', updateEnrollmentContentStatus);
+
+    lookupEstimateBtn.addEventListener('click', () => {
+      if (enrollmentAmountInput.value.trim() !== '' && currencySelect.value.trim() !== '') {
+        const amount = parseInt(enrollmentAmountInput.value);
+        const currency = currencySelect.value;
+        if (amount > 0) {
+          let estimatedAmount = 0;
+          switch(currency) {
+            case 'USD': estimatedAmount = amount * 1350; break;
+            case 'JPY': estimatedAmount = amount * 9; break;
+            case 'EUR': estimatedAmount = amount * 1450; break;
+            case 'GBP': estimatedAmount = amount * 1600; break;
+            case 'CNY': estimatedAmount = amount * 180; break;
+            case 'KRW': estimatedAmount = amount; break;
+            default: estimatedAmount = amount;
+          }
+          withdrawalEstimateInput.value = `${estimatedAmount.toLocaleString()} 원`;
+          isWithdrawalEstimateLookedUp = true;
+        } else {
+          withdrawalEstimateInput.value = '';
+          isWithdrawalEstimateLookedUp = false;
+        }
+      } else {
+        withdrawalEstimateInput.value = '';
+        isWithdrawalEstimateLookedUp = false;
+      }
+      updateEnrollmentContentStatus();
+    });
   </script>
 </body>
 </html>
