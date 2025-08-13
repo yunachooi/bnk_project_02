@@ -12,6 +12,7 @@ import com.example.bnk_project_02s.dto.UserDto;
 import com.example.bnk_project_02s.entity.User;
 import com.example.bnk_project_02s.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class UserController {
 
     private static final String LOGIN_USER = "LOGIN_USER";
     private static final String SIGNUP_DTO = "SIGNUP_DTO";
+    private static final String RETURN_TO  = "RETURN_TO";
 
     private final UserService userService;
 
@@ -69,7 +71,7 @@ public class UserController {
     public String step1Form(Model m, HttpSession session) {
         Object cached = session.getAttribute(SIGNUP_DTO);
         m.addAttribute("userDto", (cached instanceof UserDto d) ? d : new UserDto());
-        return "user/signup-step1";   // ⬅️ templates/user/signup-step1.html
+        return "user/signup-step1";
     }
 
     @PostMapping("/signup/step1")
@@ -77,16 +79,13 @@ public class UserController {
                               BindingResult binding,
                               HttpSession session) {
 
-        // 1) Bean Validation 에러 우선 처리 (@AssertTrue 포함)
         if (binding.hasErrors()) return "user/signup-step1";
 
-        // 2) 아이디 중복
         if (userService.existsByUid(dto.getUid())) {
             binding.rejectValue("uid", "duplicate", "이미 사용 중인 아이디입니다.");
             return "user/signup-step1";
         }
 
-        // 3) 주민등록번호 검증/중복
         if (!userService.isValidRrn(dto.getRrnFront(), dto.getRrnBack())) {
             binding.rejectValue("rrnFront", "format", "주민등록번호 형식이 올바르지 않습니다.");
             binding.rejectValue("rrnBack", "format", "주민등록번호 형식이 올바르지 않습니다.");
@@ -97,7 +96,6 @@ public class UserController {
             return "user/signup-step1";
         }
 
-        // 4) 휴대번호 검증/중복
         if (!userService.isValidPhone(dto.getUphone())) {
             binding.rejectValue("uphone", "format",
                 "휴대폰 형식이 올바르지 않습니다. (01로 시작, 숫자 10~11자리)");
@@ -108,7 +106,6 @@ public class UserController {
             return "user/signup-step1";
         }
 
-        // 5) 통과 → 세션 저장
         session.setAttribute(SIGNUP_DTO, dto);
         return "redirect:/user/signup/step2";
     }
@@ -119,7 +116,7 @@ public class UserController {
         UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
         if (dto == null) return "redirect:/user/signup/step1";
         m.addAttribute("userDto", dto);
-        return "user/signup-step2";   // ⬅️ templates/user/signup-step2.html
+        return "user/signup-step2";
     }
 
     @PostMapping("/signup/step2")
@@ -143,7 +140,7 @@ public class UserController {
         UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
         if (dto == null) return "redirect:/user/signup/step1";
         m.addAttribute("userDto", dto);
-        return "user/signup-step3";   // ⬅️ templates/user/signup-step3.html
+        return "user/signup-step3";
     }
 
     @PostMapping("/signup/step3")
@@ -193,44 +190,67 @@ public class UserController {
     /* ───────── 성공 페이지 ───────── */
     @GetMapping("/signup/success")
     public String signupSuccess() {
-        return "user/success";        // ⬅️ templates/user/success.html
+        return "user/success";
     }
 
     /* ───────── 로그인/로그아웃 ───────── */
     @GetMapping("/login")
-    public String loginForm() {
-        return "user/login";          // ⬅️ templates/user/login.html
+    public String loginForm(Model m) {
+        // 필요시 폼 객체 바인딩
+        if (!m.containsAttribute("userDto")) {
+            m.addAttribute("userDto", new UserDto());
+        }
+        return "user/login";
     }
 
     @PostMapping("/login")
     public String login(@RequestParam("uid") String uid,
                         @RequestParam("upw") String upw,
                         HttpSession session,
+                        HttpServletRequest request,
                         RedirectAttributes ra) {
         User user = userService.authenticate(uid, upw);
         if (user == null) {
             ra.addFlashAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
+            ra.addFlashAttribute("userDto", new UserDto()); // 필요시 uid 재바인딩
             return "redirect:/user/login";
         }
+
+        // 로그인 성공 → 세션 저장
         session.setAttribute(LOGIN_USER, user);
 
-        // 역할에 따른 뷰 분기 (템플릿 위치 기준)
-        if ("ROLE_ADMIN".equals(user.getUrole())) {
-            return "admin/adminMain"; // ⬅️ templates/admin/adminMain.html (있다면)
+        // 1) 세션의 RETURN_TO(내부 경로)로 복귀 시도
+        String dest = consumeSafeReturnTo(session);
+
+        // 2) 없으면 역할별 기본 경로
+        if (dest == null) {
+            if ("ROLE_ADMIN".equals(user.getUrole())) {
+                dest = "/admin/home";
+            } else {
+                dest = "/user/userhome";
+            }
         }
-        return "user/userMain";       // ⬅️ templates/user/userMain.html
+
+        // 항상 내부 경로로만 리다이렉트 (절대 URL 금지)
+        return "redirect:" + dest;
     }
 
     @PostMapping("/logout")
     public String logout(HttpSession session) {
-        session.invalidate();
+        if (session != null) session.invalidate();
         return "redirect:/";
     }
 
-    // (선택) 직접 진입용
-    @GetMapping("/userMain")
-    public String userMain() {
-        return "user/userMain";       // ⬅️ templates/user/userMain.html
+    /* ───────── 뷰 진입용 기본 홈 ───────── */
+    @GetMapping("/userhome")
+    public String userhome() {
+        return "user/userMain"; // 기존 템플릿명을 사용
+    }
+
+    // 관리자 기본 홈(있는 경우)
+    @GetMapping("/../admin/home") // 주의: 실제 패키지 @RequestMapping("/admin") 컨트롤러가 따로 있으면 거기서 처리하세요.
+    public String adminHomeFallback() {
+        return "admin/adminMain"; // 템플릿이 없다면 제거
     }
 
     /* ───────── push 동의 ───────── */
@@ -248,6 +268,23 @@ public class UserController {
         userService.updatePushConsent(uid, consent);
         return ResponseEntity.ok("OK");
     }
-    
-    
+
+    /* ===== 내부 유틸 ===== */
+
+    /** 세션에서 RETURN_TO를 가져오되, 내부 경로(/로 시작)만 허용. 유효하지 않으면 null */
+    private String consumeSafeReturnTo(HttpSession session) {
+        if (session == null) return null;
+        Object obj = session.getAttribute(RETURN_TO);
+        session.removeAttribute(RETURN_TO);
+        if (!(obj instanceof String s) || !StringUtils.hasText(s)) return null;
+
+        // 내부 경로만 허용 (예: /mypage/info?tab=1)
+        if (!s.startsWith("/")) return null;
+
+        // 로그인/회원가입 같은 경로는 목적지로 사용하지 않음
+        if (s.startsWith("/user/login") || s.startsWith("/user/signup") || s.startsWith("/user/logout")) {
+            return null;
+        }
+        return s;
+    }
 }
