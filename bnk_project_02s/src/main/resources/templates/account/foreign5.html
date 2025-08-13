@@ -7,38 +7,58 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    /* 공통 리셋 */
+    * { box-sizing: border-box; }
+
+    /* ===== Pixel 8(412x915) 및 웹뷰 대응 공통 ===== */
+    html, body { height:100%; }
     body { font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; overflow-x:hidden; }
+
     .container {
-      max-width:500px; margin:0 auto; background:#fff; min-height:100vh; display:flex; flex-direction:column;
-      border-radius:1rem; box-shadow:0 4px 12px rgba(0,0,0,.05); overflow:hidden;
+      width:100%;
+      max-width:none;
+      min-height:100svh;
+      margin:0 auto;
+      background:#fff;
+      display:flex; flex-direction:column;
+      border-radius:0;
+      box-shadow:none;
+      overflow:hidden;
     }
+
     header { flex:none; }
     .bottom-bar {
       flex:none; width:100%; background:#fff; border-top:1px solid #e2e8f0; padding:.75rem 1rem; gap:.5rem;
       box-shadow:0 -4px 12px rgba(0,0,0,.03); display:flex; justify-content:space-around; z-index:10;
     }
-    .bottom-bar button { flex:1; padding:.75rem 1rem; border-radius:.75rem; font-weight:600; font-size:.95rem; transition:.2s; box-shadow:0 2px 6px rgba(0,0,0,.1); }
+    .bottom-bar button {
+      flex:1; padding:.75rem 1rem; border-radius:.75rem; font-weight:600; font-size:.95rem; transition:.2s; box-shadow:0 2px 6px rgba(0,0,0,.1);
+      min-height:48px;
+    }
     .bottom-bar button:active { transform:scale(.98); }
 
-    .main-content { flex:1; padding:.75rem; display:flex; flex-direction:column; gap:1rem; overflow-y:auto; }
+    .main-content { flex:1; padding:.75rem; display:flex; flex-direction:column; gap:.9rem; overflow-y:auto; }
     .section-block { background:#fff; border-radius:.75rem; box-shadow:0 4px 12px rgba(0,0,0,.05); display:flex; flex-direction:column; overflow:hidden; }
-    .section-title { font-size:1rem; font-weight:600; color:#374151; display:flex; align-items:center; justify-content:space-between; padding:1.5rem; }
-    .section-title .checkmark { color:#10b981; font-size:1.2rem; margin-left:.5rem; display:none; }
-    .section-title .title-text { display:flex; align-items:center; flex:1; }
-    .form-group { margin-bottom:1rem; }
-    .form-group label { display:block; font-size:.9rem; font-weight:500; color:#4b5563; margin-bottom:.5rem; }
-    .form-group input, .form-group select {
-      width:100%; padding:.75rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:1rem; color:#374151; background:#f9fafb;
-    }
-    .form-group input:focus, .form-group select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,.2); }
-    .form-group input[readonly]{ background:#e5e7eb; cursor:not-allowed; }
-    #encouragementMessage { white-space:pre-wrap; font-size:1rem; }
+    .section-title { font-size:.95rem; font-weight:700; color:#374151; display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; }
+    .section-title .checkmark { color:#10b981; font-size:1.1rem; margin-left:.5rem; display:none; }
+    .section-title .title-text { display:flex; align-items:center; flex:1; min-width:0; }
 
-    .section-content { max-height:1000px; overflow:hidden; transition:max-height .5s ease-out; }
+    .form-group { margin-bottom:.7rem; }                    /* 여백 살짝 줄임 */
+    .form-group label { display:block; font-size:.85rem; font-weight:600; color:#4b5563; margin-bottom:.45rem; }
+    .form-group input, .form-group select {
+      width:100%; padding:.65rem .9rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem; color:#374151; background:#f9fafb;
+      min-width:0;
+    }
+    .form-group input:focus, .form-group select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,.18); }
+    .form-group input[readonly]{ background:#e5e7eb; cursor:not-allowed; }
+
+    #encouragementMessage { white-space:pre-wrap; font-size:.95rem; }
+
+    .section-content { max-height:1000px; overflow:hidden; transition:max-height .35s ease-out; }
     .section-content.collapsed { max-height:0; }
-    .section-content-inner { padding:1.5rem; }
+    .section-content-inner { padding:1rem 1.25rem; }
     .section-block.collapsible .section-title { cursor:pointer; }
-    .section-block.collapsible .section-title .toggle-icon { transition:transform .3s ease; display:inline-block; }
+    .section-block.collapsible .section-title .toggle-icon { transition:transform .25s ease; display:inline-block; }
     .section-block.collapsible .section-title.rotated .toggle-icon { transform:rotate(180deg); }
     .section-block.collapsible.confirmed .section-title .toggle-icon { display:none; }
 
@@ -46,108 +66,118 @@
     .step-indicator { display:flex; width:100%; height:4px; background:#e0e0e0; border-radius:2px; overflow:hidden; margin-top:.5rem; }
     .step-indicator-progress { width:66.66%; height:100%; background:#2563eb; }
 
-    /* MODAL (Full-screen style) */
+    /* ===== 모달 ===== */
     .modal-overlay {
       position:fixed; inset:0; background:rgba(0,0,0,.6);
       display:flex; align-items:center; justify-content:center; z-index:1000;
-      opacity:0; visibility:hidden; transition:opacity .3s ease, visibility .3s ease;
+      opacity:0; visibility:hidden; transition:opacity .25s ease, visibility .25s ease;
     }
     .modal-overlay.active { opacity:1; visibility:visible; }
     .modal-content {
       background:#fff; border-radius:.75rem; box-shadow:0 8px 20px rgba(0,0,0,.2);
-      width:96vw; height:92vh; display:flex; flex-direction:column; overflow:hidden;
-      transform:translateY(20px); transition:transform .3s ease;
+      width:96vw; max-width:430px;
+      height:92svh;
+      display:flex; flex-direction:column; overflow:hidden; margin:auto;
+      transform:translateY(18px); transition:transform .25s ease;
     }
     .modal-overlay.active .modal-content { transform:translateY(0); }
-    .modal-header { padding:1rem 1.25rem; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-weight:600; color:#374151; }
+    .modal-header { padding:0.85rem 1rem; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-weight:700; color:#374151; font-size:.95rem; }
     .modal-body { flex:1; padding:0; overflow:hidden; }
-    .modal-footer { padding:.75rem 1.25rem; border-top:1px solid #e2e8f0; display:flex; justify-content:center; gap:1rem; }
-    .modal-close-button { background:none; border:none; font-size:1.5rem; color:#9ca3af; cursor:pointer; line-height:1; }
+    .modal-footer { padding:.65rem 1rem; border-top:1px solid #e2e8f0; display:flex; justify-content:center; gap:.75rem; }
+    .modal-close-button { background:none; border:none; font-size:1.35rem; color:#9ca3af; cursor:pointer; line-height:1; }
     .modal-close-button:hover { color:#4b5563; }
-    .modal-button { padding:.75rem 1.5rem; border-radius:.5rem; font-weight:600; font-size:.95rem; transition:background-color .2s ease, transform .2s ease; }
+    .modal-button { padding:.7rem 1.2rem; border-radius:.5rem; font-weight:700; font-size:.9rem; transition:background-color .2s ease, transform .2s ease; min-height:44px; }
     .modal-button.primary { background:#2563eb; color:#fff; border:none; }
     .modal-button.primary:hover { background:#1d4ed8; }
+    .modal-button:disabled { cursor: not-allowed; opacity: .6; }
 
-    /* Terms pages fill modal height */
+    /* 약관 페이지 */
     .terms-page { display:none; height:100%; flex-direction:column; }
     .terms-page.active { display:flex; height:100%; }
+    .terms-page h4 { margin-top:1rem; margin-bottom:.7rem; }
 
-    /* Summary page scrollable */
-    .summary-scroll { padding:1rem 1.25rem; overflow:auto; -webkit-overflow-scrolling:touch; flex-grow: 1; }
+    /* 요약 스크롤 (1페이지는 스크롤 제거) */
+    .summary-scroll {
+      padding:1rem;
+      padding-bottom:9rem;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      flex-grow:1;
+    }
+    #termsPage1 .summary-scroll { overflow:hidden; padding-bottom:1rem; }
+
     .summary-list { list-style:none; padding:0; margin:0; }
     .summary-list li {
       background:#fff;
       border:2px solid #3b82f6;
       border-radius:.75rem;
-      padding:1rem; margin-bottom:.75rem; color:#4b5563; line-height:1.5;
+      padding:.9rem; margin-bottom:.7rem; color:#4b5563; line-height:1.5;
       box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
-    .summary-num { font-weight:800; color:#111827; margin-right:.5rem; }
-    .summary-title { font-weight:700; color:#111827; }
-    .summary-content { display:block; margin-top:.35rem; }
+    .summary-num { font-weight:800; color:#111827; margin-right:.45rem; }
+    .summary-title { font-weight:800; color:#111827; }
+    .summary-content { display:block; margin-top:.3rem; }
 
-    /* PDF viewer fills remaining space */
+    /* PDF iframe */
     .pdf-viewer-iframe {
-      flex:1 1 auto;
-      width:100%;
-      height:100%; /* Ensures it takes full available height within its flex container */
-      border: 1px solid #e0e0e0; /* Subtle border for better visual separation */
-      border-radius: .5rem; /* Rounded corners */
-      box-shadow: 0 2px 8px rgba(0,0,0,.05); /* Soft shadow */
-      background-color: #fff; /* Explicitly white background */
+      flex:1 1 auto; width:100%;
+      height: calc(92svh - 120px);
+      border:1px solid #e0e0e0; border-radius:.5rem; box-shadow:0 2px 8px rgba(0,0,0,.05); background:#fff;
     }
 
-    /* Custom scrollable content within list item */
-    .scrollable-content-wrapper {
-      max-height: 70vh; /* Increased height for customer check item 4 scroll */
-      overflow-y: auto;
-      padding-right: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    .scrollable-content-wrapper p,
-    .scrollable-content-wrapper ul {
-      margin-bottom: 0.75rem;
-    }
-    .scrollable-content-wrapper p:last-child,
-    .scrollable-content-wrapper ul:last-child {
-      margin-bottom: 0;
-    }
-    .scrollable-content-wrapper h4 {
-      font-weight: 600;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-      margin-top: 1rem;
-      text-align: center; /* Contract title center alignment */
-    }
-    .scrollable-content-wrapper h4:first-child {
-      margin-top: 0;
+    .scrollable-content-wrapper { max-height: 65svh; overflow-y:auto; padding-right:.5rem; margin-top:.5rem; }
+
+    .grouped-content-box { background:#fff; border:2px solid #3b82f6; border-radius:.75rem; padding:1rem; margin-bottom:.7rem; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .grouped-content-box h4 { margin-top:0!important; }
+    .grouped-content-box ul { margin-left:1.1rem; list-style:disc; }
+    .grouped-content-box ul li { border:none; box-shadow:none; background:none; padding:0; margin-bottom:.25rem; }
+
+    .section-title-spacing { margin-top:1rem; }
+
+    /* 전자서명 */
+    .signature-consent { display:flex; align-items:center; margin-top:1rem; margin-bottom:.7rem; padding:.9rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:.5rem; }
+    .signature-consent input[type="checkbox"] { margin-right:.65rem; width:1.2rem; height:1.2rem; min-width:1.2rem; min-height:1.2rem; border-radius:.25rem; accent-color:#2563eb; cursor:pointer; }
+    .signature-consent label { font-size:.92rem; color:#374151; font-weight:600; cursor:pointer; flex:1; }
+
+    #signatureCanvas { border:1px solid #d1d5db; background:#fff; border-radius:.5rem; touch-action:none; }
+
+    /* 입력 그룹 */
+    .input-group-container {
+      display:flex; flex-direction:column; gap:.4rem;        /* 내부 간격 축소 → ‘빈 공간’ 제거 */
+      margin-bottom:1rem; padding:1rem;
+      border:1px solid #e5e7eb; border-radius:.75rem; background:#f9fafb;
     }
 
-    /* Grouped content box style */
-    .grouped-content-box {
-        background:#fff;
-        border:2px solid #3b82f6;
-        border-radius:.75rem;
-        padding:1rem;
-        margin-bottom:0.75rem;
-        box-shadow:0 2px 8px rgba(0,0,0,.08);
+    /* 환산 영역 */
+    .currency-conversion-display {
+      display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap;
+      margin-top:.1rem;                                                  /* 위 여백 최소화 */
     }
-    .grouped-content-box h4 {
-      margin-top: 0 !important;
+    .currency-conversion-display > * { min-width:0; }
+
+    .input-amount { flex:2 1 0; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem; color:#374151; background:#f9fafb; text-align:right; }
+    .currency-select { flex:1.5 1 0; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem; color:#374151; background:#f9fafb; }
+    .equals-sign { flex:0 0 auto; text-align:center; font-size:1.3rem; font-weight:800; color:#4b5563; }
+    .krw-display { flex:2 1 280px; display:flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; background:#e5e7eb; color:#374151; font-size:.95rem; font-weight:700; cursor:not-allowed; }
+    .krw-display img { width:22px; height:22px; }
+
+    .benefit-badge { font-size:.85rem; font-weight:800; color:#dc2626; margin-top:.25rem; }  /* 빨간 안내 */
+
+    @media (max-width: 480px) {
+      .currency-conversion-display { gap:.5rem; }
+      .currency-select, .input-amount { flex:1 1 0; }
+      .equals-sign { flex-basis:100%; order:3; }
+      .krw-display { flex-basis:100%; order:4; }
     }
-    .grouped-content-box ul {
-      margin-left: 1.25rem;
-      list-style: disc;
-    }
-    .grouped-content-box ul li {
-        border: none;
-        box-shadow: none;
-        background: none;
-        padding: 0;
-        margin-bottom: 0.25rem;
-    }
-    .grouped-content-box ul li:last-child {
-        margin-bottom: 0;
+
+    @media (max-width: 420px) {
+      .section-title { font-size:.92rem; padding:.9rem 1rem; }
+      .main-content { padding:.65rem; gap:.8rem; }
+      .form-group input, .form-group select { font-size:.9rem; padding:.6rem .85rem; }
+      .modal-content { width:98vw; max-width:420px; height:92svh; border-radius:.5rem; }
+      .pdf-viewer-iframe { height: calc(92svh - 112px); }
+      .bottom-bar { padding:.6rem .75rem; gap:.5rem; }
+      .bottom-bar button { font-size:.88rem; padding:.65rem .8rem; min-height:48px; }
     }
   </style>
 </head>
@@ -174,7 +204,7 @@
 
       <!-- 동의 섹션 -->
       <div id="agreementConsentSection" class="section-block collapsible">
-        <h2 class="section-title">
+        <h2 class="section-title section-title-spacing"> 
           <span class="title-text">가입 관련 동의 <span id="agreementConsentCheckmark" class="checkmark">✔</span></span>
           <svg id="agreementConsentToggleIcon" class="toggle-icon h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </h2>
@@ -194,30 +224,51 @@
         </h2>
         <div id="enrollmentContentInner" class="section-content">
           <div class="section-content-inner">
-            <div class="form-group">
-              <label for="enrollmentAmount">가입 금액</label>
-              <input type="number" id="enrollmentAmount" placeholder="가입 금액을 입력해주세요">
+            <div class="input-group-container">
+              <!-- 통화 먼저 → 금액 -->
+              <div class="form-group">
+                <label for="currencySelect">가입할 통화</label>
+                <select id="currencySelect" class="currency-select w-full">
+                  <option value="">통화를 선택하세요</option>
+                  <!-- 환전 가능 통화(목록) -->
+                  <option value="USD">USD(미국)</option>
+                  <option value="JPY100">JPY100(일본)</option>
+                  <option value="TWD">TWD(대만)</option>
+                  <option value="SGD">SGD(싱가포르)</option>
+                  <option value="IDR100">IDR100(인도네시아)</option>
+                  <option value="CNY">CNY(중국)</option>
+                  <option value="THB">THB(태국)</option>
+                  <option value="PHP">PHP(필리핀)</option>
+                  <option value="HKD">HKD(홍콩)</option>
+                  <option value="MYR">MYR(말레이시아)</option>
+                  <option value="NZD">NZD(뉴질랜드)</option>
+                  <option value="AUD">AUD(호주)</option>
+                  <option value="CAD">CAD(캐나다)</option>
+                  <option value="CHF">CHF(스위스)</option>
+                  <option value="GBP">GBP(영국)</option>
+                  <option value="EUR">EUR(유럽연합)</option>
+                </select>
+              </div>
+
+              <div class="form-group mb-0">
+                <label for="enrollmentAmount">가입금액</label>
+                <input type="number" id="enrollmentAmount" class="input-amount w-full" placeholder="금액">
+              </div>
+
+              <div class="currency-conversion-display">
+                <span class="equals-sign">=</span>
+                <div id="krwDisplay" class="krw-display">
+                  <img src="https://placehold.co/24x24/cccccc/white?text=KRW" alt="KRW Flag">
+                  <span>대한민국 KRW</span>
+                  <span id="withdrawalEstimateAmount" class="ml-auto">0 원</span>
+                </div>
+              </div>
+              <div id="benefitNotice" class="benefit-badge">환율 우대 50% 적용 중</div>
+              <button id="lookupEstimateBtn" class="w-full bg-blue-500 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-600 transition-colors">조회하기</button>
             </div>
-            <div class="form-group">
-              <label for="currencySelect">통화 선택</label>
-              <select id="currencySelect">
-                <option value="">통화를 선택해주세요</option>
-                <option value="USD">USD - 미국 달러</option>
-                <option value="JPY">JPY - 일본 엔</option>
-                <option value="EUR">EUR - 유로</option>
-                <option value="GBP">GBP - 영국 파운드</option>
-                <option value="CNY">CNY - 중국 위안</option>
-                <option value="KRW">KRW - 대한민국 원</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="withdrawalEstimate">원화출금 예상액 조회</label>
-              <input type="text" id="withdrawalEstimate" placeholder="조회하기 버튼을 눌러주세요" readonly>
-              <button id="lookupEstimateBtn" class="w-full bg-gray-200 text-gray-700 py-2 mt-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors">조회하기</button>
-            </div>
+
             <div class="form-group">
               <label for="withdrawalAccount">출금 계좌</label>
-              <!-- 출금 계좌를 입력 필드로 변경 및 readonly 설정 -->
               <input type="text" id="withdrawalAccount" value="BNK부산은행 112-4567-7890-01" readonly class="bg-gray-200 cursor-not-allowed">
             </div>
           </div>
@@ -240,7 +291,7 @@
         <button class="modal-close-button" onclick="closeModal('termsModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <!-- Page 1: 요약본 -->
+        <!-- Page 1: 요약본 (스크롤 없음) -->
         <div id="termsPage1" class="terms-page active">
           <div class="summary-scroll">
             <h4 class="font-bold text-gray-800 text-lg mb-4 text-center">요약본</h4>
@@ -269,27 +320,21 @@
           </div>
         </div>
 
-        <!-- Page 2 -->
+        <!-- Page 2~5 -->
         <div id="termsPage2" class="terms-page">
-          <!-- H4 tag will be dynamically added here by JS for centering -->
+          <h4 class="font-bold text-gray-800 text-lg mb-4 text-center"></h4>
           <iframe src="https://drive.google.com/file/d/1GClaAcMVQeXwKBSUZDZD-CrrCMWC2PJd/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
-
-        <!-- Page 3 -->
         <div id="termsPage3" class="terms-page">
-          <!-- H4 tag will be dynamically added here by JS for centering -->
+          <h4 class="font-bold text-gray-800 text-lg mb-4 text-center"></h4>
           <iframe src="https://drive.google.com/file/d/15wwn9df-I70sL1TSLHv5m9KHFWOS1yuZ/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
-
-        <!-- Page 4 -->
         <div id="termsPage4" class="terms-page">
-          <!-- H4 tag will be dynamically added here by JS for centering -->
+          <h4 class="font-bold text-gray-800 text-lg mb-4 text-center"></h4>
           <iframe src="https://drive.google.com/file/d/1iI2juipDYmW_Ok9c_VGhaHtXi8OEpGIC/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
-
-        <!-- Page 5 -->
         <div id="termsPage5" class="terms-page">
-          <!-- H4 tag will be dynamically added here by JS for centering -->
+          <h4 class="font-bold text-gray-800 text-lg mb-4 text-center"></h4>
           <iframe src="https://drive.google.com/file/d/10RBKoscPB6Zz93y476Hg12GNZ44Le6tT/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
         </div>
       </div>
@@ -322,7 +367,7 @@
             <li>
               <span class="summary-num">3.</span>
               <span class="summary-title">약관 및 상품설명서 이해</span><br>
-              <span class="summary-content">금융회사는 「금융소비자보호에 관한 법률 (시행일 2021.03.25)」 제19조(설명의무)에 따라 예금상품의 중요한 사항을 소비자가 이해할 수 있도록 설명해야 하며, 동법 제23조(계약서류의 제공의무)에 따라 금융소비자에게 지체없이 제공해야 합니다. 본인은 약관 및 상품설명서의 주요내용에 대하여 충분히 이해하였습니다.</span>
+              <span class="summary-content">금융회사는 「금융소비자보호에 관한 법률」 제19조(설명의무)에 따라 예금상품의 중요한 사항을 소비자가 이해할 수 있도록 설명해야 하며, 동법 제23조(계약서류의 제공의의무)에 따라 금융소비자에게 지체없이 제공해야 합니다. 본인은 약관 및 상품설명서의 주요내용에 대하여 충분히 이해하였습니다.</span>
             </li>
           </ul>
         </div>
@@ -362,18 +407,15 @@
                     <li>계약기간, 이자의 지급시기 및 지급제한 사유</li>
                     <li>이자율(기본+우대), 중도해지이자율, 만기해지이자율, 만기후이자율, 수익률 및 산출근거 등</li>
                     <li>수수료 등 부대비용, 일반 금융소비자 계약해지 시 불이익</li>
-                    <li>이용 제한사항(계좌이체 제한 등)</li> <!-- 추가된 내용 -->
-                    <li>인용한 자료의 출처</li> <!-- 추가된 내용 -->
+                    <li>이용 제한사항(계좌이체 제한 등)</li>
+                    <li>인용한 자료의 출처</li>
                   </ul>
                 </div>
-
                 <div class="grouped-content-box mt-2">
                   <h4 class="font-semibold text-gray-800">연계제휴</h4>
                   <ul class="list-disc text-gray-700">
-                    <li>연계, 제휴서비스 등의 내용</li>
-                    <li>연계, 제휴서비스 등의 이행책임에 관한 사항</li>
-                    <li>연계, 제휴서비스 등의 제공기간</li>
-                    <li>연계, 제휴서비스 등의 내용변경 및 그 사유 등을 일반금융소비자에게 알린다는 사실 및 그 고지방법 등 내용</li>
+                    <li>연계/제휴서비스의 내용 및 제공기간</li>
+                    <li>이행책임 및 내용변경 시 고지방법</li>
                   </ul>
                 </div>
                 <p class="summary-content mt-4 text-center">
@@ -392,8 +434,63 @@
     </div>
   </div>
 
+  <!-- 필수 서류 받기 모달 -->
+  <div id="sendDocumentsModal" class="modal-overlay hidden">
+    <div class="modal-content w-4/5 h-auto max-h-[80svh] m-auto">
+      <div class="modal-header">
+        <h3>필수 서류 받기</h3>
+        <button id="sendDocumentsModalCloseX" class="modal-close-button" disabled>&times;</button>
+      </div>
+      <div class="modal-body p-4 text-center">
+        <p class="text-gray-700 text-lg mb-6">필수 서류를 어떤 방식으로<br>받으시겠어요?</p>
+        <div class="form-group mb-4">
+          <label for="smsNumberInput" class="text-left">휴대폰 번호</label>
+          <input type="tel" id="smsNumberInput" class="w-full" placeholder="예: 01012345678" inputmode="numeric" pattern="[0-9]*">
+          <button id="sendBySmsBtn" class="modal-button bg-blue-500 text-white mt-3 hover:bg-blue-600 w-full">문자로 받기</button>
+        </div>
+        <div class="form-group mb-4">
+          <label for="emailAddressInput" class="text-left">이메일 주소</label>
+          <input type="email" id="emailAddressInput" class="w-full" placeholder="예: yourname@example.com">
+          <button id="sendByEmailBtn" class="modal-button bg-blue-500 text-white mt-3 hover:bg-blue-600 w-full">이메일로 받기</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="sendDocumentsModalCloseBtn" class="modal-button bg-gray-200 text-gray-700 hover:bg-gray-300" disabled>닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전자서명 모달 -->
+  <div id="electronicSignatureModal" class="modal-overlay hidden">
+    <div class="modal-content w-4/5 h-auto max-h-[80svh]">
+      <div class="modal-header">
+        <h3>전자서명</h3>
+        <button class="modal-close-button" onclick="closeModal('electronicSignatureModal')">&times;</button>
+      </div>
+      <div class="modal-body p-4 flex flex-col items-center justify-center">
+        <p class="text-gray-700 text-base mb-4 text-center">
+          위 약관 및 고객 확인 사항에 동의하며,<br>본 상품 가입 전자서명을 진행합니다.
+        </p>
+        <canvas id="signatureCanvas" width="300" height="150" class="border border-gray-300 rounded-lg shadow-sm mb-3"></canvas>
+        <button id="clearSignatureBtn" class="modal-button bg-red-400 text-white hover:bg-red-500 mb-3">서명 지우기</button>
+
+        <div class="signature-consent">
+          <input type="checkbox" id="signatureConsentCheckbox">
+          <label for="signatureConsentCheckbox">본인은 위 서류를 확인하고<br>전자서명에 동의합니다.</label>
+        </div>
+        <p class="text-sm text-gray-500 mt-2 text-center">
+          전자서명 완료 버튼 클릭 시,<br>고객님의 동의가 최종 확인됩니다.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button id="completeElectronicSignatureBtn" class="modal-button primary" disabled>전자서명 완료</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // DOM 요소 참조
+    /* ===== 스크립트 ===== */
+
     const homeButton = document.querySelector('header a');
     const prevButton = document.getElementById('prevButton');
     const nextButton = document.getElementById('nextButton');
@@ -413,7 +510,7 @@
 
     const enrollmentAmountInput = document.getElementById('enrollmentAmount');
     const currencySelect = document.getElementById('currencySelect');
-    const withdrawalEstimateInput = document.getElementById('withdrawalEstimate');
+    const krwDisplayAmount = document.getElementById('withdrawalEstimateAmount');
     const lookupEstimateBtn = document.getElementById('lookupEstimateBtn');
     const withdrawalAccountInput = document.getElementById('withdrawalAccount');
 
@@ -427,55 +524,72 @@
     const customerCheckModalPart2 = document.getElementById('customerCheckModalPart2');
     const customerCheckAgreeBtnPart2 = document.getElementById('customerCheckAgreeBtnPart2');
 
+    const sendDocumentsModal = document.getElementById('sendDocumentsModal');
+    const smsNumberInput = document.getElementById('smsNumberInput');
+    const emailAddressInput = document.getElementById('emailAddressInput');
+    const sendBySmsBtn = document.getElementById('sendBySmsBtn');
+    const sendByEmailBtn = document.getElementById('sendByEmailBtn');
+    const sendDocumentsModalCloseBtn = document.getElementById('sendDocumentsModalCloseBtn');
+    const sendDocumentsModalCloseX = document.getElementById('sendDocumentsModalCloseX');
 
-    // 상태 변수
+    const electronicSignatureModal = document.getElementById('electronicSignatureModal');
+    const signatureCanvas = document.getElementById('signatureCanvas');
+    const signatureCtx = signatureCanvas.getContext('2d');
+    const clearSignatureBtn = document.getElementById('clearSignatureBtn');
+    const signatureConsentCheckbox = document.getElementById('signatureConsentCheckbox');
+    const completeElectronicSignatureBtn = document.getElementById('completeElectronicSignatureBtn');
+
     let isTermsAndExplanationsAgreed = false;
     let isCustomerCheckConfirmed = false;
+    let isElectronicSignatureCompleted = false;
+    let isSignatureDrawn = false;
     let isEnrollmentAmountFilled = false;
     let isCurrencySelected = false;
     let isWithdrawalEstimateLookedUp = false;
-    let isWithdrawalAccountFilled = true; // 출금 계좌는 자동 입력되므로 기본값 true
+    let isWithdrawalAccountFilled = true;
+    let hasDeliveredDocuments = false;
 
     let termsCurrentPage = 0;
+    const totalTermsPagesCount = 5;
 
-    // 약관 모달 페이지별 제목
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
     const termsBaseTitles = [
       '약관 및 설명서 요약',
       '상품별적용약관',
       '외화보통예금 상품설명서',
       '설명의무관련확인서(차명거래금지에 관한 설명)',
-      '개인(신용)정보 수집이용제공조회동의서(비대면 계좌개설 안심차단)'
+      '개인(신용)정보 수집·이용·제공·조회 동의서<br>(비대면 계좌개설 안심차단)'
     ];
 
-    /**
-     * 초기 UI 상태 설정
-     */
+    const googleDriveFileUrls = [
+      "https://drive.google.com/file/d/1GClaAcMVQeXwKBSUZDZD-CrrCMWC2PJd/view?usp=sharing",
+      "https://drive.google.com/file/d/15wwn9df-I70sL1TSLHv5m9KHFWOS1yuZ/view?usp=sharing",
+      "https://drive.google.com/file/d/1iI2juipDYmW_Ok9c_VGhaHtXi8OEpGIC/view?usp=sharing",
+      "https://drive.google.com/file/d/10RBKoscPB6Zz93y476Hg12GNZ44Le6tT/ view?usp=sharing"
+    ];
+
     function initializeUI() {
       encouragementMessageDiv.textContent = '중요한 내용이니 꼼꼼히 확인해 주세요! 😎';
-
       agreementConsentContent.classList.remove('collapsed');
       agreementConsentTitle.classList.add('rotated');
-
       enrollmentContentInner.classList.add('collapsed');
-      enrollmentContentTitle.classList.remove('rotated'); 
-      
+      enrollmentContentTitle.classList.remove('rotated');
       updateNextButtonState();
       updateAgreementConsentSectionStatus();
       updateAgreementButtonsState();
       updateEnrollmentContentStatus();
     }
 
-    /**
-     * '다음' 버튼 활성화/비활성화 상태 및 응원 메시지 업데이트
-     */
     function updateNextButtonState() {
-      if (isTermsAndExplanationsAgreed && isCustomerCheckConfirmed &&
+      if (isTermsAndExplanationsAgreed && isElectronicSignatureCompleted &&
           isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp) {
         nextButton.disabled = false;
         nextButton.classList.remove('bg-gray-400','cursor-not-allowed');
         nextButton.classList.add('bg-blue-600','hover:bg-blue-700');
         nextButton.textContent = '다음으로';
-        // 두 번째 응원 문구 변경 및 줄바꿈 적용
         encouragementMessageDiv.textContent = '모든 정보가 입력되었습니다! 🎉\n마지막 단계로 이동해 주세요.';
       } else {
         nextButton.disabled = true;
@@ -486,74 +600,61 @@
       }
     }
 
-    /**
-     * 약관 및 고객 확인 버튼의 활성화/비활성화 상태를 개별적으로 관리
-     */
     function updateAgreementButtonsState() {
-      if (isTermsAndExplanationsAgreed) {
-        openTermsModalBtn.disabled = true;
-        openTermsModalBtn.classList.remove('bg-blue-500','hover:bg-blue-600');
-        openTermsModalBtn.classList.add('bg-gray-400','cursor-not-allowed');
-      } else {
-        openTermsModalBtn.disabled = false;
-        openTermsModalBtn.classList.add('bg-blue-500','hover:bg-blue-600');
-        openTermsModalBtn.classList.remove('bg-gray-400','cursor-not-allowed');
-      }
+      openTermsModalBtn.disabled = !!isTermsAndExplanationsAgreed;
+      openCustomerCheckModalBtn.disabled = !!isElectronicSignatureCompleted;
 
-      if (isCustomerCheckConfirmed) {
-        openCustomerCheckModalBtn.disabled = true;
-        openCustomerCheckModalBtn.classList.remove('bg-blue-500','hover:bg-blue-600');
-        openCustomerCheckModalBtn.classList.add('bg-gray-400','cursor-not-allowed');
-      } else {
-        openCustomerCheckModalBtn.disabled = false;
-        openCustomerCheckModalBtn.classList.add('bg-blue-500','hover:bg-blue-600');
-        openCustomerCheckModalBtn.classList.remove('bg-gray-400','cursor-not-allowed');
-      }
+      openTermsModalBtn.classList.toggle('bg-gray-400', !!isTermsAndExplanationsAgreed);
+      openTermsModalBtn.classList.toggle('cursor-not-allowed', !!isTermsAndExplanationsAgreed);
+
+      openCustomerCheckModalBtn.classList.toggle('bg-gray-400', !!isElectronicSignatureCompleted);
+      openCustomerCheckModalBtn.classList.toggle('cursor-not-allowed', !!isElectronicSignatureCompleted);
     }
 
-    /**
-     * 모달창 열기
-     * @param {string} id - 열고자 하는 모달의 ID
-     */
-    function openModal(id){ const el=document.getElementById(id); el.classList.add('active'); el.classList.remove('hidden'); }
+    function openModal(id){
+      const el=document.getElementById(id);
+      el.classList.add('active');
+      el.classList.remove('hidden');
+      if (id === 'electronicSignatureModal') initializeSignaturePad();
+      if (id === 'sendDocumentsModal') {
+        sendDocumentsModalCloseBtn.disabled = !hasDeliveredDocuments;
+        sendDocumentsModalCloseX.disabled = !hasDeliveredDocuments;
+      }
+    }
+    function closeModal(id){
+      const el=document.getElementById(id);
+      el.classList.remove('active');
+      setTimeout(()=>el.classList.add('hidden'),250);
+    }
 
-    /**
-     * 모달창 닫기
-     * @param {string} id - 닫고자 하는 모달의 ID
-     */
-    function closeModal(id){ const el=document.getElementById(id); el.classList.remove('active'); setTimeout(()=>el.classList.add('hidden'),300); }
-
-    /**
-     * 약관 모달 페이지 전환
-     * @param {number} idx - 보여줄 페이지의 인덱스
-     */
     function showTermsPage(idx){
       termsPages.forEach((p,i)=>p.classList.toggle('active', i===idx));
-      termsModalTitle.textContent = `약관 및 설명서 동의 (${idx + 1} / ${termsPages.length})`;
-
       const currentPageElement = termsPages[idx];
-      const currentTitle = termsBaseTitles[idx];
-      // 첫 페이지는 요약본이므로 기존 h4를 사용하고, 나머지 페이지에 h4를 동적으로 추가
-      if (idx > 0 && !currentPageElement.querySelector('h4')) {
-        const h4Element = document.createElement('h4');
-        h4Element.classList.add('font-bold', 'text-gray-800', 'text-lg', 'mb-4', 'text-center'); // 가운데 정렬 추가
-        h4Element.textContent = currentTitle;
-        currentPageElement.prepend(h4Element);
-      } else if (idx === 0) {
-        // 첫 페이지의 기존 h4에도 가운데 정렬 적용
-        currentPageElement.querySelector('h4').classList.add('text-center');
-      }
-      
+
       if (idx === 0) {
+        termsModalTitle.textContent = `약관 및 설명서 동의 (1 / ${totalTermsPagesCount})`;
         termsAgreeBtn.textContent = '동의 및 확인 시작';
       } else {
-        termsAgreeBtn.textContent = (idx === termsPages.length - 1) ? '동의 완료' : '동의하기';
+        termsModalTitle.textContent = `약관 및 설명서 동의 (${idx + 1} / ${totalTermsPagesCount})`;
+        termsAgreeBtn.textContent = (idx === termsPages.length - 1) ? `동의 (4 / 4)` : `동의 (${idx} / 4)`;
+      }
+
+      let h4Element = currentPageElement.querySelector('h4');
+      const currentTitle = [
+        '약관 및 설명서 요약','상품별적용약관','외화보통예금 상품설명서','설명의무관련확인서(차명거래금지에 관한 설명)','개인(신용)정보 수집·이용·제공·조회 동의서<br>(비대면 계좌개설 안심차단)'
+      ][idx];
+      if (idx > 0) {
+        if (!h4Element) {
+          h4Element = document.createElement('h4');
+          h4Element.classList.add('font-bold','text-gray-800','text-lg','mb-4','text-center');
+          currentPageElement.prepend(h4Element);
+        }
+        h4Element.innerHTML = currentTitle;
+      } else if (idx === 0 && h4Element) {
+        h4Element.classList.add('text-center');
       }
     }
 
-    /**
-     * 약관 동의 버튼 클릭 핸들러
-     */
     function handleTermsAgreeButton(){
       termsCurrentPage++;
       if(termsCurrentPage < termsPages.length){
@@ -561,63 +662,57 @@
       } else {
         isTermsAndExplanationsAgreed = true;
         closeModal('termsModal');
-        console.log('약관 및 설명서 동의가 완료되었습니다. ✅');
         termsCurrentPage = 0;
-        showTermsPage(termsCurrentPage); // 페이지 상태 초기화
+        showTermsPage(termsCurrentPage);
         updateAgreementConsentSectionStatus();
         updateAgreementButtonsState();
         updateNextButtonState();
+        openModal('sendDocumentsModal');
       }
     }
 
-    /**
-     * 고객 확인 사항 동의 (Part 1) 버튼 클릭 핸들러
-     */
     function handleCustomerCheckAgreeBtn(){
       closeModal('customerCheckModal');
       openModal('customerCheckModalPart2');
-      console.log('고객 확인 사항 (1/2) 동의 완료. 다음 단계로 이동합니다.');
     }
 
-    /**
-     * 고객 확인 사항 동의 (Part 2) 버튼 클릭 핸들러
-     */
     function handleCustomerCheckAgreeBtnPart2(){
-      isCustomerCheckConfirmed = true;
       closeModal('customerCheckModalPart2');
-      console.log('고객 확인 사항 (2/2) 모두 동의 완료되었습니다. ✅');
-      updateAgreementConsentSectionStatus();
-      updateAgreementButtonsState();
-      updateNextButtonState();
+      openModal('electronicSignatureModal');
     }
 
-    /**
-     * 동의 섹션의 전체적인 상태 (체크마크 표시, 섹션 확장/축소) 업데이트
-     */
+    function handleCompleteElectronicSignature(){
+      if (signatureConsentCheckbox.checked && isSignatureDrawn) {
+        isElectronicSignatureCompleted = true;
+        isCustomerCheckConfirmed = true;
+        closeModal('electronicSignatureModal');
+        updateAgreementConsentSectionStatus();
+        updateAgreementButtonsState();
+        updateNextButtonState();
+      } else {
+        if (!signatureConsentCheckbox.checked && !isSignatureDrawn) showInfoModal('전자서명을 완료하려면 서명을 그리고 동의 체크박스에 체크해주세요.');
+        else if (!signatureConsentCheckbox.checked) showInfoModal('전자서명을 완료하려면 동의 체크박스에 체크해주세요.');
+        else if (!isSignatureDrawn) showInfoModal('전자서명을 완료하려면 서명을 그려주세요.');
+      }
+    }
+
     function updateAgreementConsentSectionStatus(){
-      if(isTermsAndExplanationsAgreed && isCustomerCheckConfirmed){
+      if(isTermsAndExplanationsAgreed && isElectronicSignatureCompleted){
         agreementConsentCheckmark.style.display = 'inline-block';
         agreementConsentSection.classList.add('confirmed');
-
         setTimeout(()=>{
           agreementConsentContent.classList.add('collapsed');
           agreementConsentTitle.classList.remove('rotated');
           enrollmentContentInner.classList.remove('collapsed');
           enrollmentContentTitle.classList.add('rotated');
-        },500);
+        },350);
       }
       updateNextButtonState();
     }
 
-    /**
-     * 가입 내용 섹션의 전체적인 상태 (체크마크 표시) 업데이트
-     */
     function updateEnrollmentContentStatus() {
       isEnrollmentAmountFilled = enrollmentAmountInput.value.trim() !== '' && parseInt(enrollmentAmountInput.value) > 0;
       isCurrencySelected = currencySelect.value.trim() !== '';
-      isWithdrawalEstimateLookedUp = withdrawalEstimateInput.value.trim() !== '' && withdrawalEstimateInput.value.includes('원');
-      // isWithdrawalAccountFilled는 항상 true이므로 별도 검사 불필요
-
       if (isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled) {
         enrollmentContentCheckmark.style.display = 'inline-block';
         enrollmentContentSection.classList.add('confirmed');
@@ -628,18 +723,125 @@
       updateNextButtonState();
     }
 
-    // --- 이벤트 리스너 ---
+    /* === 서류 전송 (하나만 성공해도 닫기/X 버튼 활성화) === */
+    function enableSendModalCloseButtons() {
+      hasDeliveredDocuments = true;
+      sendDocumentsModalCloseBtn.disabled = false;
+      sendDocumentsModalCloseX.disabled = false;
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initializeUI();
+    async function sendDocumentsBySms() {
+      const phoneNumber = smsNumberInput.value.trim();
+      if (!phoneNumber) { showInfoModal('휴대폰 번호를 입력해주세요.'); return; }
+      const message = `BNK 쇼핑환전통장 필수 서류입니다:\n${googleDriveFileUrls.join('\n')}`;
+      showInfoModal('서류 전송 중...');
+      try {
+        await new Promise(r => setTimeout(r, 800));
+        console.log(`[SMS 전송(시뮬레이션)] ${phoneNumber}\n${message}`);
+        showInfoModal(`필수 서류가\n${phoneNumber}(으)로\n전송되었습니다.`);
+        enableSendModalCloseButtons();
+      } catch (e) {
+        showInfoModal('SMS 전송에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+
+    async function sendDocumentsByEmail() {
+      const emailAddress = emailAddressInput.value.trim();
+      if (!emailAddress || !emailAddress.includes('@')) { showInfoModal('유효한 이메일 주소를 입력해주세요.'); return; }
+      const subject = 'BNK 쇼핑환전통장 필수 서류입니다.';
+      const body = `BNK 쇼핑환전통장 가입에 필요한 필수 서류를 보내드립니다.\n\n${googleDriveFileUrls.join('\n')}\n\n감사합니다.`;
+      showInfoModal('서류 전송 중...');
+      try {
+        await new Promise(r => setTimeout(r, 800));
+        console.log(`[이메일 전송(시뮬레이션)] ${emailAddress}\n${subject}\n${body}`);
+        showInfoModal(`필수 서류가\n${emailAddress}(으)로\n전송되었습니다.`);
+        enableSendModalCloseButtons();
+      } catch (e) {
+        showInfoModal('이메일 전송에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+
+    // 닫기 버튼/ X 버튼: 활성화되면 실제로 닫히도록
+    sendDocumentsModalCloseBtn.addEventListener('click', () => {
+      if (!sendDocumentsModalCloseBtn.disabled) closeModal('sendDocumentsModal');
+    });
+    sendDocumentsModalCloseX.addEventListener('click', () => {
+      if (!sendDocumentsModalCloseX.disabled) closeModal('sendDocumentsModal');
     });
 
-    document.getElementById('enrollmentContentSection')
-      .querySelector('.section-title')
-      .addEventListener('click', ()=>{
-        enrollmentContentInner.classList.toggle('collapsed');
-        enrollmentContentTitle.classList.toggle('rotated');
-      });
+    function showInfoModal(message) {
+      const modalId = 'infoModal';
+      let infoModal = document.getElementById(modalId);
+      if (!infoModal) {
+        infoModal = document.createElement('div');
+        infoModal.id = modalId;
+        infoModal.classList.add('modal-overlay','hidden');
+        infoModal.innerHTML = `
+          <div class="modal-content w-4/5 h-auto max-h-[80svh] m-auto">
+            <div class="modal-header">
+              <h3>안내</h3>
+              <button class="modal-close-button" onclick="closeModal('${modalId}')">&times;</button>
+            </div>
+            <div class="modal-body p-4 text-gray-700 whitespace-pre-wrap text-center">
+              <p id="infoModalMessage" class="info-modal-text-center"></p>
+            </div>
+            <div class="modal-footer">
+              <button class="modal-button primary" onclick="closeModal('${modalId}')">확인</button>
+            </div>
+          </div>`;
+        document.body.appendChild(infoModal);
+      }
+      document.getElementById('infoModalMessage').textContent = message;
+      openModal(modalId);
+    }
+
+    /* === 서명 패드 === */
+    function initializeSignaturePad() {
+      const bodyEl = electronicSignatureModal.querySelector('.modal-body');
+      const w = Math.min(bodyEl.clientWidth - 32, 320);
+      signatureCanvas.width = w;
+      signatureCanvas.height = 150;
+      signatureCtx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);
+      signatureCtx.lineWidth = 2;
+      signatureCtx.lineCap = 'round';
+      signatureCtx.strokeStyle = '#000';
+      isSignatureDrawn = false;
+      updateSignatureButtonState();
+    }
+
+    function startDrawing(e) {
+      e.preventDefault();
+      isDrawing = true;
+      const { clientX, clientY } = e.touches ? e.touches[0] : e;
+      const rect = signatureCanvas.getBoundingClientRect();
+      lastX = clientX - rect.left; lastY = clientY - rect.top;
+    }
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const { clientX, clientY } = e.touches ? e.touches[0] : e;
+      const rect = signatureCanvas.getBoundingClientRect();
+      const x = clientX - rect.left; const y = clientY - rect.top;
+      signatureCtx.beginPath(); signatureCtx.moveTo(lastX,lastY); signatureCtx.lineTo(x,y); signatureCtx.stroke();
+      lastX = x; lastY = y;
+      if (!isSignatureDrawn) { isSignatureDrawn = true; updateSignatureButtonState(); }
+    }
+    function stopDrawing() { isDrawing = false; }
+    function clearSignature() { signatureCtx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height); isSignatureDrawn = false; updateSignatureButtonState(); }
+    function updateSignatureButtonState() {
+      completeElectronicSignatureBtn.disabled = !(signatureConsentCheckbox.checked && isSignatureDrawn);
+      completeElectronicSignatureBtn.classList.toggle('bg-gray-400', completeElectronicSignatureBtn.disabled);
+      completeElectronicSignatureBtn.classList.toggle('cursor-not-allowed', completeElectronicSignatureBtn.disabled);
+      completeElectronicSignatureBtn.classList.toggle('bg-blue-500', !completeElectronicSignatureBtn.disabled);
+      completeElectronicSignatureBtn.classList.toggle('hover:bg-blue-600', !completeElectronicSignatureBtn.disabled);
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeUI);
+
+    document.getElementById('enrollmentContentSection').querySelector('.section-title').addEventListener('click', ()=>{
+      enrollmentContentInner.classList.toggle('collapsed');
+      enrollmentContentTitle.classList.toggle('rotated');
+    });
 
     agreementConsentTitle.addEventListener('click', ()=>{
       if(!agreementConsentSection.classList.contains('confirmed')){
@@ -651,55 +853,135 @@
     homeButton.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='/foreign0'; });
     prevButton.addEventListener('click', ()=>{ window.location.href='/foreign4'; });
 
-    nextButton.addEventListener('click', ()=>{
-      if(isTermsAndExplanationsAgreed && isCustomerCheckConfirmed &&
-         isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled){
-        console.log('BNK 쇼핑환전통장 가입이 완료되었습니다! 🥳');
-        window.location.href='/foreign6';
-      }else{
-        let m='상품 가입을 완료하려면 다음 사항을 확인해야 합니다:\\n';
-        if(!isTermsAndExplanationsAgreed) m+='- 약관 및 설명서 동의\\n';
-        if(!isCustomerCheckConfirmed) m+='- 고객 확인 사항 확인\\n';
-        if(!(isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp)) m+='- 가입 내용을 모두 입력 및 확인\\n';
-        console.log(m);
-      }
-    });
+    // ===== 환율 계산 =====
+    // USD만 실시간, 우대율 50% 적용(기본 스프레드 2.4% 가정 → 1.2% 적용)
+    const BASE_SPREAD = 0.024;     // 고시 스프레드(가정)
+    const DISCOUNT_RATE = 0.5;     // 우대율 50%
+    const EFFECTIVE_SPREAD = BASE_SPREAD * (1 - DISCOUNT_RATE); // 0.012
 
+    const unitFactorByOption = { 'JPY100': 100, 'IDR100': 100 }; // 100단위 표기
+    const codeFromOption = (opt) => opt.replace('100','');
+
+    const fallbackRatesToKRW = { // 비-USD는 임시 고정치(대략값)
+      'USD': 1350, 'JPY': 13.5, 'TWD': 45, 'SGD': 1000, 'IDR': 0.09, 'CNY': 180,
+      'THB': 38, 'PHP': 25, 'HKD': 170, 'MYR': 290, 'NZD': 850, 'AUD': 900,
+      'CAD': 980, 'CHF': 1500, 'GBP': 1600, 'EUR': 1450
+    };
+
+    async function getUsdKrwMid() {
+      try {
+        const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=KRW', { cache:'no-store' });
+        if(!res.ok) throw new Error('rate fetch failed');
+        const data = await res.json();
+        const mid = data?.rates?.KRW;
+        if (typeof mid !== 'number') throw new Error('invalid rate');
+        return mid;
+      } catch(e) {
+        return fallbackRatesToKRW['USD'];
+      }
+    }
+
+    async function lookupEstimate() {
+      const amount = parseInt(enrollmentAmountInput.value);
+      const optionValue = currencySelect.value;
+
+      if (!(amount > 0) || !optionValue) {
+        krwDisplayAmount.textContent = '0 원';
+        isWithdrawalEstimateLookedUp = false;
+        showInfoModal('가입 금액과 통화를 모두 입력(선택)하고 0보다 큰 값을 입력해주세요.');
+        updateEnrollmentContentStatus();
+        return;
+      }
+
+      const code = codeFromOption(optionValue);
+
+      // USD만 정확 계산
+      if (code === 'USD') {
+        const mid = await getUsdKrwMid();                 // 1 USD의 중간환율(KRW)
+        const applied = mid * (1 + EFFECTIVE_SPREAD);     // 우대 50% 반영된 매입환율
+        const estimatedKRW = Math.round(amount * applied);
+        krwDisplayAmount.textContent = `${estimatedKRW.toLocaleString()} 원`;
+        isWithdrawalEstimateLookedUp = true;
+        updateEnrollmentContentStatus();
+        return;
+      }
+
+      // 그 외 통화는 목록만 – 간단 안내 및 대략치(고정) 표시(선택에 따른 숫자 감만 제공)
+      const unit = unitFactorByOption[optionValue] || 1;
+      const perUnit = (fallbackRatesToKRW[code] || 0) * unit;
+      const approx = Math.round(amount * perUnit);
+      krwDisplayAmount.textContent = `${approx.toLocaleString()} 원`;
+      isWithdrawalEstimateLookedUp = false; // 정확 계산 아님 → 다음으로 진행 막음
+      updateEnrollmentContentStatus();
+      showInfoModal('현재 USD만 실시간/정확 계산을 지원합니다.\n다른 통화는 목록 선택만 가능합니다.');
+    }
+
+    // 이벤트 바인딩
     document.getElementById('openTermsModalBtn').addEventListener('click', ()=>{ showTermsPage(0); openModal('termsModal'); });
     document.getElementById('termsAgreeBtn').addEventListener('click', handleTermsAgreeButton);
     document.getElementById('openCustomerCheckModalBtn').addEventListener('click', ()=>openModal('customerCheckModal'));
     customerCheckAgreeBtn.addEventListener('click', handleCustomerCheckAgreeBtn);
     customerCheckAgreeBtnPart2.addEventListener('click', handleCustomerCheckAgreeBtnPart2);
 
-    enrollmentAmountInput.addEventListener('input', updateEnrollmentContentStatus);
-    currencySelect.addEventListener('change', updateEnrollmentContentStatus);
+    signatureConsentCheckbox.addEventListener('change', updateSignatureButtonState);
+    completeElectronicSignatureBtn.addEventListener('click', handleCompleteElectronicSignature);
 
-    lookupEstimateBtn.addEventListener('click', () => {
-      if (enrollmentAmountInput.value.trim() !== '' && currencySelect.value.trim() !== '') {
-        const amount = parseInt(enrollmentAmountInput.value);
-        const currency = currencySelect.value;
-        if (amount > 0) {
-          let estimatedAmount = 0;
-          switch(currency) {
-            case 'USD': estimatedAmount = amount * 1350; break;
-            case 'JPY': estimatedAmount = amount * 9; break;
-            case 'EUR': estimatedAmount = amount * 1450; break;
-            case 'GBP': estimatedAmount = amount * 1600; break;
-            case 'CNY': estimatedAmount = amount * 180; break;
-            case 'KRW': estimatedAmount = amount; break;
-            default: estimatedAmount = amount;
-          }
-          withdrawalEstimateInput.value = `${estimatedAmount.toLocaleString()} 원`;
-          isWithdrawalEstimateLookedUp = true;
-        } else {
-          withdrawalEstimateInput.value = '';
-          isWithdrawalEstimateLookedUp = false;
-        }
-      } else {
-        withdrawalEstimateInput.value = '';
-        isWithdrawalEstimateLookedUp = false;
+    signatureCanvas.addEventListener('mousedown', startDrawing);
+    signatureCanvas.addEventListener('mousemove', draw);
+    signatureCanvas.addEventListener('mouseup', stopDrawing);
+    signatureCanvas.addEventListener('mouseout', stopDrawing);
+    signatureCanvas.addEventListener('touchstart', startDrawing, {passive:false});
+    signatureCanvas.addEventListener('touchmove', draw, {passive:false});
+    signatureCanvas.addEventListener('touchend', stopDrawing);
+
+    clearSignatureBtn.addEventListener('click', clearSignature);
+
+    enrollmentAmountInput.addEventListener('input', ()=>{ isWithdrawalEstimateLookedUp = false; updateEnrollmentContentStatus(); });
+    currencySelect.addEventListener('change', ()=>{ isWithdrawalEstimateLookedUp = false; updateEnrollmentContentStatus(); });
+
+    lookupEstimateBtn.addEventListener('click', lookupEstimate);
+
+    // 서류 전송
+    sendBySmsBtn.addEventListener('click', sendDocumentsBySms);
+    sendByEmailBtn.addEventListener('click', sendDocumentsByEmail);
+
+    // 모달 오픈 시 닫기 버튼 상태 동기화
+    const originalOpenModal = openModal;
+    openModal = function(id) {
+      originalOpenModal(id);
+      if (id === 'sendDocumentsModal') {
+        sendDocumentsModalCloseBtn.disabled = !hasDeliveredDocuments;
+        sendDocumentsModalCloseX.disabled = !hasDeliveredDocuments;
       }
-      updateEnrollmentContentStatus();
+    };
+
+    // ===== 다음 페이지로 값 전달 (sessionStorage) =====
+    nextButton.addEventListener('click', ()=>{
+      if(isTermsAndExplanationsAgreed && isElectronicSignatureCompleted &&
+         isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled){
+
+        let signatureDataUrl = '';
+        try { signatureDataUrl = signatureCanvas.toDataURL('image/png'); } catch(e) {}
+
+        const payload = {
+          currencyDisplay: currencySelect.value,                     // 예: USD, JPY100
+          amount: parseInt(enrollmentAmountInput.value),
+          krwEstimate: parseInt((krwDisplayAmount.textContent || '0').replace(/[^\d]/g,'')),
+          benefitApplied: 50,
+          timestamp: new Date().toISOString(),
+          signatureDataUrl
+        };
+        sessionStorage.setItem('bnkEnrollmentData', JSON.stringify(payload));
+        window.location.href='/foreign6';
+      } else {
+        let msg = '상품 가입을 완료하려면 다음 사항을 확인해야 합니다:\n';
+        if(!isTermsAndExplanationsAgreed) msg += '- 약관 및 설명서 동의\n';
+        if(!isElectronicSignatureCompleted) msg += '- 고객 확인 사항 및 전자서명 완료\n';
+        if(!isEnrollmentAmountFilled) msg += '- 가입 금액을 입력해주세요.\n';
+        if(!isCurrencySelected) msg += '- 통화를 선택해주세요.\n';
+        if(!isWithdrawalEstimateLookedUp) msg += '- 원화출금 예상액(USD 기준)을 조회해주세요.\n';
+        showInfoModal(msg);
+      }
     });
   </script>
 </body>
