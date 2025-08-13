@@ -3,20 +3,16 @@ package com.example.bnk_project_02s.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.bnk_project_02s.dto.UserDto;
 import com.example.bnk_project_02s.entity.User;
 import com.example.bnk_project_02s.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.Data;
@@ -28,8 +24,8 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private static final String LOGIN_USER = "LOGIN_USER";
-    private static final String RETURN_TO  = "RETURN_TO";
     private static final String SIGNUP_DTO = "SIGNUP_DTO";
+    private static final String RETURN_TO  = "RETURN_TO";
 
     private final UserService userService;
 
@@ -37,11 +33,12 @@ public class UserController {
     @GetMapping("/check-uid")
     @ResponseBody
     public String checkUid(@RequestParam("uid") String uid) {
+        if (!StringUtils.hasText(uid)) return "ID를 입력하세요.";
         boolean exists = userService.existsByUid(uid);
         return exists ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
     }
 
-    /* ───────── 중복확인: 주민등록번호(RRN) ───────── */
+    /* ───────── 중복확인: 주민등록번호 ───────── */
     @GetMapping("/check-rrn")
     @ResponseBody
     public String checkRrn(@RequestParam("front") String rrnFront,
@@ -53,7 +50,7 @@ public class UserController {
         return exists ? "이미 등록된 주민등록번호입니다." : "사용 가능한 주민등록번호입니다.";
     }
 
-    /* ───────── 중복확인: 휴대번호(Phone, HMAC) ───────── */
+    /* ───────── 중복확인: 휴대번호 ───────── */
     @GetMapping("/check-phone")
     @ResponseBody
     public String checkPhone(@RequestParam("phone") String phone) {
@@ -66,7 +63,9 @@ public class UserController {
 
     /* ───────── 멀티스텝: step1 ───────── */
     @GetMapping("/signup")
-    public String signupRedirect() { return "redirect:/user/signup/step1"; }
+    public String signupRedirect() {
+        return "redirect:/user/signup/step1";
+    }
 
     @GetMapping("/signup/step1")
     public String step1Form(Model m, HttpSession session) {
@@ -79,30 +78,27 @@ public class UserController {
     public String step1Submit(@Valid @ModelAttribute("userDto") UserDto dto,
                               BindingResult binding,
                               HttpSession session) {
+
         if (binding.hasErrors()) return "user/signup-step1";
 
-        // 비밀번호 일치
-        if (!dto.isPwMatched()) {
-            binding.rejectValue("confirmUpw", "mismatch", "비밀번호가 일치하지 않습니다.");
-            return "user/signup-step1";
-        }
-        // 아이디 중복
         if (userService.existsByUid(dto.getUid())) {
             binding.rejectValue("uid", "duplicate", "이미 사용 중인 아이디입니다.");
             return "user/signup-step1";
         }
-        // ★ 주민등록번호 검증/중복
+
         if (!userService.isValidRrn(dto.getRrnFront(), dto.getRrnBack())) {
             binding.rejectValue("rrnFront", "format", "주민등록번호 형식이 올바르지 않습니다.");
+            binding.rejectValue("rrnBack", "format", "주민등록번호 형식이 올바르지 않습니다.");
             return "user/signup-step1";
         }
         if (userService.isRrnDuplicate(dto.getRrnFront(), dto.getRrnBack())) {
-            binding.rejectValue("rrnFront", "duplicate", "이미 등록된 주민등록번호입니다.");
+            binding.rejectValue("rrnBack", "duplicate", "이미 등록된 주민등록번호입니다.");
             return "user/signup-step1";
         }
-        // ★ 휴대번호 검증/중복 (AES/HMAC 저장은 서비스에서 처리)
+
         if (!userService.isValidPhone(dto.getUphone())) {
-            binding.rejectValue("uphone", "format", "휴대폰 형식이 올바르지 않습니다. (01로 시작, 숫자 10~11자리)");
+            binding.rejectValue("uphone", "format",
+                "휴대폰 형식이 올바르지 않습니다. (01로 시작, 숫자 10~11자리)");
             return "user/signup-step1";
         }
         if (userService.isPhoneDuplicate(dto.getUphone())) {
@@ -150,74 +146,118 @@ public class UserController {
     @PostMapping("/signup/step3")
     public String step3Submit(@ModelAttribute("userDto") UserDto form,
                               HttpSession session,
-                              RedirectAttributes ra) {
+                              RedirectAttributes ra,
+                              Model model) {
         UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
         if (dto == null) return "redirect:/user/signup/step1";
 
         dto.setUinterest(form.getUinterest());
-        String uid = userService.signup(dto); // 서비스에서 BCrypt + RRN AES/HMAC + Phone AES/HMAC 저장
-        session.removeAttribute(SIGNUP_DTO);
-        ra.addFlashAttribute("signupOk", true);
-        ra.addFlashAttribute("uid", uid);
-        return "redirect:/user/signup/success";
+
+        try {
+            String uid = userService.signup(dto); // BCrypt + RRN AES/HMAC + Phone AES/HMAC 저장
+            session.removeAttribute(SIGNUP_DTO);
+            ra.addFlashAttribute("signupOk", true);
+            ra.addFlashAttribute("uid", uid);
+            return "redirect:/user/signup/success";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("userDto", dto);
+            model.addAttribute("error", e.getMessage());
+            return "user/signup-step3";
+        } catch (Exception e) {
+            model.addAttribute("userDto", dto);
+            model.addAttribute("error", "가입 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+            return "user/signup-step3";
+        }
     }
 
     @GetMapping("/signup/step3/skip")
-    public String step3Skip(HttpSession session, RedirectAttributes ra) {
+    public String step3Skip(HttpSession session, RedirectAttributes ra, Model model) {
         UserDto dto = (UserDto) session.getAttribute(SIGNUP_DTO);
         if (dto == null) return "redirect:/user/signup/step1";
-        String uid = userService.signup(dto);
-        session.removeAttribute(SIGNUP_DTO);
-        ra.addFlashAttribute("signupOk", true);
-        ra.addFlashAttribute("uid", uid);
-        return "redirect:/user/signup/success";
+        try {
+            String uid = userService.signup(dto);
+            session.removeAttribute(SIGNUP_DTO);
+            ra.addFlashAttribute("signupOk", true);
+            ra.addFlashAttribute("uid", uid);
+            return "redirect:/user/signup/success";
+        } catch (Exception e) {
+            model.addAttribute("userDto", dto);
+            model.addAttribute("error", "가입 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+            return "user/signup-step3";
+        }
     }
 
     /* ───────── 성공 페이지 ───────── */
     @GetMapping("/signup/success")
-    public String signupSuccess() { return "user/success"; }
+    public String signupSuccess() {
+        return "user/success";
+    }
 
     /* ───────── 로그인/로그아웃 ───────── */
     @GetMapping("/login")
-    public String loginForm() { return "user/login"; }
+    public String loginForm(Model m) {
+        // 필요시 폼 객체 바인딩
+        if (!m.containsAttribute("userDto")) {
+            m.addAttribute("userDto", new UserDto());
+        }
+        return "user/login";
+    }
 
-    // ROLE_ADMIN -> admin/adminMain, 그 외 -> user/userMain
     @PostMapping("/login")
     public String login(@RequestParam("uid") String uid,
                         @RequestParam("upw") String upw,
                         HttpSession session,
+                        HttpServletRequest request,
                         RedirectAttributes ra) {
         User user = userService.authenticate(uid, upw);
         if (user == null) {
             ra.addFlashAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
+            ra.addFlashAttribute("userDto", new UserDto()); // 필요시 uid 재바인딩
             return "redirect:/user/login";
         }
+
+        // 로그인 성공 → 세션 저장
         session.setAttribute(LOGIN_USER, user);
-        if ("ROLE_ADMIN".equals(user.getUrole())) {
-            return "admin/adminMain";
-        } else {
-            return "user/userMain";
+
+        // 1) 세션의 RETURN_TO(내부 경로)로 복귀 시도
+        String dest = consumeSafeReturnTo(session);
+
+        // 2) 없으면 역할별 기본 경로
+        if (dest == null) {
+            if ("ROLE_ADMIN".equals(user.getUrole())) {
+                dest = "/admin/home";
+            } else {
+                dest = "/user/userhome";
+            }
         }
+
+        // 항상 내부 경로로만 리다이렉트 (절대 URL 금지)
+        return "redirect:" + dest;
     }
 
     @PostMapping("/logout")
     public String logout(HttpSession session) {
-        session.invalidate();
+        if (session != null) session.invalidate();
         return "redirect:/";
     }
 
-    // 필요하면 GET 진입용 라우트도 추가 가능 (선택)
-    @GetMapping("/userMain")
-    public String userMain() { return "user/userMain"; }
-
+    /* ───────── 뷰 진입용 기본 홈 ───────── */
     @GetMapping("/userhome")
-    public String userhome() { return "user/userhome"; }
-    
-    //push 동의알림 관련
+    public String userhome() {
+        return "user/userMain"; // 기존 템플릿명을 사용
+    }
+
+    // 관리자 기본 홈(있는 경우)
+    @GetMapping("/../admin/home") // 주의: 실제 패키지 @RequestMapping("/admin") 컨트롤러가 따로 있으면 거기서 처리하세요.
+    public String adminHomeFallback() {
+        return "admin/adminMain"; // 템플릿이 없다면 제거
+    }
+
+    /* ───────── push 동의 ───────── */
     @Data
     static class PushConsentReq {
-      private String uid;
-      private boolean consent;
+        private String uid;
+        private boolean consent;
     }
 
     @PostMapping("/push-consent")
@@ -227,5 +267,24 @@ public class UserController {
             @RequestParam("consent") boolean consent) {
         userService.updatePushConsent(uid, consent);
         return ResponseEntity.ok("OK");
+    }
+
+    /* ===== 내부 유틸 ===== */
+
+    /** 세션에서 RETURN_TO를 가져오되, 내부 경로(/로 시작)만 허용. 유효하지 않으면 null */
+    private String consumeSafeReturnTo(HttpSession session) {
+        if (session == null) return null;
+        Object obj = session.getAttribute(RETURN_TO);
+        session.removeAttribute(RETURN_TO);
+        if (!(obj instanceof String s) || !StringUtils.hasText(s)) return null;
+
+        // 내부 경로만 허용 (예: /mypage/info?tab=1)
+        if (!s.startsWith("/")) return null;
+
+        // 로그인/회원가입 같은 경로는 목적지로 사용하지 않음
+        if (s.startsWith("/user/login") || s.startsWith("/user/signup") || s.startsWith("/user/logout")) {
+            return null;
+        }
+        return s;
     }
 }
