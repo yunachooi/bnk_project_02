@@ -1,8 +1,300 @@
-<!-- templates/admin/dashboard.html -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="content">
-  <h2>고객 정보 관리</h2>
+  <style>
+    /* ===== 대시보드와 동일한 헤더 박스 ===== */
+    :root{
+      --card:#fff; --border:#e6efff; --primary-600:#2563eb; --primary-700:#1d4ed8; --primary-900:#1e3a8a;
+      --shadow:0 12px 26px rgba(37,99,235,.12); --text:#0f172a;
+    }
+    .cm-wrap{padding:16px 24px 24px}
+    .dashboard-header{
+      display:flex;align-items:center;justify-content:space-between;
+      background:var(--card);border:1px solid var(--border);border-left:4px solid var(--primary-600);
+      border-radius:14px;padding:14px 16px;margin:10px 0 16px;box-shadow:var(--shadow);
+    }
+    .dashboard-header h2{margin:0;font-size:22px;font-weight:800;color:var(--primary-900)}
+    .report-toolbar button{
+      appearance:none;border:1px solid var(--primary-600);background:var(--primary-600);
+      color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;
+      box-shadow:0 8px 16px rgba(37,99,235,.18);transition:.18s ease;
+    }
+    .report-toolbar button:hover{background:var(--primary-700);border-color:var(--primary-700);transform:translateY(-1px)}
 
+    /* ===== 검색 바 ===== */
+    .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0 12px}
+    .in{height:34px;min-width:240px;padding:0 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+    .btn{appearance:none;cursor:pointer;border:1px solid var(--primary-600);background:var(--primary-600);color:#fff;
+         padding:7px 12px;border-radius:10px;font-weight:700}
+    .btn.outline{background:#fff;color:var(--primary-600)}
+
+    /* ===== 테이블 카드 + 표(가로 스크롤 금지) ===== */
+    .table-card{background:#fff;border:1px solid #e9eefb;border-radius:12px;box-shadow:0 1px 3px rgba(9,30,66,.05)}
+    .customer-table{
+      width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed;
+      font-size:13px; color:var(--text);
+    }
+    .customer-table thead th{
+      position:sticky;top:0;z-index:1;background:linear-gradient(180deg,#f8fafc,#eef5ff);
+      color:#0f1f48;font-weight:800;font-size:12px;letter-spacing:.2px;text-align:left;
+      border-bottom:1px solid #e6efff;padding:8px 8px;white-space:nowrap
+    }
+    .customer-table tbody td{
+      padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;
+    }
+    .customer-table tbody tr:hover{background:#f8fbff}
+
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.2px}
+
+    /* ==== 컬럼 폭(한 화면에 수납되도록 고정) ==== */
+    .customer-table col.col-uid   { width:84px; }
+    .customer-table col.col-name  { width:110px; }
+    .customer-table col.col-rrn   { width:140px; }
+    .customer-table col.col-phone { width:140px; }
+    .customer-table col.col-g     { width:46px; }
+    .customer-table col.col-birth { width:110px; }
+    .customer-table col.col-cur   { width:100px; }
+    .customer-table col.col-int   { width:160px; }
+    .customer-table col.col-check { width:80px; }
+    .customer-table col.col-loc   { width:80px; }
+    .customer-table col.col-push  { width:80px; }
+    .customer-table col.col-pushd { width:120px; }
+    .customer-table col.col-act   { width:120px; } /* 관리 버튼 공간 */
+
+    .btn.small{padding:5px 8px;border-radius:8px;font-size:12px}
+    .btn.danger{background:#fff;border:1px solid #ef4444;color:#ef4444}
+    .btn.danger:hover{background:#fee2e2}
+
+    .pag{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:10px}
+    .muted{color:#64748b}
+  </style>
+
+  <!-- CSRF (있으면 삭제/등록에 사용) -->
+  <meta name="_csrf" th:content="${_csrf?.token}">
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+
+  <div class="cm-wrap">
+    <!-- 대시보드와 동일한 제목 박스 -->
+    <div class="dashboard-header">
+      <h2>고객 정보 관리</h2>
+      <div class="report-toolbar">
+        <button type="button" onclick="openDrawer()">+ 신규등록</button>
+      </div>
+    </div>
+
+    <!-- 검색 -->
+    <div class="toolbar">
+      <input id="q" class="in" placeholder="이름/아이디 검색" />
+      <input id="phone" class="in"
+             placeholder="휴대폰(동등검색, 숫자만)"
+             inputmode="numeric"
+             oninput="this.value=this.value.replace(/\D/g,'')" />
+      <button class="btn" onclick="loadUsers(0)">검색</button>
+      <button class="btn outline" onclick="resetSearch()">리셋</button>
+    </div>
+
+    <!-- 표 -->
+    <div class="table-card">
+      <table class="customer-table">
+        <colgroup>
+          <col class="col-uid"><col class="col-name"><col class="col-rrn"><col class="col-phone">
+          <col class="col-g"><col class="col-birth"><col class="col-cur"><col class="col-int">
+          <col class="col-check"><col class="col-loc"><col class="col-push"><col class="col-pushd"><col class="col-act">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>UID</th><th>이름</th><th>주민번호(복호)</th><th>휴대폰(복호)</th><th>성별</th>
+            <th>생년월일</th><th>관심통화</th><th>관심분야</th><th>상품가입</th><th>위치동의여부</th>
+            <th>푸시동의</th><th>푸시일자</th><th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="customer-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="pag">
+      <button class="btn outline" onclick="prevPage()">이전</button>
+      <span id="pageInfo" class="muted"></span>
+      <button class="btn outline" onclick="nextPage()">다음</button>
+    </div>
+  </div>
+
+  <!-- 우측 드로어(등록/수정) -->
+  <aside id="custDrawer" class="drawer"
+         aria-hidden="true"
+         style="display:none;position:fixed;top:0;right:0;bottom:0;width:460px;max-width:92vw;background:#fff;border-left:1px solid #e5e7eb;box-shadow:-16px 0 32px rgba(2,6,23,.15);padding:16px;overflow:auto;z-index:50">
+    <h3 id="drawerTitle" style="margin:0 0 8px;font-size:18px;font-weight:800;color:#0f1f48">고객 등록</h3>
+    <div class="form-row" style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+      <label>UID <input id="f_uid" class="in" /></label>
+      <span class="muted">수정 시 UID는 변경할 수 없습니다.</span>
+      <label>비밀번호 <input id="f_upw" type="password" class="in" /></label>
+      <label>이름 <input id="f_uname" class="in" /></label>
+      <label>성별(M/F) <input id="f_ugender" class="in" /></label>
+      <label>생년월일(YYYY-MM-DD) <input id="f_ubirth" class="in" /></label>
+      <label>주민번호(숫자13자리/6-7) <input id="f_rrn" class="in" inputmode="numeric" /></label>
+      <label>휴대폰(숫자만) <input id="f_phone" class="in" inputmode="numeric" /></label>
+      <label>관심통화 <input id="f_ucurrency" class="in" /></label>
+      <label>관심분야 <input id="f_uinterest" class="in" /></label>
+      <label>상품가입여부 <input id="f_ucheck" class="in" /></label>
+      <label>위치동의여부 <input id="f_ulocation" class="in" /></label>
+      <label>푸시동의(Y/N) <input id="f_upush" class="in" /></label>
+      <label>푸시일자(YYYY-MM-DD) <input id="f_upushdate" class="in" /></label>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+        <button class="btn outline" onclick="closeDrawer()">닫기</button>
+        <button class="btn" onclick="saveUser()">저장</button>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const USERS_API = '/api/admin/user';
+    let curPage = 0, totalPages = 0, editingUid = null;
+
+    function resetSearch(){
+      const qEl = document.getElementById('q');
+      if (qEl) qEl.value = '';
+      document.getElementById('phone').value='';
+      loadUsers(0);
+    }
+
+    function loadUsers(page){
+      curPage = page;
+      const qEl = document.getElementById('q');
+      const q = encodeURIComponent(qEl ? (qEl.value || '') : '');
+      const phone = encodeURIComponent((document.getElementById('phone').value||'').replace(/\D/g,''));
+      const qs = [`page=${page}`,'size=10'];
+      if(q) qs.push(`q=${q}`);
+      if(phone) qs.push(`phone=${phone}`);
+
+      fetch(`${USERS_API}?${qs.join('&')}`)
+        .then(r=>r.json())
+        .then(d=>{
+          const tbody = document.getElementById('customer-tbody');
+          tbody.innerHTML = '';
+          (d.content||[]).forEach(it=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="mono" title="${it.uid??''}">${it.uid??''}</td>
+              <td title="${it.uname??''}">${it.uname??''}</td>
+              <td class="mono" title="${it.rrn??''}">${it.rrn??''}</td>
+              <td class="mono" title="${it.phone??''}">${it.phone??''}</td>
+              <td>${it.ugender??''}</td>
+              <td>${it.ubirth??''}</td>
+              <td title="${it.ucurrency??''}">${it.ucurrency??''}</td>
+              <td title="${it.uinterest??''}">${it.uinterest??''}</td>
+              <td>${it.ucheck??''}</td>
+              <td title="${it.ulocation??''}">${it.ulocation??''}</td>
+              <td>${it.upush??''}</td>
+              <td>${it.upushdate??''}</td>
+              <td>
+                <button class="btn outline small" onclick="editUser('${it.uid}')">수정</button>
+                <button class="btn danger small" onclick="delUser('${it.uid}')">삭제</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+          totalPages = d.totalPages||0;
+          document.getElementById('pageInfo').textContent = (d.number+1)+' / '+(d.totalPages||1);
+        })
+        .catch(()=>alert('목록 조회 실패'));
+    }
+
+    function prevPage(){ if(curPage>0) loadUsers(curPage-1); }
+    function nextPage(){ if(curPage+1<totalPages) loadUsers(curPage+1); }
+
+    function openDrawer(edit=false){
+      const d=document.getElementById('custDrawer');
+      d.style.display='block';
+      document.getElementById('drawerTitle').textContent = edit ? '고객 수정' : '고객 등록';
+      document.getElementById('f_uid').disabled = edit;
+    }
+    function closeDrawer(){
+      document.getElementById('custDrawer').style.display='none';
+      editingUid = null;
+      ['f_uid','f_upw','f_uname','f_ugender','f_ubirth','f_rrn','f_phone',
+       'f_ucurrency','f_uinterest','f_ucheck','f_ulocation','f_upush','f_upushdate']
+        .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+      document.getElementById('f_uid').disabled = false;
+    }
+
+    function delUser(uid){
+      if(!confirm('삭제하시겠습니까?')) return;
+
+      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+      const headerName = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+      const headers = {};
+      if (token && headerName) headers[headerName] = token;
+
+      fetch(`${USERS_API}/${encodeURIComponent(uid)}`, { method:'DELETE', headers })
+        .then(async r=>{
+          if(!r.ok){
+            const txt = await r.text();
+            throw new Error(`삭제 실패(${r.status}) ${txt||''}`);
+          }
+          loadUsers(curPage);
+        })
+        .catch(e=>alert(e.message || '삭제 실패'));
+    }
+
+    function editUser(uid){
+      fetch(`${USERS_API}/${encodeURIComponent(uid)}`)
+        .then(r=>r.json())
+        .then(it=>{
+          editingUid = uid;
+          openDrawer(true);
+          document.getElementById('f_uid').value = it.uid||'';
+          document.getElementById('f_uname').value = it.uname||'';
+          document.getElementById('f_ugender').value = it.ugender||'';
+          document.getElementById('f_ubirth').value = it.ubirth||'';
+          document.getElementById('f_rrn').value = it.rrn||'';
+          document.getElementById('f_phone').value = (it.phone||'').replace(/\D/g,'');
+          document.getElementById('f_ucurrency').value = it.ucurrency||'';
+          document.getElementById('f_uinterest').value = it.uinterest||'';
+          document.getElementById('f_ucheck').value = it.ucheck||'';
+          document.getElementById('f_ulocation').value = it.ulocation||'';
+          document.getElementById('f_upush').value = it.upush||'';
+          document.getElementById('f_upushdate').value = it.upushdate||'';
+        })
+        .catch(()=>alert('상세 조회 실패'));
+    }
+
+    function saveUser(){
+      const body = {
+        uid: document.getElementById('f_uid').value.trim(),
+        upw: document.getElementById('f_upw').value,
+        uname: document.getElementById('f_uname').value,
+        ugender: document.getElementById('f_ugender').value,
+        ubirth: document.getElementById('f_ubirth').value,
+        rrn: document.getElementById('f_rrn').value,
+        phone: document.getElementById('f_phone').value,
+        ucurrency: document.getElementById('f_ucurrency').value,
+        uinterest: document.getElementById('f_uinterest').value,
+        ucheck: document.getElementById('f_ucheck').value,
+        ulocation: document.getElementById('f_ulocation').value,
+        upush: document.getElementById('f_upush').value,
+        upushdate: document.getElementById('f_upushdate').value
+      };
+      const edit = !!editingUid;
+      const url = edit ? `${USERS_API}/${encodeURIComponent(editingUid)}` : USERS_API;
+      const method = edit ? 'PUT' : 'POST';
+      if(!body.uid && !edit){ alert('UID는 필수입니다.'); return; }
+
+      fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) })
+        .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
+        .then(()=>{ closeDrawer(); loadUsers(0); })
+        .catch(()=>alert('저장 실패'));
+    }
+
+    // Enter 로도 검색
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadUsers(0);
+      const qEl = document.getElementById('q');
+      const pEl = document.getElementById('phone');
+      if (qEl) qEl.addEventListener('keydown', e=>{ if(e.key==='Enter') loadUsers(0); });
+      if (pEl) pEl.addEventListener('keydown', e=>{ if(e.key==='Enter') loadUsers(0); });
+    });
+  </script>
 </th:block>
 </html>
