@@ -196,7 +196,6 @@ public class UserController {
     /* ───────── 로그인/로그아웃 ───────── */
     @GetMapping("/login")
     public String loginForm(Model m) {
-        // 필요시 폼 객체 바인딩
         if (!m.containsAttribute("userDto")) {
             m.addAttribute("userDto", new UserDto());
         }
@@ -212,7 +211,7 @@ public class UserController {
         User user = userService.authenticate(uid, upw);
         if (user == null) {
             ra.addFlashAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
-            ra.addFlashAttribute("userDto", new UserDto()); // 필요시 uid 재바인딩
+            ra.addFlashAttribute("userDto", new UserDto());
             return "redirect:/user/login";
         }
 
@@ -225,13 +224,12 @@ public class UserController {
         // 2) 없으면 역할별 기본 경로
         if (dest == null) {
             if ("ROLE_ADMIN".equals(user.getUrole())) {
-                dest = "/admin/home";
+                dest = "/admin/dashboard"; // ✅ 관리자 기본 진입: 대시보드
             } else {
                 dest = "/user/userhome";
             }
         }
 
-        // 항상 내부 경로로만 리다이렉트 (절대 URL 금지)
         return "redirect:" + dest;
     }
 
@@ -241,16 +239,10 @@ public class UserController {
         return "redirect:/";
     }
 
-    /* ───────── 뷰 진입용 기본 홈 ───────── */
+    /* ───────── 사용자 기본 홈 ───────── */
     @GetMapping("/userhome")
     public String userhome() {
-        return "user/userMain"; // 기존 템플릿명을 사용
-    }
-
-    // 관리자 기본 홈(있는 경우)
-    @GetMapping("/../admin/home") // 주의: 실제 패키지 @RequestMapping("/admin") 컨트롤러가 따로 있으면 거기서 처리하세요.
-    public String adminHomeFallback() {
-        return "admin/adminMain"; // 템플릿이 없다면 제거
+        return "user/userMain";
     }
 
     /* ───────── push 동의 ───────── */

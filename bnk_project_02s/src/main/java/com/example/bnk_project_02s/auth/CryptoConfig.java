@@ -1,10 +1,11 @@
 package com.example.bnk_project_02s.auth;
 
+import java.util.Base64;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Base64;
 
 @Configuration
 public class CryptoConfig {
@@ -24,6 +25,14 @@ public class CryptoConfig {
         byte[] key = decodeKeyFlexible(hmacKey);
         requireAtLeast(key, HMAC_MIN_LEN, "HMAC");
         return new HmacUtil(key); // byte[] 생성자 사용
+    }
+    
+    @Bean
+    @Qualifier("urlHmac")
+    public HmacUtil urlHmac(@Value("${hmac.url.secret.base64:${hmac.secret.base64}}") String keyB64) {
+        byte[] key = decodeKeyFlexible(keyB64); // 기존 CryptoConfig의 유틸 메서드 재사용
+        requireAtLeast(key, 32, "HMAC");
+        return new HmacUtil(key);
     }
 
     /** Base64 → 실패 시 HEX(공백/0x 허용) 파싱 */
