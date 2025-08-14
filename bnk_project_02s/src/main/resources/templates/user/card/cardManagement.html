@@ -532,7 +532,7 @@
         
         async function toggleCardNumber() {
             const button = document.getElementById('toggleCardNumber');
-            
+
             if (!showingFullNumber) {
                 try {
                     const response = await fetch(`${baseUrl}/user/card/full-number`, {
@@ -542,9 +542,10 @@
                         },
                         credentials: 'include'
                     });
-                    
+
                     if (response.ok) {
-                        const fullNumber = await response.text();
+                        const data = await response.json();
+                        const fullNumber = data.cardno;
                         showingFullNumber = true;
                         button.textContent = '카드번호 숨기기';
                         document.getElementById('cardNumberDisplay').textContent = fullNumber;
@@ -560,7 +561,7 @@
                 updateUI();
             }
         }
-        
+
         async function toggleCardStatus() {
             try {
                 const response = await fetch(`${baseUrl}/user/card/toggle-status`, {
@@ -572,17 +573,21 @@
                 });
                 
                 if (response.ok) {
-                    const message = await response.text();
-                    cardInfo.cardstatus = cardInfo.cardstatus === 'Y' ? 'N' : 'Y';
-                    updateUI();
-                    showMessage(message);
+                    const data = await response.json();
+                    if (data.message) {
+                        cardInfo.cardstatus = cardInfo.cardstatus === 'Y' ? 'N' : 'Y';
+                        updateUI();
+                        showMessage(data.message);
+                    }
                 } else {
-                    showMessage('카드 상태 변경에 실패했습니다.');
+                    const errorData = await response.json();
+                    showMessage(errorData.error || '카드 상태 변경에 실패했습니다.');
                 }
             } catch (error) {
                 showMessage('카드 상태 변경 중 오류가 발생했습니다.');
             }
         }
+
         
         function hideLoading() {
             document.getElementById('loading').classList.add('hidden');

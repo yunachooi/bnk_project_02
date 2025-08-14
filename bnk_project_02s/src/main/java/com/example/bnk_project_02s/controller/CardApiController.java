@@ -5,10 +5,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.bnk_project_02s.dto.CardDto;
@@ -18,36 +16,49 @@ import com.example.bnk_project_02s.service.CardService;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
-@RequestMapping("/user/card")
 @CrossOrigin(origins = "*")
-public class CardController {
+public class CardApiController {
     
     private static final String LOGIN_USER = "LOGIN_USER";
     
     @Autowired
     private CardService cardService;
     
-    @GetMapping("")
-    public String showCardManagement(Model model, HttpSession session) {
+    @GetMapping("/api/session-check")
+    @ResponseBody
+    public ResponseEntity<?> checkSession(HttpSession session) {
         User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
-            return "redirect:/user/login";
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
         
-        try {
-            CardDto cardInfo = cardService.getCardByUserId(loginUser.getUid());
-            model.addAttribute("cardInfo", cardInfo);
-        } catch (Exception e) {
-            model.addAttribute("cardInfo", null);
-            model.addAttribute("error", "카드 정보를 찾을 수 없습니다.");
-        }
-        
-        return "user/card/cardManagement";
+        return ResponseEntity.ok(Map.of(
+            "uid", loginUser.getUid(),
+            "uname", loginUser.getUname(),
+            "urole", loginUser.getUrole(),
+            "sessionId", session.getId()
+        ));
     }
     
-    @GetMapping("/info")
+    @GetMapping("/api/auth/token")
     @ResponseBody
-    public ResponseEntity<?> getCardInfo(HttpSession session) {
+    public ResponseEntity<?> getAuthToken(HttpSession session) {
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        
+        String token = session.getId();
+        return ResponseEntity.ok(Map.of(
+            "token", token,
+            "uid", loginUser.getUid(),
+            "uname", loginUser.getUname()
+        ));
+    }
+    
+    @GetMapping("/api/card/info")
+    @ResponseBody
+    public ResponseEntity<?> getApiCardInfo(HttpSession session) {
         User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
@@ -61,9 +72,9 @@ public class CardController {
         }
     }
     
-    @GetMapping("/toggle-status")
+    @GetMapping("/api/card/toggle-status")
     @ResponseBody
-    public ResponseEntity<?> toggleCardStatus(HttpSession session) {
+    public ResponseEntity<?> toggleApiCardStatus(HttpSession session) {
         User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
@@ -81,9 +92,9 @@ public class CardController {
         }
     }
     
-    @GetMapping("/full-number")
+    @GetMapping("/api/card/full-number")
     @ResponseBody
-    public ResponseEntity<?> getFullCardNumber(HttpSession session) {
+    public ResponseEntity<?> getApiFullCardNumber(HttpSession session) {
         User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
