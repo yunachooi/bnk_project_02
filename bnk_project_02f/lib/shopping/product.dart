@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:bnk_project_02f/account/accountMain.dart';
 
 void main() {
   runApp(ShoppingApp());
@@ -64,7 +65,7 @@ class Product {
       spprice: (json['spprice'] ?? 0).toDouble(),
       spcurrency: json['spcurrency'] ?? 'USD',
       sprating: (json['sprating'] ?? 0).toDouble(),
-      spreviews: json['spreviews'] ?? 0,
+      spreviews: (json['spreviews'] ?? 0).toInt(),
       spimgurl: json['spimgurl'] ?? '',
       spurl: json['spurl'] ?? '',
       spat: json['spat'],
@@ -97,7 +98,7 @@ class ApiService {
   static Future<List<Product>> getProducts() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/shopping/products'),
+        Uri.parse('$baseUrl/user/shopping/products'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -134,7 +135,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getUserInfo() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/shopping/user/info'),
+        Uri.parse('$baseUrl/user/shopping/user/info'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -545,24 +546,26 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
   @override
   void dispose() {
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   void _startAdSlider() {
-    Future.delayed(Duration(seconds: 3), () {
-      if (mounted) {
-        if (currentAdIndex < adImages.length - 1) {
-          currentAdIndex++;
-        } else {
-          currentAdIndex = 0;
+    Timer.periodic(Duration(seconds: 3), (Timer timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_pageController.hasClients) {
+        int nextPage = _pageController.page!.round() + 1;
+        if (nextPage >= adImages.length) {
+          nextPage = 0;
         }
-        setState(() {});
         _pageController.animateToPage(
-          currentAdIndex,
+          nextPage,
           duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
+          curve: Curves.easeIn,
         );
-        _startAdSlider();
       }
     });
   }
@@ -650,7 +653,12 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.of(context).pop();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AccountMainPage(),
+              ),
+            );
           },
         ),
         title: Text(
