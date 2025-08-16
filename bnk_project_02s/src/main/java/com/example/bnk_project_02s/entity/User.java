@@ -36,7 +36,7 @@ public class User {
 
     @Column(nullable = true, length = 10)    // YYYY-MM-DD
     private String ubirth;
-
+    
     // 호환용: 평문 휴대폰(과거 데이터). 신규 저장은 enc/hmac만 사용 권장
     @Column(nullable = true, length = 13)    // 예: 010-1234-5678
     private String uphone;

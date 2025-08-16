@@ -13,9 +13,7 @@
 
   <style>
     :root{
-      /* 하단 바 높이(모바일 터치 타깃 확보) */
       --bottom-bar-h: 72px;
-      /* 모바일 100vh 보정용 (JS에서 설정) */
       --vh: 1vh;
     }
 
@@ -31,9 +29,6 @@
       color:#111827;
     }
 
-    /* 전체 래퍼: 모바일 100vh 이슈 대응
-       1) 최신 브라우저: 100dvh
-       2) 폴백: calc(var(--vh)*100) */
     .container {
       width: 100%;
       background-color: #ffffff;
@@ -42,7 +37,7 @@
       min-height: calc(var(--vh, 1vh) * 100);
       display: flex;
       flex-direction: column;
-      border-radius: 0; /* 앱 느낌 유지 위해 모서리 제거(필요 시 1rem로 변경 가능) */
+      border-radius: 0;
       overflow: hidden;
     }
 
@@ -63,24 +58,31 @@
     }
     .header-back:active { background:#eff6ff; }
     .header-back svg { width:20px; height:20px; }
-    .header-title { font-size:1.15rem; font-weight:800; color:#111827; }
+    .header-title { font-size:1.1rem; font-weight:700; color:#111827; } /* 굵기 한 단계 낮춤 */
 
-    /* 진행 바: 꽉 찬(3/3) */
+    /* 진행 바: 참고 코드 스타일로 간격 조정 */
     .step-indicator {
       display:flex; width:100%; height:4px;
       background:#e5e7eb; border-radius:2px; overflow:hidden;
-      margin:.25rem 1rem 0.5rem 1rem;
+      margin: .5rem 1rem 0;           /* ← 위 코드 참고해 간격 정리 */
     }
     .step-indicator-progress { width:100%; height:100%; background:#2563eb; }
+
+    /* 응원 문구: 진행바와의 간격도 부드럽게 */
+    #encouragementMessage {
+      white-space: pre-wrap; text-align: center; font-weight: 600;  /* 굵기 약화 */
+      color: #4b5563;
+      padding: 0.6rem 1rem; border-radius: 0.6rem; background-color: #fef3c7;
+      margin: .4rem 1rem .2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
 
     /* 본문 */
     .main-content {
       flex: 1 1 auto;
-      padding: 0.75rem 1rem 1rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
+      padding: 0.6rem 1rem 1rem;
+      display: flex; flex-direction: column; gap: 0.6rem;
       overflow-y: auto;
       max-width: 40rem; margin: 0 auto; width: 100%;
-      /* 하단바가 컨텐츠를 가리지 않도록 하단 여백 확보 */
       padding-bottom: calc(var(--bottom-bar-h) + env(safe-area-inset-bottom, 0px) + 12px);
       scroll-padding-bottom: calc(var(--bottom-bar-h) + env(safe-area-inset-bottom, 0px) + 12px);
     }
@@ -92,50 +94,56 @@
       border:1px solid #eef2f7;
     }
     .section-head {
-      padding:.9rem 1rem;
+      padding:.8rem 1rem;
       border-bottom:1px solid #eef2f7;
       display:flex; align-items:center; justify-content:space-between;
     }
     .section-title {
-      font-weight:800; color:#111827;
+      font-weight:700; color:#111827;          /* 굵기 낮춤 */
       text-align:center; width:100%;
-      font-size: 1.25rem; line-height: 1.35;
+      font-size: 1.15rem; line-height: 1.35;   /* 사이즈도 아주 약간만 낮춤 */
     }
-    .section-body { padding:.75rem 1rem; }
+    .section-body { padding:.7rem 1rem; }
 
-    .row { display:flex; align-items:flex-start; justify-content:space-between;
-      padding:.6rem 0; border-bottom:1px dashed #e5e7eb; gap:.75rem; }
+    .row {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      padding:.5rem 0; border-bottom:1px dashed #e5e7eb; gap:.75rem;
+    }
     .row:last-child { border-bottom:none; }
-    .label { color:#6b7280; font-weight:700; font-size:.95rem; }
-    .value { color:#111827; font-weight:800; text-align:right; white-space: pre-wrap; font-size:1rem; }
+    .label { color:#6b7280; font-weight:600; font-size:.95rem; }   /* 굵기 낮춤 */
+    .value { color:#111827; font-weight:700; text-align:right; white-space: pre-wrap; font-size:1rem; } /* 굵기 낮춤 */
 
-    /* 전자서명 미리보기 */
-    .sig-wrap { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; justify-content:flex-end; }
+    /* 전자서명 미리보기: 항상 표시 */
+    .sig-wrap { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; justify-content:flex-end; }
     .sig-img { border:1px dashed #d1d5db; background:#fff; border-radius:.5rem; width:180px; height:90px; object-fit:contain; }
 
     /* 고객 확인 박스 */
     .confirm-box {
       background:#fff7ed; border:1px solid #fed7aa; color:#7c2d12;
-      padding:.9rem 1rem; border-radius:.75rem;
-      display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+      padding:.8rem 1rem; border-radius:.75rem;
+      display:flex; align-items:center; justify-content:space-between; gap:.7rem;
     }
     .confirm-btn {
-      background:#2563eb; color:#fff; font-weight:800;
-      padding:.6rem 1rem; border-radius:.6rem;
+      background:#2563eb; color:#fff; font-weight:700;      /* 굵기 낮춤 */
+      padding:.55rem 1rem; border-radius:.6rem;
       transition:transform .15s ease, background-color .2s ease;
       min-width: 110px; text-align:center; user-select:none; -webkit-user-select:none;
     }
     .confirm-btn:active { transform:scale(.98); }
+    .confirm-btn.confirmed {
+      background:#10b981;
+      cursor: default;
+    }
 
     /* 카드 발급 버튼 */
     .card-issue-btn {
-      display:none; margin-top:.5rem; width:100%;
-      background:#ef4444; color:#fff; padding:.85rem;
-      border-radius:.75rem; font-weight:800; text-align:center; text-decoration: none;
+      display:none; margin-top:.45rem; width:100%;
+      background:#ef4444; color:#fff; padding:.8rem;
+      border-radius:.75rem; font-weight:700; text-align:center; text-decoration: none;
     }
     .card-issue-btn:active { transform: scale(.99); }
 
-    /* 하단 고정 버튼 바: sticky + 안전영역 */
+    /* 하단 고정 버튼 바 */
     .bottom-bar {
       position: sticky; bottom: 0; left: 0; right: 0;
       flex: none; width: 100%; background:#ffffff;
@@ -146,8 +154,8 @@
       display: flex; justify-content: space-around; gap: .5rem; z-index: 30;
     }
     .bottom-bar button {
-      flex: 1; padding: .9rem 1rem; border-radius: .9rem;
-      font-weight: 800; font-size: 1rem;
+      flex: 1; padding: .85rem 1rem; border-radius: .9rem;
+      font-weight: 700; font-size: 1rem;                    /* 굵기 낮춤 */
       transition: background-color .2s ease, transform .15s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: none;
       user-select:none; -webkit-user-select:none;
@@ -170,33 +178,38 @@
     }
     .modal-overlay.show { opacity: 1; visibility: visible; }
     .modal-content {
-      background: #fff; padding: 1.25rem;
+      background: #fff; padding: 1.2rem;
       border-radius: 0.9rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
       max-width: 480px; width: 100%;
       transform: translateY(-12px); transition: transform 0.25s ease;
     }
     .modal-overlay.show .modal-content { transform: translateY(0); }
-    .modal-title { font-size: 1.1rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; text-align:center; }
-    .modal-message { font-size: .98rem; color: #374151; margin-bottom: 1rem; text-align:center; }
+    .modal-title { font-size: 1.05rem; font-weight: 700; color: #111827; margin-bottom: 0.45rem; text-align:center; }
+    .modal-message { font-size: .95rem; color: #374151; margin-bottom: 1rem; text-align:center; }
     .modal-button {
-      display:block; width:100%; background: #2563eb; color: #fff; font-weight: 800;
-      padding: 0.75rem 1rem; border-radius: 0.6rem; transition: background .2s ease; border:none;
+      display:block; width:100%; background: #2563eb; color: #fff; font-weight: 700;
+      padding: 0.7rem 1rem; border-radius: 0.6rem; transition: background .2s ease; border:none;
+      cursor: pointer;
     }
     .modal-button:active { background: #1e40af; }
 
-    /* 응원 메시지 */
-    #encouragementMessage {
-      white-space: pre-wrap; text-align: center; font-weight: 700; color: #4b5563;
-      padding: 0.7rem 1rem; border-radius: 0.6rem; background-color: #fef3c7;
-      margin: .5rem 1rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    .password-input-group { margin-bottom: 1rem; }
+    .password-input-group label {
+      display: block; font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem;
     }
+    .password-input-group input {
+      width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; color: #111827; background-color: #f9fafb;
+    }
+    .password-input-group input:focus {
+      outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    .password-error-message { color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; text-align: left; }
 
-    /* 모바일 폰트/간격 미세 조정 */
     @media (max-width: 420px){
-      .header-title{font-size:1.08rem}
-      .section-title { font-size: 1.18rem; }
-      .label{font-size:.93rem}
-      .value{font-size:.98rem}
+      .header-title{font-size:1.05rem}
+      .section-title { font-size: 1.08rem; }
+      .label{font-size:.92rem}
+      .value{font-size:.97rem}
     }
   </style>
 </head>
@@ -204,23 +217,23 @@
   <div class="container">
     <!-- 헤더 -->
     <header class="header-bar">
-      <a href="/foreign5" class="header-back" aria-label="이전으로">
+      <a href="/foreign0" class="header-back" aria-label="이전으로">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        이전
+        홈으로
       </a>
       <div class="header-title">개설 확인</div>
       <span style="width:24px;height:24px;opacity:0" aria-hidden="true"></span>
     </header>
 
-    <!-- 진행 바 -->
+    <!-- 진행 바 (간격 조정) -->
     <div class="step-indicator" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
       <div class="step-indicator-progress"></div>
     </div>
 
     <!-- 응원 문구 -->
-    <div id="encouragementMessage" class="encouragement-message"></div>
+    <div id="encouragementMessage"></div>
 
     <!-- 본문 -->
     <main class="main-content">
@@ -250,7 +263,7 @@
             <div class="value" id="interestText">0.01000</div>
           </div>
 
-          <!-- 전자서명 -->
+          <!-- 전자서명: 항상 보이게 유지 -->
           <div class="row" id="signatureRow" style="margin-top:.3rem; padding-bottom:0; border-bottom:none;">
             <div class="label">전자서명</div>
             <div class="value sig-wrap">
@@ -270,7 +283,7 @@
       </div>
 
       <!-- 카드 발급 버튼 -->
-      <a id="cardIssueBtn" href="/card_issue" class="card-issue-btn" role="button">카드 발급하러 가기</a>
+      <a id="cardIssueBtn" href="/foreign7" class="card-issue-btn" role="button">카드 발급하러 가기</a>
     </main>
 
     <!-- 하단 고정 버튼 바 -->
@@ -285,7 +298,19 @@
     <div class="modal-content">
       <div class="modal-title" id="modalTitle">알림</div>
       <div class="modal-message" id="modalMessage"></div>
-      <button id="modalCloseBtn" class="modal-button" type="button">확인</button>
+      <!-- Password input fields -->
+      <div id="passwordInputs" style="display: none;">
+        <div class="password-input-group">
+          <label for="password">비밀번호 설정</label>
+          <input type="password" id="password" placeholder="비밀번호 4자리를 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
+        </div>
+        <div class="password-input-group">
+          <label for="passwordConfirm">비밀번호 확인</label>
+          <input type="password" id="passwordConfirm" placeholder="비밀번호 4자리를 다시 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
+          <p id="passwordError" class="password-error-message" style="display: none;">비밀번호가 일치하지 않습니다.</p>
+        </div>
+      </div>
+      <button id="modalActionButton" class="modal-button" type="button">확인</button>
     </div>
   </div>
 
@@ -300,10 +325,10 @@
 
     /* ===== 유틸 ===== */
     function formatKRW(n){
-      try { return Number(n).toLocaleString('ko-KR'); } catch { return n; }
+      try { return Number(n).toLocaleString('ko-KR'); } catch (e) { return n; }
     }
     function formatRate(n){
-      try { return Number(n).toLocaleString('ko-KR', { minimumFractionDigits:2, maximumFractionDigits:2 }); } catch { return n; }
+      try { return Number(n).toLocaleString('ko-KR', { minimumFractionDigits:2, maximumFractionDigits:2 }); } catch (e) { return n; }
     }
     function ymd(date){
       try {
@@ -312,27 +337,45 @@
         const m = String(d.getMonth()+1).padStart(2,'0');
         const dd = String(d.getDate()).padStart(2,'0');
         return `${y}-${m}-${dd}`;
-      } catch { return date; }
+      } catch (e) { return date; }
     }
 
     /* ===== 모달 ===== */
     const customModal = document.getElementById('customModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalActionButton = document.getElementById('modalActionButton');
+    const passwordInputsDiv = document.getElementById('passwordInputs');
+    const passwordInput = document.getElementById('password');
+    const passwordConfirmInput = document.getElementById('passwordConfirm');
+    const passwordError = document.getElementById('passwordError');
 
-    function showModal(message, title = '알림', onCloseCallback = null) {
+    function showModal(message, title = '알림', onActionCallback = null, showPasswordFields = false) {
       modalTitle.textContent = title;
       modalMessage.textContent = message;
+
+      if (showPasswordFields) {
+        passwordInputsDiv.style.display = 'block';
+        passwordInput.value = '';
+        passwordConfirmInput.value = '';
+        passwordError.style.display = 'none';
+        modalActionButton.textContent = '확인';
+      } else {
+        passwordInputsDiv.style.display = 'none';
+        modalActionButton.textContent = '확인';
+      }
+
       customModal.classList.add('show');
 
-      const closeHandler = () => {
-        customModal.classList.remove('show');
-        modalCloseBtn.removeEventListener('click', closeHandler);
-        if (onCloseCallback) onCloseCallback();
-      };
-      modalCloseBtn.addEventListener('click', closeHandler, { once: true });
+      modalActionButton.onclick = null;
+      if (typeof onActionCallback === 'function') {
+        modalActionButton.addEventListener('click', onActionCallback, { once: true });
+      } else {
+        modalActionButton.addEventListener('click', () => customModal.classList.remove('show'), { once: true });
+      }
     }
+
+    function hideModal() { customModal.classList.remove('show'); }
 
     /* ===== 데이터 로드 & 요소 참조 ===== */
     const saved = sessionStorage.getItem('bnkEnrollmentData');
@@ -389,38 +432,94 @@
       acctText.textContent = DEFAULT_ACCT;
       interestText.textContent = '0.01000';
 
+      // 전자서명: 항상 노출 (이미지 없으면 힌트 표시)
       if (data.signatureDataUrl) {
         sigImg.src = data.signatureDataUrl;
-        sigHint.textContent = '';
+        sigImg.alt = '서명 이미지';
         sigImg.style.display = 'block';
+        sigHint.textContent = '';
       } else {
-        sigImg.style.display = 'none';
+        sigImg.style.display = 'block';  // 프레임은 유지
+        sigImg.src = '';
         sigHint.textContent = '서명 이미지가 없습니다';
       }
 
       disableDoneButton();
-    }
 
-    /* 이벤트 */
-    confirmBtn.addEventListener('click', () => {
-      confirmed = true;
-      confirmBtn.textContent = '확인됨';
-      confirmBtn.classList.add('ring-2'); // 시각적 피드백
-      enableDoneButton();
-
-      if (!hasEncouragementMessageBeenUpdated) {
+      if (sessionStorage.getItem('bnkConfirmedStatus') === 'true') {
+        confirmed = true;
+        confirmBtn.textContent = '확인됨';
+        confirmBtn.classList.add('confirmed');
+        confirmBtn.disabled = true;
+        enableDoneButton();
         encouragementMessageDiv.textContent = '✅ 모든 정보가 확인되었습니다!\n아래 "통장 가입 완료" 버튼을 눌러주세요.';
         hasEncouragementMessageBeenUpdated = true;
       }
+
+      if (sessionStorage.getItem('bnkEnrollmentComplete') === 'true') {
+        doneBtn.textContent = '통장 개설 완료';
+        confirmBoxText.textContent = '통장 개설 완료';
+        cardIssueBtn.style.display = 'block';
+        // 전자서명은 계속 보이도록 더 이상 숨기지 않음
+        encouragementMessageDiv.textContent = '🎉 통장 개설이 완료되었습니다!\n카드 발급을 진행해주세요.';
+        confirmBtn.classList.add('confirmed');
+        confirmBtn.textContent = '확인됨';
+        confirmBtn.disabled = true;
+        confirmBtn.removeAttribute('aria-disabled');
+        disableDoneButton();
+      }
+    }
+
+    /* 비밀번호 확인 플로우 */
+    confirmBtn.addEventListener('click', () => {
+      if (confirmed) {
+        showModal('이미 가입 정보를 확인하셨습니다.');
+        return;
+      }
+      showModal('비밀번호를 설정해주세요', '비밀번호 설정', handlePasswordConfirmation, true);
     });
 
-    prevBtn.addEventListener('click', () => {
-      history.back();
-    });
+    function handlePasswordConfirmation() {
+      const p1 = passwordInput.value;
+      const p2 = passwordConfirmInput.value;
 
-    doneBtn.addEventListener('click', () => {
+      if (p1.length !== 4 || p2.length !== 4 || !/^\d{4}$/.test(p1) || !/^\d{4}$/.test(p2)) {
+        passwordError.textContent = '비밀번호는 4자리 숫자로 입력해주세요.';
+        passwordError.style.display = 'block';
+        modalActionButton.removeEventListener('click', handlePasswordConfirmation);
+        modalActionButton.addEventListener('click', handlePasswordConfirmation, { once: true });
+        return;
+      }
+
+      if (p1 === p2) {
+        confirmed = true;
+        sessionStorage.setItem('bnkPassword', p1);
+        sessionStorage.setItem('bnkConfirmedStatus', 'true');
+        hideModal();
+
+        confirmBtn.textContent = '확인됨';
+        confirmBtn.classList.add('confirmed');
+        confirmBtn.disabled = true;
+
+        enableDoneButton();
+
+        if (!hasEncouragementMessageBeenUpdated) {
+          encouragementMessageDiv.textContent = '✅ 모든 정보가 확인되었습니다!\n아래 "통장 가입 완료" 버튼을 눌러주세요.';
+          hasEncouragementMessageBeenUpdated = true;
+        }
+      } else {
+        passwordError.textContent = '비밀번호가 일치하지 않습니다.';
+        passwordError.style.display = 'block';
+        modalActionButton.removeEventListener('click', handlePasswordConfirmation);
+        modalActionButton.addEventListener('click', handlePasswordConfirmation, { once: true });
+      }
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => history.back());
+
+    document.getElementById('doneBtn').addEventListener('click', () => {
       if (!confirmed) {
-        showModal('가입 정보를 먼저 확인해 주세요.');
+        showModal('가입 정보를 먼저 확인하고 비밀번호를 설정해주세요.');
         return;
       }
 
@@ -432,13 +531,16 @@
         confirmBoxText.textContent = '통장 개설 완료';
 
         cardIssueBtn.style.display = 'block';
-
-        if (signatureRow) signatureRow.style.display = 'none';
+        // 전자서명은 계속 표시
 
         encouragementMessageDiv.textContent = '🎉 통장 개설이 완료되었습니다!\n카드 발급을 진행해주세요.';
 
-        // 하단 바는 유지하되 버튼은 더 이상 필요 없다면 비활성만 유지
-        // document.querySelector('.bottom-bar').style.display = 'none';
+        sessionStorage.setItem('bnkEnrollmentComplete', 'true');
+
+        confirmBtn.classList.add('confirmed');
+        confirmBtn.textContent = '확인됨';
+        confirmBtn.disabled = true;
+        confirmBtn.removeAttribute('aria-disabled');
       }, 600);
     });
 

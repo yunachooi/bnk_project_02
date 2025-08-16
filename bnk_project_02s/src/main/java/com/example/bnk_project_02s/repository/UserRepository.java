@@ -3,6 +3,8 @@ package com.example.bnk_project_02s.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -87,4 +89,12 @@ public interface UserRepository extends JpaRepository<User, String> {
             group by upper(trim(u.ugender))
             """)
     List<Object[]> countByGenderRaw();
+    
+    // 이름/아이디 부분검색
+    Page<User> findByUidContainingIgnoreCaseOrUnameContainingIgnoreCase(
+            String uid, String uname, Pageable pageable);
+
+    // 휴대폰은 AES-GCM이라 LIKE가 불가 → 동등검색만 지원.
+    // @Convert가 파라미터에도 적용되므로, “평문”을 넘기면 내부에서 암호문으로 비교됨.
+    Page<User> findByUphoneEnc(String phonePlain, Pageable pageable);
 }

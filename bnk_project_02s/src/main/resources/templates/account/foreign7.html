@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#ffffff"/>
+  <title>BNK 쇼핑환전통장 - 카드 발급 신청</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- 다음(카카오) 우편번호 API -->
+  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+  <style>
+    :root{ --bottom-bar-h:72px; --vh:1vh; }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;}
+    body{
+      font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; padding:0; overflow-x:hidden; color:#111827;
+      font-size:16px; line-height:1.5;
+    }
+
+    .container{ width:100%; background:#fff; min-height:100dvh; min-height:calc(var(--vh,1vh)*100); display:flex; flex-direction:column; overflow:hidden; }
+
+    /* Header */
+    header{ position:sticky; top:0; z-index:50; background:#fff; border-bottom:1px solid #e5e7eb; }
+    .header-bar{ display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; }
+    .header-back{ display:flex; align-items:center; gap:.25rem; color:#ef4444; font-weight:800; text-decoration:none; padding:.25rem .375rem; border-radius:.5rem;}
+    .header-back svg{ width:20px; height:20px; }
+    .header-title{ font-size:1.15rem; font-weight:800; }
+
+    /* Sticky: step + encouragement */
+    .sticky-top-wrap{ position:sticky; top:48px; z-index:40; background:#fff; padding:.5rem 1rem .5rem; border-bottom:1px solid #eef2f7; }
+    .step-indicator{ display:flex; width:100%; height:4px; background:#e5e7eb; margin:0 0 .5rem; }
+    .step-indicator-progress{ width:50%; height:100%; background:#ef4444; }
+
+    /* Main */
+    .main-content{
+      flex:1 1 auto; padding:.75rem 1rem 1rem; display:flex; flex-direction:column; gap:.75rem;
+      overflow-y:auto; max-width:40rem; margin:0 auto; width:100%;
+      padding-bottom:calc(var(--bottom-bar-h) + env(safe-area-inset-bottom,0px) + 12px);
+    }
+
+    /* Accordion */
+    .accordion-section{ background:#fff; border:1px solid #eef2f7; border-radius:.75rem; box-shadow:0 4px 12px rgba(0,0,0,.05); overflow:hidden; scroll-margin-top:140px; }
+    .accordion-header{ padding:.9rem 1rem; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between; font-weight:800; font-size:1.1rem; cursor:pointer; }
+    .accordion-header svg{ transition:transform .25s; }
+    .accordion-header.active svg{ transform:rotate(180deg); }
+    .accordion-section .checkmark{ display:none; color:#10b981; font-size:1.1rem; margin-left:.5rem; }
+    .accordion-section.confirmed .checkmark{ display:inline-block; }
+    .accordion-section.confirmed .accordion-header .toggle-icon{ display:none; }
+    .accordion-section.confirmed .accordion-header{ cursor:default; }
+
+    /* Smooth open/close */
+    .accordion-content{
+      overflow:hidden;
+      max-height:0;
+      transition:max-height .35s ease, opacity .25s ease;
+      opacity:0;
+      border-top:1px solid #eef2f7;
+      padding:0 1rem;
+    }
+    .accordion-content.open{ opacity:1; padding:.75rem 1rem; }
+
+    /* Form cards */
+    .form-section-card{ background:#fff; border:1px solid #eef2f7; border-radius:.75rem; padding:1.25rem 1rem; margin-bottom:.75rem; box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; flex-direction:column; gap:1rem; }
+    .form-group{ margin-bottom:.75rem; }
+    .form-group label{ display:block; font-size:.9rem; font-weight:800; color:#374151; margin-bottom:.4rem; }
+    .form-group input,.form-group select{ width:100%; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:1rem; background:#f9fafb; color:#111827; }
+    .form-group input:focus,.form-group select:focus{ outline:none; border-color:#ef4444; box-shadow:0 0 0 2px rgba(239,68,68,.2); }
+    .radio-group{ display:flex; gap:1rem; flex-wrap:nowrap; }
+    .radio-group label{ display:flex; align-items:center; gap:.4rem; font-weight:800; white-space:nowrap; }
+    .radio-group input{ transform:scale(1.2); accent-color:#ef4444; }
+
+    /* Card slider centered */
+    .card-slider-wrapper{ position:relative; width:100%; overflow:hidden; border-radius:.75rem; background:#f9fafb; padding:.75rem; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.05); }
+    .card-slider{
+      --slide-w: 260px;
+      display:flex; overflow-x:auto; gap:.75rem; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+      padding:0 calc((100% - var(--slide-w))/2);
+      justify-content:flex-start; align-items:center;
+    }
+    .card-slider::-webkit-scrollbar{ display:none; }
+    .card-slide-item{ flex:0 0 var(--slide-w); scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; padding:.6rem; border-radius:.75rem; border:2px solid transparent; transition:.2s; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.08); user-select:none; }
+    .card-slide-item.selected{ border-color:#ef4444; box-shadow:0 0 0 2px rgba(239,68,68,.35); background:#ffebeb; }
+    .card-slide-item img{ width:100%; height:150px; border-radius:.5rem; object-fit:cover; margin-bottom:.5rem; cursor:pointer; }
+    .card-slide-item span{ font-size:.95rem; font-weight:800; color:#374151; text-align:center; }
+    .slider-buttons{ display:flex; justify-content:center; gap:.75rem; margin-top:.6rem; }
+    .slider-buttons button{ padding:.7rem 1.2rem; border-radius:.6rem; font-weight:800; font-size:.95rem; background:#ef4444; color:#fff; border:none; transition:.2s; }
+    .slider-buttons button:hover{ background:#dc2626; }
+    .slider-buttons button:disabled{ background:#9ca3af; cursor:not-allowed; }
+    .slider-arrow{ position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.35); color:#fff; border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; font-size:1.2rem; font-weight:bold; transition:.2s;}
+    .slider-arrow:hover{ background:rgba(0,0,0,.5); }
+    .slider-arrow.left{ left:.25rem; }
+    .slider-arrow.right{ right:.25rem; }
+
+    /* Bottom bar */
+    .bottom-bar{ position:sticky; bottom:0; left:0; right:0; flex:none; width:100%; background:#fff; border-top:1px solid #e2e8f0; padding:.5rem 1rem; padding-bottom:calc(.5rem + env(safe-area-inset-bottom,0px)); box-shadow:0 -4px 12px rgba(0,0,0,.03); display:flex; justify-content:space-around; gap:.5rem; z-index:60; }
+    .bottom-bar button{ flex:1; padding:.9rem 1rem; border-radius:.9rem; font-weight:800; font-size:1rem; transition:background-color .2s, transform .15s; box-shadow:0 2px 6px rgba(0,0,0,.08); border:none; user-select:none; }
+    .bottom-bar button:active{ transform:scale(.98); }
+
+    /* Modals (common) */
+    .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; opacity:0; visibility:hidden; transition:opacity .25s, visibility .25s; padding:1rem; }
+    .modal-overlay.show{ opacity:1; visibility:visible; }
+    .modal-content{ background:#fff; border-radius:.9rem; box-shadow:0 8px 24px rgba(0,0,0,.2); max-width:430px; width:96vw; transform:translateY(-12px); transition:transform .25s; }
+    .modal-overlay.show .modal-content{ transform:translateY(0); }
+    .modal-header-like{ display:flex; align-items:center; justify-content:space-between; padding:.9rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:800; }
+    .modal-title{ text-align:center; font-weight:800; font-size:1.05rem; }
+    .modal-body{ padding:1rem; }
+    .modal-footer{ padding:.8rem 1rem; border-top:1px solid #e5e7eb; display:flex; justify-content:center; gap:.5rem; }
+    .close-x{ background:none; border:none; font-size:1.25rem; color:#9ca3af; cursor:pointer; }
+    .close-x:hover{ color:#4b5563; }
+    .modal-button{ display:block; width:100%; background:#ef4444; color:#fff; font-weight:800; padding:.75rem 1rem; border-radius:.6rem; border:none; cursor:pointer; transition:.2s; }
+    .modal-button:hover{ background:#dc2626; }
+
+    /* Terms modal specific */
+    .terms-page{ display:none; flex-direction:column; }
+    .terms-page.active{ display:flex; }
+    .summary-scroll{ padding:1rem; }
+    .summary-list{ list-style:none; padding:0; margin:0; }
+    .summary-list li{ background:#fff; border:2px solid #ef4444; border-radius:.75rem; padding:.9rem; margin-bottom:.7rem; color:#4b5563; line-height:1.5; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .summary-num{ font-weight:800; color:#111827; margin-right:.45rem; }
+    .summary-title{ font-weight:800; color:#111827; }
+    .pdf-viewer-iframe{ width:100%; height:60vh; border:1px solid #e0e0e0; border-radius:.5rem; background:#fff; }
+
+    /* 공통 경고 */
+    .inline-warning{ margin-top:.25rem; color:#ef4444; font-weight:500; font-size:.9rem; line-height:1.35; text-align:center; }
+    .inline-warning--modal{ margin-top:.5rem; }
+
+    /* Image preview modal */
+    .image-modal .modal-content{ background:rgba(0,0,0,.92); max-width:900px; width:96vw; color:#fff; border-radius:.6rem; }
+    .image-modal .modal-header-like{ border-bottom:none; }
+    .image-stage{ width:100%; height:80vh; max-height:80vh; display:flex; align-items:center; justify-content:center; overflow:auto; }
+    #zoomImg{ max-width:95vw; max-height:80vh; object-fit:contain; border-radius:.5rem; transform-origin:center center; transition:transform .15s ease; }
+    .image-caption{ text-align:center; padding:.25rem .75rem 1rem; color:#e5e7eb; font-weight:700; }
+
+    @media (max-width:420px){
+      body{font-size:15px;}
+      .pdf-viewer-iframe{ height:56vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-bar">
+        <a href="/foreign0" class="header-back">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+          홈으로
+        </a>
+        <h1 class="header-title">카드 발급 신청</h1>
+        <span class="w-5 h-5 opacity-0"></span>
+      </div>
+    </header>
+
+    <!-- Sticky progress + encouragement -->
+    <div class="sticky-top-wrap">
+      <div class="step-indicator"><div class="step-indicator-progress"></div></div>
+      <div id="encouragementMessage" class="text-center text-base font-semibold text-gray-700 p-3 rounded-lg bg-yellow-100 mx-0 mt-2 shadow-sm">
+        카드 발급 신청만 하면 끝이에요!<br>조금만 더 힘내요. 😊
+      </div>
+    </div>
+
+    <!-- Main -->
+    <main class="main-content">
+      <!-- 카드 디자인 -->
+      <section id="cardDesignSection" class="accordion-section">
+        <div class="accordion-header" data-accordion="card-design">
+          <span>카드 디자인 선택 <span id="cardDesignCheckmark" class="checkmark">✔</span></span>
+          <svg class="toggle-icon h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="accordion-content" id="card-design-content">
+          <div class="card-slider-wrapper">
+            <button class="slider-arrow left" id="slideLeftBtn">&lt;</button>
+            <div class="card-slider" id="cardSlider">
+              <div class="card-slide-item" data-card-id="card-a">
+                <img src="images/option1.png" alt="BNK쇼핑환전체크카드 A">
+                <span>BNK쇼핑환전체크카드 A</span>
+              </div>
+              <div class="card-slide-item" data-card-id="card-b">
+                <img src="images/option2.png" alt="BNK쇼핑환전체크카드 B">
+                <span>BNK쇼핑환전체크카드 B</span>
+              </div>
+              <div class="card-slide-item" data-card-id="card-c">
+                <img src="images/option3.png" alt="BNK쇼핑환전체크카드 C">
+                <span>BNK쇼핑환전체크카드 C</span>
+              </div>
+            </div>
+            <button class="slider-arrow right" id="slideRightBtn">&gt;</button>
+          </div>
+          <div class="slider-buttons">
+            <button id="selectCardBtn">선택</button>
+          </div>
+          <div id="cardWarning" class="inline-warning" style="display:none;"></div>
+        </div>
+      </section>
+
+      <!-- 고객 정보 -->
+      <section id="customerInfoSection" class="accordion-section">
+        <div class="accordion-header" data-accordion="customer-info">
+          <span>고객 정보 추가 확인 <span id="customerInfoCheckmark" class="checkmark">✔</span></span>
+          <svg class="toggle-icon h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="accordion-content" id="customer-info-content">
+          <div class="form-section-card">
+            <div class="form-group mb-0">
+              <label for="english-name">영문명 이름 입력</label>
+              <input type="text" id="english-name" placeholder="예: HONG GILDONG" class="w-full uppercase" />
+              <div id="englishWarn" class="inline-warning" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="form-section-card mt-3">
+            <div class="form-group mb-0">
+              <label for="occupation">직업 구분</label>
+              <select id="occupation" class="w-full">
+                <option value="">선택해주세요</option>
+                <option value="직장인">직장인</option>
+                <option value="자영업">자영업</option>
+                <option value="학생">학생</option>
+                <option value="주부">주부</option>
+                <option value="무직">무직</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section-card mt-3">
+            <div class="form-group mb-0">
+              <label>본인의 자금인가요?</label>
+              <div class="radio-group">
+                <label><input type="radio" name="own-funds" value="yes" id="own-funds-yes"> 예</label>
+                <label><input type="radio" name="own-funds" value="no" id="own-funds-no"> 아니오</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 주소 입력 -->
+          <div class="form-section-card mt-3">
+            <div class="form-group">
+              <label>카드 수령받을 주소</label>
+              <div class="flex gap-2">
+                <input id="postalCode" type="text" class="flex-1" placeholder="우편번호" readonly>
+                <button id="findAddressBtn" type="button" class="modal-button" style="width:auto;">우편번호 찾기</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="baseAddress">기본주소</label>
+              <input id="baseAddress" type="text" placeholder="예: 부산광역시 OO구 OO로 123" readonly>
+            </div>
+            <div class="form-group">
+              <label for="detailAddress">상세주소</label>
+              <input id="detailAddress" type="text" placeholder="예: 101동 1001호">
+            </div>
+            <button id="addressDoneBtn" class="modal-button" style="width:auto;">주소 입력 완료</button>
+            <div id="customerInfoWarning" class="inline-warning" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 약관 동의 -->
+      <section id="termsDocsSection" class="accordion-section">
+        <div class="accordion-header" data-accordion="terms-docs">
+          <span>카드 신청 약관 동의 <span id="termsDocsCheckmark" class="checkmark">✔</span></span>
+          <svg class="toggle-icon h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="accordion-content" id="terms-docs-content">
+          <div class="form-group">
+            <button id="openTermsModalBtn" class="w-full modal-button">약관 및 설명서 동의</button>
+            <div id="termsWarning" class="inline-warning" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom -->
+    <footer class="bottom-bar">
+      <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
+      <button id="nextButton" class="bg-gray-400 text-white cursor-not-allowed" disabled>다음으로</button>
+    </footer>
+  </div>
+
+  <!-- 약관/설명서 모달 -->
+  <div id="termsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header-like">
+        <div class="modal-title" id="termsModalTitle">약관 및 설명서 동의 (1/4)</div>
+        <button class="close-x" data-close="termsModal">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- 1) 요약 -->
+        <div id="termsPage1" class="terms-page active">
+          <div class="summary-scroll">
+            <h4 class="font-bold text-gray-800 text-lg mb-4 text-center">요약본</h4>
+            <ol class="summary-list">
+              <li><span class="summary-num">1.</span><span class="summary-title">체크카드 개인회원 표준약관</span><br><span class="summary-content">카드 사용/관리의 기본 규칙과 수수료, 이용 제한 및 분쟁 처리 절차 등을 안내합니다.</span></li>
+              <li><span class="summary-num">2.</span><span class="summary-title">개인(신용)정보 필수적 전체 동의서</span><br><span class="summary-content">수집·이용 항목, 목적, 보유기간 및 제3자 제공 등 필수 동의 사항을 안내합니다.</span></li>
+              <li><span class="summary-num">3.</span><span class="summary-title">포인트 이용약관</span><br><span class="summary-content">포인트 적립·사용·소멸 기준 및 유의사항을 안내합니다.</span></li>
+            </ol>
+          </div>
+        </div>
+        <!-- 2~4) PDF -->
+        <div id="termsPage2" class="terms-page">
+          <h4 class="font-bold text-gray-800 text-lg mb-2 text-center">체크카드 개인회원 표준약관</h4>
+          <iframe src="https://drive.google.com/file/d/1OuKPmFPrSpbFmtjotrSB6t3F0-ImZcTR/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
+        </div>
+        <div id="termsPage3" class="terms-page">
+          <h4 class="font-bold text-gray-800 text-lg mb-2 text-center">개인(신용)정보 필수적 전체 동의서</h4>
+          <iframe src="https://drive.google.com/file/d/12YvgPzqPEiDAUCNji1FYq_HnO6fWEFjG/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
+        </div>
+        <div id="termsPage4" class="terms-page">
+          <h4 class="font-bold text-gray-800 text-lg mb-2 text-center">포인트 이용약관</h4>
+          <iframe src="https://drive.google.com/file/d/1du1hO_sc9w4uWZGe9aLpniKznJywOHpt/preview" class="pdf-viewer-iframe" allow="autoplay"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="termsAgreeBtn" class="modal-button">동의 및 계속</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 필수 서류 받기 -->
+  <div id="sendDocumentsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header-like">
+        <div class="modal-title">필수 서류 받기</div>
+        <button class="close-x" data-close="sendDocumentsModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-gray-700 text-base mb-4 text-center">
+          필수 서류를 어떤 방식으로 받으시겠어요?<br>
+          <span class="text-sm text-gray-500">문자 또는 이메일 중 하나만 입력해도 됩니다.</span>
+        </p>
+
+        <div class="form-group mb-4">
+          <label for="smsNumberInput">휴대폰 번호</label>
+          <input type="tel" id="smsNumberInput" class="w-full" placeholder="예: 01012345678" inputmode="numeric" pattern="[0-9]*">
+          <button id="sendBySmsBtn" class="modal-button mt-3">문자로 받기</button>
+          <div id="smsWarn" class="inline-warning inline-warning--modal" style="display:none;"></div>
+        </div>
+
+        <div class="form-group mb-2">
+          <label for="emailAddressInput">이메일 주소</label>
+          <input type="email" id="emailAddressInput" class="w-full" placeholder="예: yourname@example.com">
+          <button id="sendByEmailBtn" class="modal-button mt-3">이메일로 받기</button>
+          <div id="emailWarn" class="inline-warning inline-warning--modal" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="sendDocumentsCloseBtn" class="w-full font-bold py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공용 안내 모달 -->
+  <div id="infoModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header-like">
+        <div class="modal-title">안내</div>
+        <button class="close-x" data-close="infoModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="infoModalMsg" class="text-center text-gray-700 whitespace-pre-line"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="infoModalOk" class="modal-button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 카드 이미지 확대 모달 -->
+  <div id="imageModal" class="modal-overlay image-modal">
+    <div class="modal-content">
+      <div class="modal-header-like">
+        <div class="modal-title" id="imageCaption">미리보기</div>
+        <button class="close-x" data-close="imageModal" style="color:#fff;">×</button>
+      </div>
+      <div class="image-stage" id="imageStage">
+        <img id="zoomImg" src="" alt="">
+      </div>
+      <div class="image-caption" id="imageAlt"></div>
+    </div>
+  </div>
+
+  <!-- 카드 선택 확인 모달 -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header-like">
+        <div class="modal-title">확인</div>
+        <button class="close-x" data-close="confirmModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMsg" class="text-center text-gray-700 whitespace-pre-line"></p>
+      </div>
+      <div class="modal-footer" style="gap:.5rem;">
+        <button id="confirmCancel" class="modal-button" style="background:#9ca3af">취소</button>
+        <button id="confirmOk" class="modal-button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== 공통 ===== */
+    const STORAGE_KEY = 'bnkCardIssueData';
+    function setVHUnit(){ const vh=window.innerHeight*0.01; document.documentElement.style.setProperty('--vh', `${vh}px`);}
+    setVHUnit(); window.addEventListener('resize', setVHUnit);
+
+    function openModal(id){ document.getElementById(id).classList.add('show'); }
+    function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+    document.querySelectorAll('.close-x').forEach(btn=> btn.addEventListener('click', ()=> closeModal(btn.dataset.close)));
+    document.getElementById('infoModalOk').addEventListener('click', ()=> closeModal('infoModal'));
+    function showCenter(msg, ms){ document.getElementById('infoModalMsg').textContent=msg; openModal('infoModal'); if(ms){ setTimeout(()=> closeModal('infoModal'), ms); } }
+
+    /* ===== 아코디언 열고 닫기 ===== */
+    function setAccordionOpen(sectionEl, open){
+      const header = sectionEl.querySelector('.accordion-header');
+      const content = sectionEl.querySelector('.accordion-content');
+      if(open){
+        header.classList.add('active');
+        content.classList.add('open');
+        content.style.maxHeight = content.scrollHeight + 'px';
+      }else{
+        header.classList.remove('active');
+        content.style.maxHeight = content.scrollHeight + 'px';
+        requestAnimationFrame(()=>{
+          content.style.maxHeight = '0px';
+          content.classList.remove('open');
+        });
+      }
+    }
+    const cardDesignSection = document.getElementById('cardDesignSection');
+    const customerInfoSection = document.getElementById('customerInfoSection');
+    const termsDocsSection = document.getElementById('termsDocsSection');
+
+    document.querySelectorAll('.accordion-header').forEach(h=>{
+      h.addEventListener('click', ()=>{
+        const section = h.parentElement;
+        if(section.classList.contains('confirmed')) return;
+        const open = h.classList.contains('active');
+        document.querySelectorAll('.accordion-section').forEach(s=>{
+          if(s!==section && !s.classList.contains('confirmed')) setAccordionOpen(s, false);
+        });
+        setAccordionOpen(section, !open);
+        section.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+
+    const prevButton=document.getElementById('prevButton');
+    const nextButton=document.getElementById('nextButton');
+    prevButton.addEventListener('click', ()=> location.href='/foreign0');
+
+    let isCardDesignCompleted=false, isCustomerInfoCompleted=false, isTermsAndDocsCompleted=false;
+
+    function updateNext(){
+      if(isCardDesignCompleted && isCustomerInfoCompleted && isTermsAndDocsCompleted){
+        nextButton.disabled=false;
+        nextButton.classList.remove('bg-gray-400','cursor-not-allowed');
+        nextButton.classList.add('bg-red-500');
+      }else{
+        nextButton.disabled=true;
+        nextButton.classList.add('bg-gray-400','cursor-not-allowed');
+        nextButton.classList.remove('bg-red-500');
+      }
+    }
+
+    /* ===== 카드 슬라이더 ===== */
+    const cardSlider=document.getElementById('cardSlider');
+    const cardSlideItems=document.querySelectorAll('.card-slide-item');
+    const selectCardBtn=document.getElementById('selectCardBtn');
+    const slideLeftBtn=document.getElementById('slideLeftBtn');
+    const slideRightBtn=document.getElementById('slideRightBtn');
+    let currentSlideIndex=0, selectedCardId=null;
+
+    function scrollToSlide(i){
+      const item=cardSlideItems[i]; if(!item) return;
+      const left=item.offsetLeft - (cardSlider.clientWidth - item.clientWidth)/2;
+      cardSlider.scroll({left, behavior:'smooth'}); currentSlideIndex=i;
+    }
+    slideLeftBtn.addEventListener('click', ()=> scrollToSlide(Math.max(0,currentSlideIndex-1)));
+    slideRightBtn.addEventListener('click', ()=> scrollToSlide(Math.min(cardSlideItems.length-1,currentSlideIndex+1)));
+    cardSlider.addEventListener('scroll', ()=>{
+      clearTimeout(cardSlider._t);
+      cardSlider._t=setTimeout(()=>{
+        const list=[...cardSlideItems];
+        const center=window.innerWidth/2;
+        let best=0, bestDist=1e9;
+        list.forEach((el,i)=>{
+          const r=el.getBoundingClientRect();
+          const d=Math.abs(r.left + r.width/2 - center);
+          if(d<bestDist){ bestDist=d; best=i; }
+        });
+        currentSlideIndex=best;
+        selectCardBtn.disabled=(selectedCardId!==null);
+      },80);
+    });
+
+    function cardNameById(id){
+      if(id==='card-a') return 'BNK쇼핑환전 체크카드A';
+      if(id==='card-b') return 'BNK쇼핑환전 체크카드B';
+      return 'BNK쇼핑환전 체크카드C';
+    }
+
+    function openConfirm(msg, onOk){
+      document.getElementById('confirmMsg').textContent=msg;
+      openModal('confirmModal');
+      document.getElementById('confirmCancel').onclick=()=> closeModal('confirmModal');
+      document.getElementById('confirmOk').onclick=()=>{ closeModal('confirmModal'); onOk&&onOk(); };
+    }
+
+    document.getElementById('selectCardBtn').addEventListener('click', ()=>{
+      const item=cardSlideItems[currentSlideIndex]; if(!item) return;
+      const msg=`정말 '${cardNameById(item.dataset.cardId)}'\n디자인으로 결정하시겠습니까?`;
+      openConfirm(msg, ()=>{
+        selectedCardId=item.dataset.cardId;
+        cardSlideItems.forEach(el=> el.classList.toggle('selected', el===item));
+        isCardDesignCompleted=true;
+        cardDesignSection.classList.add('confirmed');
+        setAccordionOpen(cardDesignSection,false);
+        setTimeout(()=> setAccordionOpen(customerInfoSection,true), 500);
+        saveState();               // 저장
+        updateNext();
+      });
+    });
+
+    /* 이미지 확대 */
+    const imageModal=document.getElementById('imageModal');
+    const zoomImg=document.getElementById('zoomImg');
+    const imageCaption=document.getElementById('imageCaption');
+    const imageAlt=document.getElementById('imageAlt');
+    const imageStage=document.getElementById('imageStage');
+    let zoomScale=1,isPanning=false,startX=0,startY=0,scrollLeft=0,scrollTop=0;
+
+    function openImagePreview(src,alt){
+      zoomScale=1; zoomImg.style.transform='scale(1)';
+      zoomImg.src=src; zoomImg.alt=alt||'';
+      imageCaption.textContent='미리보기'; imageAlt.textContent=alt||'';
+      openModal('imageModal');
+    }
+    let lastTap=0;
+    function toggleZoom(e){
+      const now=Date.now(); const dbl=(now-lastTap)<300; lastTap=now;
+      if(!dbl) return;
+      zoomScale=(zoomScale===1)?2:1; zoomImg.style.transform=`scale(${zoomScale})`;
+    }
+    zoomImg.addEventListener('click', toggleZoom);
+    zoomImg.addEventListener('touchend', toggleZoom);
+
+    imageStage.addEventListener('mousedown', e=>{
+      if(zoomScale===1) return;
+      isPanning=true; startX=e.pageX-imageStage.offsetLeft; startY=e.pageY-imageStage.offsetTop;
+      scrollLeft=imageStage.scrollLeft; scrollTop=imageStage.scrollTop;
+    });
+    imageStage.addEventListener('mousemove', e=>{
+      if(!isPanning) return; e.preventDefault();
+      const x=e.pageX-imageStage.offsetLeft, y=e.pageY-imageStage.offsetTop;
+      imageStage.scrollLeft=scrollLeft-(x-startX); imageStage.scrollTop=scrollTop-(y-startY);
+    });
+    ['mouseup','mouseleave'].forEach(evt=> imageStage.addEventListener(evt, ()=> isPanning=false));
+    document.querySelectorAll('.card-slide-item img').forEach(img=> img.addEventListener('click', ()=> openImagePreview(img.src,img.alt)));
+
+    /* ===== 고객 정보 ===== */
+    const englishNameInput=document.getElementById('english-name');
+    const englishWarn=document.getElementById('englishWarn');
+    const occupationSelect=document.getElementById('occupation');
+    const ownFundsRadios=document.querySelectorAll('input[name="own-funds"]');
+    const postalCodeInput=document.getElementById('postalCode');
+    const baseAddressInput=document.getElementById('baseAddress');
+    const detailAddressInput=document.getElementById('detailAddress');
+    const findAddressBtn=document.getElementById('findAddressBtn');
+    const addressDoneBtn=document.getElementById('addressDoneBtn');
+    const customerInfoWarning=document.getElementById('customerInfoWarning');
+
+    function validCustomerInfo(){
+      const nameOk=englishNameInput.value.trim().length>0;
+      const jobOk=occupationSelect.value!=='';
+      const ownOk=[...ownFundsRadios].some(r=>r.checked);
+      const addrOk=postalCodeInput.value && baseAddressInput.value && detailAddressInput.value.trim();
+      return {nameOk,jobOk,ownOk,addrOk,all:(nameOk&&jobOk&&ownOk&&addrOk)};
+    }
+
+    function scheduleSave(){ clearTimeout(scheduleSave._t); scheduleSave._t=setTimeout(saveState, 200); }
+
+    englishNameInput.addEventListener('input', ()=>{
+      const hasHangul=/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(englishNameInput.value);
+      englishWarn.textContent='영문으로 입력해주세요 (예: HONG GILDONG).';
+      englishWarn.style.display = hasHangul ? 'block' : 'none';
+      scheduleSave();
+    });
+    occupationSelect.addEventListener('change', scheduleSave);
+    ownFundsRadios.forEach(r=> r.addEventListener('change', scheduleSave));
+    detailAddressInput.addEventListener('input', scheduleSave);
+
+    findAddressBtn.addEventListener('click', ()=>{
+      new daum.Postcode({
+        oncomplete: function(data){
+          postalCodeInput.value = data.zonecode || '';
+          baseAddressInput.value = (data.roadAddress || data.jibunAddress || '');
+          detailAddressInput.focus();
+          scheduleSave();
+        }
+      }).open();
+    });
+
+    addressDoneBtn.addEventListener('click', ()=>{
+      const v=validCustomerInfo();
+      if(!v.all){
+        customerInfoWarning.style.display='block';
+        customerInfoWarning.textContent='영문명/직업/자금 여부/주소를 모두 입력해주세요.';
+        return;
+      }
+      customerInfoWarning.style.display='none';
+      isCustomerInfoCompleted=true;
+      customerInfoSection.classList.add('confirmed');
+      setAccordionOpen(customerInfoSection,false);
+      setTimeout(()=> setAccordionOpen(termsDocsSection,true), 500);
+      saveState();                       // 저장
+      updateNext();
+    });
+
+    /* ===== 약관 & 서류 ===== */
+    const openTermsModalBtn=document.getElementById('openTermsModalBtn');
+    const termsModalTitle=document.getElementById('termsModalTitle');
+    const termsPages=document.querySelectorAll('#termsModal .terms-page');
+    let termsIdx=0;
+    function showTermsPage(i){
+      termsPages.forEach((p,idx)=> p.classList.toggle('active', idx===i));
+      termsModalTitle.textContent=`약관 및 설명서 동의 (${i+1}/4)`;
+    }
+    openTermsModalBtn.addEventListener('click', ()=>{ termsIdx=0; showTermsPage(0); openModal('termsModal'); });
+    document.getElementById('termsAgreeBtn').addEventListener('click', ()=>{
+      termsIdx++;
+      if(termsIdx<termsPages.length){ showTermsPage(termsIdx); }
+      else{ closeModal('termsModal'); openModal('sendDocumentsModal'); }
+    });
+
+    const smsNumberInput=document.getElementById('smsNumberInput');
+    const emailAddressInput=document.getElementById('emailAddressInput');
+    const sendBySmsBtn=document.getElementById('sendBySmsBtn');
+    const sendByEmailBtn=document.getElementById('sendByEmailBtn');
+    const sendDocumentsCloseBtn=document.getElementById('sendDocumentsCloseBtn');
+    const smsWarn=document.getElementById('smsWarn');
+    const emailWarn=document.getElementById('emailWarn');
+    let hasDeliveredDocuments=false;
+    let docsDelivery=null;   // {method:'sms'|'email', value:string, at:ISO}
+
+    function validatePhone(v){ return /^\d{10,11}$/.test((v||'').trim()); }
+    function validateEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||'').trim()); }
+
+    function simulateSend(cb){
+      showCenter('전송 중...', null);
+      setTimeout(()=>{ closeModal('infoModal'); showCenter('전송이 완료되었습니다.', 1200); setTimeout(cb, 1200); }, 900);
+    }
+
+    function finishDocs(){
+      hasDeliveredDocuments=true;
+      isTermsAndDocsCompleted=true;
+      termsDocsSection.classList.add('confirmed');
+      setAccordionOpen(termsDocsSection,false);
+      saveState();                         // 저장
+      updateNext();
+      closeModal('sendDocumentsModal');
+    }
+
+    sendBySmsBtn.addEventListener('click', ()=>{
+      smsWarn.style.display='none';
+      const val=smsNumberInput.value.trim();
+      if(!validatePhone(val)){ smsWarn.textContent='휴대폰 번호를 정확히 입력해주세요.'; smsWarn.style.display='block'; return; }
+      docsDelivery={method:'sms', value:val, at:new Date().toISOString()};
+      simulateSend(finishDocs);
+    });
+
+    sendByEmailBtn.addEventListener('click', ()=>{
+      emailWarn.style.display='none';
+      const val=emailAddressInput.value.trim();
+      if(!validateEmail(val)){ emailWarn.textContent='이메일 주소를 정확히 입력해주세요.'; emailWarn.style.display='block'; return; }
+      docsDelivery={method:'email', value:val, at:new Date().toISOString()};
+      simulateSend(finishDocs);
+    });
+
+    sendDocumentsCloseBtn.addEventListener('click', ()=>{
+      if(!hasDeliveredDocuments){
+        showCenter('문자 또는 이메일 중 하나로 서류를 받아야 합니다.', 1500);
+        return;
+      }
+      closeModal('sendDocumentsModal');
+    });
+
+    /* ===== 저장/복원 ===== */
+    function payloadFromUI(){
+      const selected = selectedCardId ? {
+        id: selectedCardId,
+        name: cardNameById(selectedCardId)
+      } : null;
+
+      const own = document.querySelector('input[name="own-funds"]:checked')?.value || '';
+      const payload = {
+        selectedCard: selected,
+        customer: {
+          englishName: (englishNameInput.value || '').trim(),
+          occupation: occupationSelect.value || '',
+          ownFunds: own,
+          address: {
+            postalCode: postalCodeInput.value || '',
+            baseAddress: baseAddressInput.value || '',
+            detailAddress: detailAddressInput.value || ''
+          }
+        },
+        consent: {
+          termsAndDocs: !!isTermsAndDocsCompleted,
+          delivered: !!hasDeliveredDocuments,
+          method: docsDelivery?.method || '',
+          destination: docsDelivery?.value || '',
+          consentedAt: docsDelivery?.at || ''
+        },
+        progress: {
+          card: !!isCardDesignCompleted,
+          customer: !!isCustomerInfoCompleted,
+          terms: !!isTermsAndDocsCompleted
+        },
+        savedAt: new Date().toISOString()
+      };
+      return payload;
+    }
+
+    function saveState(){
+      try{
+        const data = payloadFromUI();
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }catch(e){ console.warn('saveState failed', e); }
+    }
+
+    function restoreState(){
+      try{
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+
+        // 카드
+        if(data.selectedCard?.id){
+          selectedCardId = data.selectedCard.id;
+          cardSlideItems.forEach(el=> el.classList.toggle('selected', el.dataset.cardId===selectedCardId));
+          isCardDesignCompleted = !!data.progress?.card;
+          if(isCardDesignCompleted) cardDesignSection.classList.add('confirmed');
+        }
+
+        // 고객 정보
+        if(data.customer){
+          englishNameInput.value = data.customer.englishName || '';
+          occupationSelect.value = data.customer.occupation || '';
+          if(data.customer.ownFunds){
+            const r = document.querySelector(`input[name="own-funds"][value="${data.customer.ownFunds}"]`);
+            if(r) r.checked = true;
+          }
+          if(data.customer.address){
+            postalCodeInput.value = data.customer.address.postalCode || '';
+            baseAddressInput.value  = data.customer.address.baseAddress || '';
+            detailAddressInput.value = data.customer.address.detailAddress || '';
+          }
+          isCustomerInfoCompleted = !!data.progress?.customer;
+          if(isCustomerInfoCompleted) customerInfoSection.classList.add('confirmed');
+        }
+
+        // 약관 & 전송
+        if(data.consent){
+          isTermsAndDocsCompleted = !!data.consent.termsAndDocs;
+          hasDeliveredDocuments   = !!data.consent.delivered;
+          if(isTermsAndDocsCompleted) termsDocsSection.classList.add('confirmed');
+          docsDelivery = (data.consent.method? {method:data.consent.method, value:data.consent.destination, at:data.consent.consentedAt} : null);
+        }
+
+        // 열릴 곳 결정
+        if(!isCardDesignCompleted){ setAccordionOpen(cardDesignSection,true); }
+        else if(!isCustomerInfoCompleted){ setAccordionOpen(cardDesignSection,false); setAccordionOpen(customerInfoSection,true); }
+        else if(!isTermsAndDocsCompleted){ setAccordionOpen(cardDesignSection,false); setAccordionOpen(customerInfoSection,false); setAccordionOpen(termsDocsSection,true); }
+        else { setAccordionOpen(cardDesignSection,false); setAccordionOpen(customerInfoSection,false); setAccordionOpen(termsDocsSection,false); }
+
+        updateNext();
+      }catch(e){ console.warn('restoreState failed', e); }
+    }
+
+    // 초기 열림 상태(복원 전 기본값)
+    setAccordionOpen(cardDesignSection, true);
+    setAccordionOpen(customerInfoSection, false);
+    setAccordionOpen(termsDocsSection, false);
+
+    // 복원 시도
+    restoreState();
+
+    // 다음으로: 저장 후 이동
+    nextButton.addEventListener('click', ()=>{
+      if(nextButton.disabled) return;
+      saveState();
+      location.href = '/foreign8';
+    });
+  </script>
+</body>
+</html>
