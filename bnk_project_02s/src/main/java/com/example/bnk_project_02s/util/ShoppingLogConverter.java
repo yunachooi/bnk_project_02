@@ -1,12 +1,12 @@
 package com.example.bnk_project_02s.util;
 
 import org.springframework.stereotype.Component;
-
 import com.example.bnk_project_02s.dto.ShoppingLogDto;
 import com.example.bnk_project_02s.entity.ShoppingLog;
 
 @Component
 public class ShoppingLogConverter {
+    
     public ShoppingLogDto toDto(ShoppingLog shoppingLog) {
         if (shoppingLog == null) {
             return null;
@@ -19,13 +19,13 @@ public class ShoppingLogConverter {
                 .cardno(shoppingLog.getCard() != null ? shoppingLog.getCard().getCardno() : null)
                 .slamount(shoppingLog.getSlamount())
                 .slcurrency(shoppingLog.getSlcurrency())
-                .slexrate(shoppingLog.getSlexrate())
                 .slstatus(shoppingLog.getSlstatus())
-                .slrequest(shoppingLog.getSlrequest())
-                .sldate(shoppingLog.getSldate())
+                .slreason(shoppingLog.getSlreason())
+                .slreqat(shoppingLog.getSlreqat())
+                .slcomat(shoppingLog.getSlcomat())
                 .build();
     }
-
+    
     public ShoppingLog toEntity(ShoppingLogDto shoppingLogDto) {
         if (shoppingLogDto == null) {
             return null;
@@ -35,10 +35,10 @@ public class ShoppingLogConverter {
                 .slno(shoppingLogDto.getSlno())
                 .slamount(shoppingLogDto.getSlamount())
                 .slcurrency(shoppingLogDto.getSlcurrency())
-                .slexrate(shoppingLogDto.getSlexrate())
                 .slstatus(shoppingLogDto.getSlstatus())
-                .slrequest(shoppingLogDto.getSlrequest())
-                .sldate(shoppingLogDto.getSldate())
+                .slreason(shoppingLogDto.getSlreason())
+                .slreqat(shoppingLogDto.getSlreqat())
+                .slcomat(shoppingLogDto.getSlcomat())
                 .build();
     }
 }
