@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:bnk_project_02f/account/accountMain.dart';
+import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
+import 'package:kakao_flutter_sdk_template/kakao_flutter_sdk_template.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(ShoppingApp());
@@ -95,6 +98,24 @@ class Product {
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8093';
 
+  // 공유
+  static Future<String?> getShareUrl(String spno) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/share/product/$spno'),
+        headers: {'Accept': 'text/plain'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return response.body; // 보안 URL
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<List<Product>> getProducts() async {
     try {
       final response = await http.get(
@@ -178,6 +199,120 @@ class ProductDetailPage extends StatelessWidget {
     }
   }
 
+  Future<void> _shareProduct(BuildContext context) async {
+    // 클릭 피드백 (눌렀는지 바로 보이게)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(duration: Duration(milliseconds: 700), content: Text('공유 준비중...')),
+    );
+
+    try {
+      // HMAC URL 준비(없으면 원본으로 폴백)
+      final raw = await ApiService.getShareUrl(product.spno);
+      final shareUrl = (raw != null && raw.isNotEmpty) ? raw : product.spurl;
+
+      final template = FeedTemplate(
+        content: Content(
+          title: product.displayName,
+          description: product.displayDescription,
+          imageUrl: Uri.parse(
+            product.spimgurl.isNotEmpty
+                ? product.spimgurl
+                : 'https://via.placeholder.com/300x200.png?text=No+Image',
+          ),
+          link: Link(
+            webUrl: Uri.parse(shareUrl),
+            mobileWebUrl: Uri.parse(shareUrl),
+          ),
+        ),
+        buttons: [
+          Button(
+            title: '자세히 보기',
+            link: Link(
+              webUrl: Uri.parse(shareUrl),
+              mobileWebUrl: Uri.parse(shareUrl),
+            ),
+          ),
+        ],
+      );
+
+      // 1) 카카오톡 앱
+      final available = await ShareClient.instance.isKakaoTalkSharingAvailable();
+      if (available) {
+        final uri = await ShareClient.instance.shareDefault(template: template);
+        await ShareClient.instance.launchKakaoTalk(uri);
+        return;
+      }
+
+      // 2) 웹 공유 (외부 브라우저)
+      final webUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
+      final openedExternal =
+      await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      if (openedExternal) return;
+
+      // 3) 인앱 웹뷰 (에뮬레이터에 브라우저 없을 때)
+      final openedInApp = await launchUrl(webUrl, mode: LaunchMode.inAppWebView);
+      if (openedInApp) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('브라우저가 없어 앱 내에서 열었습니다.')),
+          );
+        }
+        return;
+      }
+
+      // 4) 최후: 링크 복사
+      await Clipboard.setData(ClipboardData(text: shareUrl));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크를 클립보드에 복사했습니다. 붙여넣어 공유하세요.')),
+        );
+      }
+    } catch (e) {
+      debugPrint('공유 실패: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('공유 실패: $e')),
+        );
+      }
+    }
+  }
+
+  void _showQuickShareToast(BuildContext context, {String text = '공유 준비중...'}) {
+    final entry = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: IgnorePointer(
+          ignoring: true,
+          child: Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.75),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    ),
+                    SizedBox(width: 10),
+                    Text('공유 준비중...', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context, rootOverlay: true)?.insert(entry);
+    Future.delayed(const Duration(seconds: 1), () => entry.remove());
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,8 +341,12 @@ class ProductDetailPage extends StatelessWidget {
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.share, color: Colors.black),
-            onPressed: () {},
+            icon: const Icon(Icons.share, color: Colors.black),
+            onPressed: () {
+              HapticFeedback.selectionClick();      // 살짝 진동
+              _showQuickShareToast(context);        // 즉시 오버레이 표시 (1초)
+              _shareProduct(context);               // 실제 공유 시도(안 되더라도 오버레이는 뜸)
+            },
           ),
         ],
       ),
@@ -676,7 +815,15 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
           ),
           IconButton(
             icon: Icon(Icons.share, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('공유 준비중...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
           ),
         ],
       ),
