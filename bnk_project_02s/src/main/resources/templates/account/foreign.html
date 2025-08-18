@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNK 쇼핑환전통장</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better scrolling on smaller devices */
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px; /* Max width for mobile-first design */
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 1rem; /* Overall rounded container */
+            overflow: hidden; /* Ensure rounded corners are visible */
+        }
+        .header {
+            background-color: #ffffff;
+            padding: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Subtle shadow for header */
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            padding: 0.75rem 0;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.02); /* Subtle shadow for nav bar */
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.85rem; /* Slightly larger font */
+            color: #6b7280; /* Grey color */
+            font-weight: 500; /* Medium weight */
+            transition: color 0.2s ease;
+        }
+        .nav-button.active {
+            color: #1a73e8; /* Blue color for active */
+            font-weight: 600;
+        }
+        .currency-card {
+            background-color: #e0f2f7; /* Light blue background for cards */
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px; /* Consistent height for cards */
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* Stronger shadow for cards */
+            transition: transform 0.2s ease-in-out, background-color 0.2s ease;
+            cursor: pointer;
+        }
+        .currency-card:hover {
+            transform: translateY(-3px);
+            background-color: #d1eff7; /* Slightly darker on hover */
+        }
+
+        /* Common button style */
+        .primary-button {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* Large rounded corners */
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); /* Blue shadow */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+        .primary-button:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+        }
+        .primary-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Secondary button style */
+        .secondary-button {
+            background-color: #e2e8f0; /* Gray-200 */
+            color: #4a5568; /* Gray-700 */
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            width: 100%;
+            display: flex; /* Flex to align icon and text */
+            justify-content: center; /* Center content */
+            align-items: center; /* Center content */
+            gap: 0.5rem; /* Space between icon and text */
+        }
+        .secondary-button:hover {
+            background-color: #cbd5e0; /* Gray-300 */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+        .secondary-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* Content box styles */
+        .content-box {
+            background-color: #ffffff;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem; /* Consistent padding */
+        }
+
+        /* Modal specific styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden; /* Hidden by default */
+            opacity: 0; /* Fully transparent by default */
+            transition: visibility 0s, opacity 0.3s ease-in-out;
+        }
+        .modal-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 90%;
+            width: min(90vw, 350px); /* Responsive width, max 350px */
+            aspect-ratio: 1 / 1; /* Make it square */
+            position: relative;
+            transform: translateY(20px); /* Slightly move down when appearing */
+            transition: transform 0.3s ease-in-out;
+            display: flex; /* Use flexbox for content alignment */
+            flex-direction: column; /* Stack children vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .modal-close-button:hover {
+            color: #374151;
+        }
+
+        /* Quick Action Buttons */
+        .quick-action-buttons-container {
+            display: flex;
+            gap: 12px; /* Space between buttons */
+            width: 100%;
+            margin-top: 2rem; /* Consistent margin from previous section */
+            padding: 0 1rem; /* Padding to align with content-box */
+        }
+        .quick-action-button {
+            flex: 1; /* Make buttons take equal width */
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            font-weight: 600;
+            padding: 0.9rem 1rem; /* Adjust padding for better look without icons */
+            border-radius: 0.75rem; /* Large rounded corners */
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); /* Stronger blue shadow */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            text-align: center;
+            border: none; /* Ensure no border */
+            cursor: pointer;
+        }
+        .quick-action-button:hover {
+            background-color: #1d4ed8; /* Blue-700 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4); /* Even stronger shadow on hover */
+        }
+        .quick-action-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        .muted {
+            color:#666;
+            font-size:13px;
+        }
+        .tag {
+            background:#eef3ff;
+            color:#0d47a1;
+            padding:3px 8px;
+            border-radius:999px;
+            font-size:12px;
+        }
+
+        /* Styles for review tags */
+        .review-tag-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem; /* Increased padding */
+            border-radius: 999px;
+            border: 1px solid currentColor; /* Use text color for border */
+            background-color: var(--tag-bg-color); /* Use CSS variable for background */
+            color: var(--tag-color); /* Use CSS variable for text color */
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+            margin: 0.5rem auto; /* Center with auto margins and provide vertical spacing */
+            justify-content: center; /* Center content within button */
+            align-items: center; /* Center content vertically */
+            gap: 0.5rem; /* Space between emoji and text */
+            width: auto; /* Allow content to dictate width */
+            min-width: 120px; /* Give a minimum width for better appearance */
+        }
+        /* When selected, override with primary blue */
+        .review-tag-button.selected {
+            background-color: #2563eb !important;
+            color: white !important;
+            border-color: #2563eb !important;
+            box-shadow: 0 2px 5px rgba(37,99,235,0.2);
+        }
+        .review-tag-button.selected .tag-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        .tag-count {
+            margin-left: 0.5rem;
+            padding: 0.1rem 0.4rem;
+            background-color: #cbd5e0;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #4a5568;
+            border: 1px solid #a0aec0;
+        }
+
+        /* Styles for star rating */
+        .star-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+        .star-rating .star-icon {
+            width: 24px;
+            height: 24px;
+            color: #d1d5db; /* Default gray star */
+            transition: color 0.2s ease, transform 0.1s ease;
+        }
+        .star-rating .star-icon.filled {
+            color: #f59e0b; /* Amber/yellow for filled star */
+        }
+        .star-rating .star-icon:hover {
+            transform: scale(1.1);
+        }
+        .star-rating .star-icon.hovered {
+            color: #fbbf24; /* Lighter amber on hover */
+        }
+
+        /* Styles for tag statistics */
+        .tag-stats-item {
+            display: flex;
+            flex-direction: column; /* Stack name/count and bar */
+            align-items: flex-start; /* Align text to the left */
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .tag-stats-item:last-child {
+            border-bottom: none;
+        }
+        .tag-stats-name {
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex; /* Allow emoji and text to be inline */
+            align-items: center;
+            gap: 0.25rem; /* Space between emoji and text */
+            /* color will be set dynamically for each tag */
+        }
+        .tag-stats-count {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2563eb;
+        }
+        .tag-bar-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 0.25rem;
+            height: 8px; /* Height of the bar */
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+        .tag-bar {
+            height: 100%;
+            background: linear-gradient(to right, #63b3ed, #2563eb); /* Consistent Blue gradient */
+            border-radius: 0.25rem;
+            transition: width 0.5s ease-out;
+        }
+        /* Pagination buttons */
+        .pagination-button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .pagination-button:hover:not(:disabled) {
+            background-color: #cbd5e0;
+        }
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Style for benefits slider content */
+        #benefits-slider-content {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute; /* Changed to absolute for controlled positioning */
+            opacity: 0; /* Hidden by default for transition */
+            transform: translateY(100%); /* Start off-screen below */
+            transition: all 0.7s ease-in-out; /* Smooth transition */
+        }
+        #benefits-slider-content.active {
+            opacity: 1;
+            transform: translateY(0); /* Slide to center */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="text-2xl font-bold text-gray-800">BNK 쇼핑환전 앱</h1>
+            <div class="flex items-center space-x-2">
+                <!-- Notification Bell -->
+                <button id="notification-bell-button" class="relative focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <!-- Notification Badge -->
+                    <span id="notification-badge" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center -mt-1 -mr-1 hidden"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow p-4 overflow-y-auto">
+            <!-- Conditional Content based on Login/Product Status -->
+            <div id="content-area" class="space-y-6">
+                <!-- Content will be injected here by JavaScript -->
+            </div>
+
+            <!-- Quick Action Buttons: Card Payment / Find Branch -->
+            <div class="quick-action-buttons-container">
+                <!-- 카드 결제 -->
+                <a id="card-payment-tile" href="/user/card" class="quick-action-button" aria-label="카드 결제">
+                    카드 결제
+                </a>
+                <!-- 영업점 찾기 -->
+                <a class="quick-action-button flex items-center justify-center" href="/branches" aria-label="영업점 찾기">
+                    영업점 찾기
+                </a>
+            </div>
+
+
+            <div class="mt-6 content-box">
+                <h3 class="text-lg font-extrabold text-blue-700 mb-3 text-center">현재 BNK 쇼핑환전통장을 이용하신 고객님들께서 받고 계신 혜택이에요! ✨</h3>
+                <div id="benefits-info" class="p-8 bg-blue-50 rounded-lg shadow-md text-center text-gray-800 font-medium border border-blue-200 relative overflow-hidden h-48">
+                    <div id="benefits-slider-content">
+                        <!-- Dynamic content will go here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Product Reviews -->
+            <section class="mt-6 content-box" id="reviews">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-semibold text-gray-700">상품 후기 <span id="total-reviews-count" class="text-sm font-normal text-gray-500 ml-2">(총 0개)</span></h3>
+                    <button id="trigger-review-modal-button-header" class="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 focus:outline-none">
+                        리뷰 작성
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="card p-4 rounded-lg border border-gray-200 bg-white">
+                    <div id="tag-statistics" class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="font-semibold text-gray-700">어떤 점이 좋았나요?</p>
+                            <button id="toggle-tag-stats" class="text-blue-600 text-sm font-medium hover:underline focus:outline-none">
+                                펼치기 >
+                            </button>
+                        </div>
+                        <div id="tag-stats-list">
+                            <!-- Tag statistics will be rendered here -->
+                        </div>
+                    </div>
+                    <div id="reviewList" class="grid gap-4"></div>
+                    <div id="review-pagination" class="flex justify-center items-center space-x-4 mt-4">
+                        <button id="prev-review-page" class="pagination-button"><</button>
+                        <span id="review-page-info" class="text-gray-700 text-sm"></span>
+                        <button id="next-review-page" class="pagination-button">></button>
+                    </div>
+                    <div style="margin-top:10px" id="review-input-section">
+                        <!-- Review input will be conditionally rendered here -->
+                    </div>
+                    <div class="muted mt-4" id="review-login-prompt">로그인하면 후기를 남길 수 있어요.</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navigation Bar -->
+        <nav class="nav-bar">
+            <!-- 해외직구 (Shopping Bag Icon) -->
+            <a class="nav-button" href="/user/shopping/products" aria-label="해외직구">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>해외직구</span>
+            </a>
+            <!-- 홈 -->
+            <a class="nav-button active" href="#" aria-current="page">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <span>홈</span>
+            </a>
+            <!-- 환전 (Exchange/Arrows Icon) -->
+            <a class="nav-button" href="/forex" aria-label="환전">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                <span>환전</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Custom Modal Structure for General Alerts -->
+    <div id="payment-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-button" class="modal-close-button">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">알림</h3>
+            <p class="text-gray-700 mb-6">카드 결제 페이지로 이동합니다. (기능 미구현)</p>
+            <button id="modal-confirm-button" class="primary-button">확인</button>
+        </div>
+    </div>
+
+    <!-- New Modal for Notification Push -->
+    <div id="notification-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="notification-modal-close-button" class="modal-close-button">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">새로운 알림</h3>
+            <div id="notification-list" class="space-y-2 mb-6">
+                <!-- Notifications will be listed here -->
+            </div>
+            <button id="notification-modal-confirm-button" class="primary-button">확인</button>
+        </div>
+    </div>
+
+    <!-- New Modal for Review Input -->
+    <div id="review-input-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="review-modal-close-button" class="modal-close-button">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">후기 작성</h3>
+            <p class="font-semibold text-gray-700 mb-2">후기를 남겨주시면 BNK에 힘이 됩니다!</p>
+
+            <div id="review-input-modal-tags" class="flex flex-col items-center gap-2 mb-4">
+                <!-- Tags for selection will be rendered here -->
+            </div>
+
+            <div class="flex justify-center items-center space-x-4 mb-4">
+                <span class="text-gray-700">평점:</span>
+                <div id="review-input-modal-star-rating" class="star-rating">
+                    <!-- Stars for selection will be rendered here -->
+                </div>
+            </div>
+
+            <textarea id="review-input-modal-content" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-y" placeholder="솔직한 후기를 남겨주세요.&#10;(후기 수정 및 삭제는 불가능합니다.)"></textarea>
+            <button id="review-input-modal-submit" class="primary-button mt-4">등록하기</button>
+        </div>
+    </div>
+
+
+    <script>
+        // Simulate fetching user status and account/product data from a backend API
+        async function fetchUserStatus() {
+            // For demonstration, we simulate the backend response with a delay.
+            // Toggle these values to test different scenarios:
+            const simulatedIsLoggedIn = true;  // true: 로그인 상태, false: 비로그인 상태
+            const simulatedHasProducts = true; // true: 상품 가입 상태, false: 상품 미가입 상태
+
+            // Simulate account data if logged in and has products
+            let accountData = null;
+            if (simulatedIsLoggedIn && simulatedHasProducts) {
+                accountData = {
+                    parentAccountNo: "123-45-67890",
+                    childAccounts: [
+                        { currencyCode: "USD", currencyFullName: "미국 달러", balance: "1,234.56" },
+                        { currencyCode: "JPY", currencyFullName: "일본 엔", balance: "123,456" },
+                        { currencyCode: "EUR", currencyFullName: "유럽 유로", balance: "876.54" },
+                        { currencyCode: "CNY", currencyFullName: "중국 위안", balance: "500.00" },
+                        { currencyCode: "GBP", currencyFullName: "영국 파운드", balance: "300.00" },
+                        { currencyCode: "AUD", currencyFullName: "호주 달러", balance: "700.00" },
+                        { currencyCode: "CAD", currencyFullName: "캐나다 달러", balance: "250.00" },
+                        { currencyCode: "CHF", currencyFullName: "스위스 프랑", balance: "150.00" },
+                        { currencyCode: "HKD", currencyFullName: "홍콩 달러", balance: "900.00" }
+                    ]
+                };
+            }
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve({
+                        isLoggedIn: simulatedIsLoggedIn,
+                        hasProducts: simulatedHasProducts,
+                        accountData: accountData
+                    });
+                }, 500); // Simulate network delay
+            });
+        }
+
+        // Mock data for reviews (now includes tags)
+        let mockReviews = [
+            { id: 1, uidMasked: "익명1", date: "2025-08-15", rating: 5, content: "아주 유용하고 편리한 통장입니다!", tags: ["사용하기 편해요", "다양한 통화 지원"] },
+            { id: 2, uidMasked: "익명2", date: "2025-08-14", rating: 4, content: "해외 직구할 때 환전 수수료 아끼니 좋아요.", tags: ["환전 수수료 저렴", "해외직구 필수"] },
+            { id: 3, uidMasked: "익명3", date: "2025-08-13", rating: 5, content: "자식 계좌 관리도 편리합니다.", tags: ["계좌 관리 편리", "다양한 통화 지원"] },
+            { id: 4, uidMasked: "익명4", date: "2025-08-12", rating: 3, content: "아직 좀 더 개선이 필요합니다.", tags: ["빠른 처리"] },
+            { id: 5, uidMasked: "익명5", date: "2025-08-11", rating: 4, content: "고객 서비스가 아주 만족스러웠습니다.", tags: ["고객 서비스 우수"] },
+            { id: 6, uidMasked: "익명6", date: "2025-08-10", rating: 5, content: "매우 만족합니다!", tags: ["사용하기 편해요"] },
+            { id: 7, uidMasked: "익명7", date: "2025-08-09", rating: 2, content: "조금 아쉬운 부분이 있습니다.", tags: [] }
+        ];
+
+        // Global list to store notifications
+        let notificationList = [];
+
+        // Available review tags (no counts here, as counts are calculated dynamically)
+        let allAvailableTags = [
+            "사용하기 편해요",
+            "다양한 통화 지원",
+            "환전 수수료 저렴",
+            "해외직구 필수",
+            "계좌 관리 편리",
+            "빠른 처리",
+            "고객 서비스 우수"
+        ];
+        // Define a color palette for tags
+        const tagColors = [
+            '#007bff', // Blue
+            '#28a745', // Green
+            '#dc3545', // Red
+            '#ffc107', // Yellow
+            '#6f42c1', // Purple
+            '#fd7e14', // Orange
+            '#20c997', // Teal
+            '#6c757d', // Gray - fallback
+        ];
+
+        // Define emojis for tags
+        const tagEmojis = {
+            "사용하기 편해요": "👍",
+            "다양한 통화 지원": "�",
+            "환전 수수료 저렴": "💰",
+            "해외직구 필수": "🛒",
+            "계좌 관리 편리": "💼",
+            "빠른 처리": "⚡",
+            "고객 서비스 우수": "✨"
+        };
+
+
+        function getColorForTag(tagName) {
+            const index = allAvailableTags.indexOf(tagName);
+            if (index !== -1) {
+                return tagColors[index % tagColors.length];
+            }
+            return '#000000'; // Default black if tag not found
+        }
+
+        // Helper to generate tag styles (background and text color) for consistency
+        function getTagStyle(tagName) {
+            const color = getColorForTag(tagName);
+            // For a light background, use a slightly desaturated color with transparency
+            // For text, use the primary color
+            const rgb = hexToRgb(color);
+            const backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`; // Light background with transparency
+            const textColor = color; // The main color for the text
+            return { backgroundColor, color: textColor };
+        }
+
+        // Helper to convert hex to rgb for rgba conversion
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return { r, g, b };
+        }
+
+
+        let selectedTagsForModal = new Set();
+        let currentRatingForModal = 0; // Rating for the review input modal
+
+        // Pagination variables for reviews
+        const reviewsPerPage = 1; // Changed to 1 review per page
+        let currentReviewPage = 1;
+        let totalReviewPages = 1;
+
+        // State for tag statistics visibility
+        let showAllTagStats = false;
+        // State for child accounts visibility
+        let showAllChildAccounts = false;
+
+        let reviewSliderInterval; // Variable to hold the interval for auto-sliding reviews
+
+
+        // Simulate fetching reviews
+        async function fetchReviews() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    // Sort reviews: highest rating first, then by ID descending (most recent within same rating)
+                    const sortedReviews = [...mockReviews].sort((a, b) => {
+                        if (b.rating !== a.rating) {
+                            return b.rating - a.rating; // Sort by rating descending
+                        }
+                        return b.id - a.id; // Then by ID descending
+                    });
+                    resolve({
+                        items: sortedReviews
+                    });
+                }, 300); // Simulate network delay
+            });
+        }
+
+        // Simulate submitting a review
+        async function submitReview(content, rating, tags) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    // Generate a unique anonymous ID for new reviews
+                    const newId = mockReviews.length > 0 ? Math.max(...mockReviews.map(r => r.id)) + 1 : 1;
+                    const newAnonymousNum = mockReviews.length + 1; // Simple incrementing number for anonymous users
+                    const newReview = {
+                        id: newId,
+                        uidMasked: `익명${newAnonymousNum}`, // Use "익명+번호" format
+                        date: new Date().toISOString().slice(0, 10), // Current date
+                        rating: parseInt(rating, 10),
+                        content: content,
+                        tags: tags // Store selected tags
+                    };
+                    mockReviews.push(newReview);
+                    resolve({ ok: true, newReviewContent: content }); // Simulate success, return content for notification
+                }, 300);
+            });
+        }
+
+        const contentArea = document.getElementById('content-area');
+        const reviewList = document.getElementById('reviewList');
+        const reviewInputSection = document.getElementById('review-input-section');
+        const reviewLoginPrompt = document.getElementById('review-login-prompt');
+        const tagStatisticsDiv = document.getElementById('tag-statistics');
+        const tagStatsList = document.getElementById('tag-stats-list');
+        const toggleTagStatsButton = document.getElementById('toggle-tag-stats');
+        const totalReviewsCountSpan = document.getElementById('total-reviews-count'); // New element
+
+
+        // Review Pagination Elements
+        const reviewPaginationDiv = document.getElementById('review-pagination');
+        const prevReviewPageButton = document.getElementById('prev-review-page');
+        const nextReviewPageButton = document.getElementById('next-review-page');
+        const reviewPageInfoSpan = document.getElementById('review-page-info');
+
+        // Notification Badge element
+        const notificationBadge = document.getElementById('notification-badge');
+
+
+        // Modals
+        const paymentModalOverlay = document.getElementById('payment-modal-overlay');
+        const notificationModalOverlay = document.getElementById('notification-modal-overlay');
+        const reviewInputModalOverlay = document.getElementById('review-input-modal-overlay');
+
+        // Modal content elements (for general alerts)
+        const modalTitle = paymentModalOverlay.querySelector('h3');
+        const modalMessage = paymentModalOverlay.querySelector('p');
+
+        function escapeHtml(s) {
+            return s.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&#39;' }[m])); // Escaping single quote for HTML attribute safety
+        }
+
+        // Function to render star icons (reused for review display and input modal)
+        function renderStarIcons(rating) {
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                starsHtml += `
+                    <svg class="star-icon ${i <= rating ? 'filled' : ''}" data-star="${i}" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.691h4.178c.969 0 1.371 1.24.588 1.81l-3.388 2.464a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.683-1.539 1.118l-3.388-2.464a1 1 0 00-1.176 0l-3.388 2.464c-.784.565-1.839-.197-1.539-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.583 9.385c-.783-.57-.381-1.81.588-1.81h4.178a1 1 0 00.95-.691l1.286-3.957z"></path>
+                    </svg>
+                `;
+            }
+            return starsHtml;
+        }
+
+        async function loadReviews() {
+            stopReviewSlider(); // Stop slider during manual navigation or initial load
+            const { items: allReviews } = await fetchReviews(); // Fetch sorted reviews
+            totalReviewPages = Math.ceil(allReviews.length / reviewsPerPage);
+
+            reviewList.innerHTML = ''; // Clear existing reviews
+            if (allReviews && allReviews.length > 0) { // Update total reviews count
+                totalReviewsCountSpan.textContent = `(총 ${allReviews.length}개)`;
+            } else {
+                totalReviewsCountSpan.textContent = `(총 0개)`;
+            }
+
+            const startIndex = (currentReviewPage - 1) * reviewsPerPage;
+            const endIndex = startIndex + reviewsPerPage;
+            const reviewsToDisplay = allReviews.slice(startIndex, endIndex);
+
+            if (reviewsToDisplay && reviewsToDisplay.length > 0) {
+                reviewsToDisplay.forEach(it => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 bg-gray-50 rounded-lg shadow-sm text-gray-700 border border-gray-100';
+                    const tagsHtml = it.tags && it.tags.length > 0 ?
+                        `<div class="flex flex-wrap gap-1 mt-2">${it.tags.map(tag => {
+                            const tagStyle = getTagStyle(tag);
+                            return `<span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${tagStyle.backgroundColor}; color: ${tagStyle.color};">${escapeHtml(tag)}</span>`;
+                        }).join('')}</div>` : '';
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <b>${it.uidMasked || ''}</b>
+                            <span class="muted">${it.date || ''}</span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <div class="star-rating">
+                                ${renderStarIcons(it.rating)}
+                            </div>
+                        </div>
+                        <p class="text-sm">${escapeHtml(it.content || '')}</p>
+                        ${tagsHtml}
+                    `;
+                    reviewList.appendChild(div);
+                });
+            } else {
+                reviewList.innerHTML = '<div class="text-center text-gray-500 p-4">등록된 후기가 없습니다.</div>';
+            }
+            updatePaginationControls();
+            updateTagStatistics(); // Update tag stats after loading reviews
+            startReviewSlider(); // Restart slider after loading reviews
+        }
+
+        function updatePaginationControls() {
+            prevReviewPageButton.disabled = (currentReviewPage === 1);
+            nextReviewPageButton.disabled = (currentReviewPage === totalReviewPages || totalReviewPages === 0);
+            reviewPageInfoSpan.textContent = `${currentReviewPage} / ${totalReviewPages}`;
+        }
+
+        function updateTagStatistics() {
+            // Calculate tag counts
+            const tagCounts = {};
+            mockReviews.forEach(review => {
+                if (review.tags) {
+                    review.tags.forEach(tag => {
+                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    });
+                }
+            });
+
+            // Prepare tags for display, including those with zero count
+            let displayTags = allAvailableTags.map(tagName => ({
+                name: tagName,
+                count: tagCounts[tagName] || 0
+            }));
+
+            // Filter tags with count > 0 and sort by count descending for the "어떤 점이 좋았나요?" section
+            const topTags = displayTags.filter(tag => tag.count > 0).sort((a, b) => b.count - a.count);
+            const maxCount = topTags.length > 0 ? topTags[0].count : 1; // Avoid division by zero
+
+            let statsHtml = '';
+            // Show only top 2 tags by default
+            const tagsToShow = showAllTagStats ? topTags : topTags.slice(0, 2);
+
+            if (tagsToShow.length > 0) {
+                tagsToShow.forEach(tag => {
+                    const percentage = (tag.count / maxCount) * 100;
+                    const tagColor = getColorForTag(tag.name); // Get color for the tag
+                    const tagEmoji = tagEmojis[tag.name] || ''; // Get emoji for the tag
+                    statsHtml += `
+                        <div class="tag-stats-item flex-col items-start">
+                            <div class="flex justify-between w-full mb-1">
+                                <span class="tag-stats-name" style="color: ${tagColor};">${escapeHtml(tag.name)}</span>
+                                <span class="tag-stats-count">${tag.count}회</span>
+                            </div>
+                            <div class="tag-bar-container w-full">
+                                <div class="tag-bar" style="width: ${percentage}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                statsHtml = '<p class="text-center text-gray-500 text-sm">아직 태그 후기가 없습니다.</p>';
+            }
+            tagStatsList.innerHTML = statsHtml;
+
+            // Update toggle button text - show toggle if more than 2 tags
+            if (topTags.length > 2) {
+                toggleTagStatsButton.style.display = 'block';
+                toggleTagStatsButton.textContent = showAllTagStats ? '접기 <' : '펼치기 >';
+            } else {
+                toggleTagStatsButton.style.display = 'none';
+            }
+        }
+
+        function renderReviewInputSection(isLoggedIn) {
+            if (isLoggedIn) {
+                // The '후기 등록' button is now in the header, so this section can be empty
+                reviewInputSection.innerHTML = '';
+                reviewLoginPrompt.style.display = 'none';
+            } else {
+                reviewInputSection.innerHTML = ''; // Ensure it's empty
+                reviewLoginPrompt.style.display = 'block';
+            }
+        }
+
+        function renderTagsForModal() {
+            const tagsSelectionDiv = document.getElementById('review-input-modal-tags');
+            tagsSelectionDiv.innerHTML = '';
+            allAvailableTags.forEach(tag => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                const tagEmoji = tagEmojis[tag] || '';
+                const tagStyle = getTagStyle(tag);
+                button.innerHTML = `${tagEmoji} ${escapeHtml(tag)}`;
+                button.className = 'review-tag-button';
+                button.style.setProperty('--tag-bg-color', tagStyle.backgroundColor);
+                button.style.setProperty('--tag-color', tagStyle.color);
+
+                if (selectedTagsForModal.has(tag)) {
+                    button.classList.add('selected');
+                }
+                button.dataset.tag = tag;
+
+                button.addEventListener('click', () => {
+                    if (selectedTagsForModal.has(tag)) {
+                        selectedTagsForModal.delete(tag);
+                        button.classList.remove('selected');
+                        button.style.backgroundColor = tagStyle.backgroundColor;
+                        button.style.color = tagStyle.color;
+                        button.style.borderColor = tagStyle.color;
+                    } else {
+                        selectedTagsForModal.add(tag);
+                        button.classList.add('selected');
+                    }
+                });
+                tagsSelectionDiv.appendChild(button);
+            });
+        }
+
+        function setupStarRatingForModal() {
+            const starRatingDiv = document.getElementById('review-input-modal-star-rating');
+            if (!starRatingDiv) return;
+
+            starRatingDiv.innerHTML = renderStarIcons(currentRatingForModal);
+
+            const stars = starRatingDiv.querySelectorAll('.star-icon');
+
+            stars.forEach(star => {
+                star.addEventListener('mouseover', () => {
+                    const value = parseInt(star.dataset.star, 10);
+                    stars.forEach((s, index) => {
+                        if (index < value) {
+                            s.classList.add('hovered');
+                        } else {
+                            s.classList.remove('hovered');
+                        }
+                    });
+                });
+
+                star.addEventListener('mouseout', () => {
+                    stars.forEach(s => s.classList.remove('hovered'));
+                });
+
+                star.addEventListener('click', () => {
+                    const value = parseInt(star.dataset.star, 10);
+                    currentRatingForModal = value;
+                    stars.forEach((s, index) => {
+                        if (index < value) {
+                            s.classList.add('filled');
+                            s.classList.remove('hovered');
+                        } else {
+                            s.classList.remove('filled');
+                        }
+                    });
+                });
+            });
+            stars.forEach((s, index) => {
+                if (index < currentRatingForModal) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+        }
+
+        // Function to get card design style based on ID
+        function getCardDesignStyle(cardId) {
+            const defaultStyle = {
+                backgroundImage: 'none',
+                textColor: '#111827' // Default dark text
+            };
+
+            switch (cardId) {
+                case 'card-a': // Red Pig / Ghibli
+                    return {
+                        backgroundImage: `url('http://googleusercontent.com/file_content/1')`,
+                        textColor: '#ffffff' // White text for darker background
+                    };
+                case 'card-b': // One Piece
+                    return {
+                        backgroundImage: `url('http://googleusercontent.com/file_content/2')`,
+                        textColor: '#ffffff'
+                    };
+                case 'card-c': // Gundam
+                    return {
+                        backgroundImage: `url('http://googleusercontent.com/file_content/3')`,
+                        textColor: '#ffffff'
+                    };
+                default:
+                    return defaultStyle;
+            }
+        }
+
+
+        function renderContent(isLoggedIn, hasProducts, accountData, selectedCardId) {
+            if (!isLoggedIn) {
+                contentArea.innerHTML = `
+                    <div class="content-box text-center">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4">내 통장 정보</h2>
+                        <p class="text-lg font-medium text-gray-800 mb-6">로그인이 필요합니다!</p>
+                        <button id="login-button" class="primary-button">
+                            로그인 페이지로 이동
+                        </button>
+                    </div>
+                `;
+                document.getElementById('login-button').addEventListener('click', () => {
+                    window.location.href = '/user/login';
+                });
+                renderReviewInputSection(false);
+
+            } else if (!hasProducts) {
+                contentArea.innerHTML = `
+                    <div class="content-box text-center">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4">내 통장 정보</h2>
+                        <p class="text-lg font-medium text-gray-800 mb-6">상품을 가입해 주세요!</p>
+                        <button id="signup-button" class="primary-button">
+                            상품 가입하기
+                        </button>
+                    </div>
+                `;
+                document.getElementById('signup-button').addEventListener('click', () => {
+                    window.location.href = '/foreign1';
+                });
+                renderReviewInputSection(false);
+
+            } else {
+                const allChildAccounts = accountData.childAccounts;
+                const maxDisplayChildren = 3;
+                const childrenToDisplay = showAllChildAccounts ? allChildAccounts : allChildAccounts.slice(0, maxDisplayChildren);
+                const hasMoreChildren = allChildAccounts.length > maxDisplayChildren;
+
+                const cardDesign = getCardDesignStyle(selectedCardId);
+                const dynamicBgStyle = cardDesign.backgroundImage ?
+                    `background-image: ${cardDesign.backgroundImage}; background-size: cover; background-position: center;` :
+                    '';
+                const dynamicTextColor = cardDesign.textColor;
+
+                let childAccountsHtml = '';
+
+                if (allChildAccounts.length > 0) {
+                     childAccountsHtml = `
+                        <div class="mt-4">
+                            <div class="grid grid-cols-3 gap-3">
+                    `;
+                    childrenToDisplay.forEach(c => {
+                        childAccountsHtml += `
+                                <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200 text-center">
+                                    <div class="flex justify-center items-center mb-1">
+                                        <b class="text-gray-800">${c.currencyCode}</b>
+                                    </div>
+                                    <div class="mono text-gray-800 mt-1 text-base font-bold">${c.balance}</div>
+                                </div>
+                        `;
+                    });
+                    childAccountsHtml += `
+                            </div>
+                    `;
+                    if (hasMoreChildren) {
+                        childAccountsHtml += `
+                            <div class="mt-4 text-center flex justify-center">
+                                <button id="toggle-child-accounts" class="text-blue-600 text-sm font-medium hover:underline focus:outline-none flex items-center w-auto">
+                                    ${showAllChildAccounts ? '접기 <' : '더보기 >'}
+                                </button>
+                            </div>
+                        `;
+                    }
+                    childAccountsHtml += `</div>`;
+                } else {
+                    childAccountsHtml = '<div class="muted mt-4">연결된 자식 통장이 없습니다.</div>';
+                }
+
+                contentArea.innerHTML = `
+                    <div class="content-box relative overflow-hidden" style="${dynamicBgStyle}; background-color: ${cardDesign.backgroundImage === 'none' ? '#ffffff' : 'transparent'};">
+                        <h2 class="text-xl font-semibold mb-4 z-10 relative" style="color: ${dynamicTextColor};">BNK 쇼핑환전통장</h2>
+                        <div class="mb-4">
+                            <div class="flex items-center z-10 relative" style="color: ${dynamicTextColor};">
+                                <span id="parent-account-number" class="mono text-lg font-bold">${accountData.parentAccountNo || '000-00-00000'}</span>
+                                <button id="copy-account-number" class="p-1 rounded-full hover:bg-gray-100 transition-colors ml-1">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: ${dynamicTextColor};">
+                                        <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        ${childAccountsHtml}
+                    </div>
+                `;
+
+                document.getElementById('copy-account-number').addEventListener('click', () => {
+                    const accountNumberElement = document.getElementById('parent-account-number');
+                    const accountNumber = accountNumberElement ? accountNumberElement.textContent.trim() : '';
+
+                    if (accountNumber) {
+                        try {
+                            const tempInput = document.createElement('textarea');
+                            tempInput.value = accountNumber;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                            showPaymentModal('알림', '계좌번호가 복사되었습니다!');
+                        } catch (err) {
+                            showPaymentModal('알림', '계좌번호 복사에 실패했습니다.');
+                            console.error('Failed to copy account number: ', err);
+                        }
+                    } else {
+                        showPaymentModal('알림', '복사할 계좌번호가 없습니다.');
+                    }
+                });
+
+                const toggleChildAccountsButton = document.getElementById('toggle-child-accounts');
+                if (toggleChildAccountsButton) {
+                    toggleChildAccountsButton.addEventListener('click', () => {
+                        showAllChildAccounts = !showAllChildAccounts;
+                        renderContent(isLoggedIn, hasProducts, accountData, selectedCardId);
+                    });
+                }
+                renderReviewInputSection(true);
+            }
+        }
+
+        // Benefits slider logic
+        const benefitsSliderContent = document.getElementById('benefits-slider-content');
+        let currentBenefitIndex = 0;
+        let benefitsInterval;
+
+        const benefitItems = [
+            { type: 'savings', label: '환전 수수료', value: 0, max: 50000, increment: 1000, unit: '원 아꼈어요!', emoji: '💰' },
+            { type: 'interest', label: '이자 혜택', value: 0, max: 12000, increment: 200, unit: '원 받았어요!', emoji: '📈' },
+            { type: 'theft', label: '카드 활성화 여부로 도난을', value: 0, max: 10, increment: 1, unit: '번 방지했어요!', emoji: '🔒' }
+        ];
+
+        function showNextBenefit() {
+            const currentBenefit = benefitItems[currentBenefitIndex];
+
+            // Update value for demo purposes
+            if (currentBenefit.value < currentBenefit.max) {
+                currentBenefit.value += currentBenefit.increment;
+                if (currentBenefit.value > currentBenefit.max) {
+                    currentBenefit.value = currentBenefit.max; // Cap at max
+                }
+            } else {
+                currentBenefit.value = 0; // Reset to 0 for continuous growth demo
+            }
+
+            // Prepare for transition: move out and hide
+            benefitsSliderContent.style.transition = 'none'; // Disable transition temporarily
+            benefitsSliderContent.style.opacity = '0';
+            benefitsSliderContent.style.transform = 'translateY(100%)'; // Move off-screen below
+
+            // After a tiny delay, update content and slide in
+            setTimeout(() => {
+                benefitsSliderContent.innerHTML = `<p class="text-xl font-bold text-blue-700">${currentBenefit.emoji} ${currentBenefit.label} ${currentBenefit.value.toLocaleString('ko-KR')}${currentBenefit.unit}</p>`;
+                benefitsSliderContent.style.transition = 'all 0.7s ease-in-out'; // Enable transition
+                benefitsSliderContent.style.opacity = '1';
+                benefitsSliderContent.style.transform = 'translateY(0)'; // Slide to center
+
+                currentBenefitIndex = (currentBenefitIndex + 1) % benefitItems.length;
+            }, 50); // Small delay to allow CSS properties to reset
+        }
+
+        function startBenefitsSlider() {
+            showNextBenefit(); // Show the first benefit immediately
+            benefitsInterval = setInterval(showNextBenefit, 3000); // Change every 3 seconds
+        }
+
+        // --- MODAL CONTROL FUNCTIONS ---
+
+        // General Alert Modal
+        const paymentModalOverlayElem = document.getElementById('payment-modal-overlay');
+        const paymentModalCloseButton = document.getElementById('modal-close-button');
+        const paymentModalConfirmButton = document.getElementById('modal-confirm-button');
+
+        function showPaymentModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            paymentModalOverlayElem.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hidePaymentModal() {
+            paymentModalOverlayElem.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Notification Modal
+        const notificationModalOverlayElem = document.getElementById('notification-modal-overlay');
+        const notificationModalCloseButton = document.getElementById('notification-modal-close-button');
+        const notificationModalConfirmButton = document.getElementById('notification-modal-confirm-button');
+        const notificationListContainer = document.getElementById('notification-list');
+
+        function updateNotificationBadgeDisplay() {
+            if (notificationList.length > 0) {
+                notificationBadge.textContent = notificationList.length;
+                notificationBadge.classList.remove('hidden');
+            } else {
+                notificationBadge.textContent = '';
+                notificationBadge.classList.add('hidden');
+            }
+        }
+
+        function showNotificationModal(title = "새로운 알림", messages = []) {
+            notificationModalOverlayElem.querySelector('h3').textContent = title;
+            notificationListContainer.innerHTML = '';
+
+            if (messages.length === 0) {
+                notificationListContainer.innerHTML = '<p class="text-gray-700">현재 새로운 푸쉬 알림이 없습니다.</p>';
+            } else {
+                messages.forEach(msg => {
+                    const p = document.createElement('p');
+                    p.className = 'notification-list-item';
+                    p.textContent = msg;
+                    notificationListContainer.appendChild(p);
+                });
+            }
+
+            notificationModalOverlayElem.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideNotificationModal() {
+            notificationModalOverlayElem.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Review Input Modal
+        const reviewInputModalOverlayElem = document.getElementById('review-input-modal-overlay');
+        const reviewModalCloseButton = document.getElementById('review-modal-close-button');
+        const reviewInputModalSubmitButton = document.getElementById('review-input-modal-submit');
+        const reviewInputModalContent = document.getElementById('review-input-modal-content');
+
+        function showReviewInputModal() {
+            // Reset modal state
+            selectedTagsForModal.clear();
+            currentRatingForModal = 0;
+            reviewInputModalContent.value = '';
+
+            renderTagsForModal();
+            setupStarRatingForModal();
+
+            reviewInputModalOverlayElem.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideReviewInputModal() {
+            reviewInputModalOverlayElem.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Function to start the automatic review slider
+        function startReviewSlider() {
+            // Clear any existing interval to prevent multiple sliders
+            if (reviewSliderInterval) {
+                clearInterval(reviewSliderInterval);
+            }
+            reviewSliderInterval = setInterval(() => {
+                currentReviewPage++;
+                if (currentReviewPage > totalReviewPages || totalReviewPages === 0) {
+                    currentReviewPage = 1;
+                }
+                loadReviews();
+            }, 3000);
+        }
+
+        // Function to stop the automatic review slider
+        function stopReviewSlider() {
+            if (reviewSliderInterval) {
+                clearInterval(reviewSliderInterval);
+                reviewSliderInterval = null;
+            }
+        }
+
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { isLoggedIn, hasProducts, accountData } = await fetchUserStatus();
+
+            // Retrieve selected card ID from session storage
+            const cardIssueDataRaw = sessionStorage.getItem('bnkCardIssueData');
+            let selectedCardId = null;
+            if (cardIssueDataRaw) {
+                try {
+                    const cardIssueData = JSON.parse(cardIssueDataRaw);
+                    if (cardIssueData.selectedCard && cardIssueData.selectedCard.id) {
+                        selectedCardId = cardIssueData.selectedCard.id;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse bnkCardIssueData from sessionStorage', e);
+                }
+            }
+
+            renderContent(isLoggedIn, hasProducts, accountData, selectedCardId);
+            loadReviews();
+            startBenefitsSlider(); // Start the benefits slider
+
+            // Event listener for Notification Bell
+            document.getElementById('notification-bell-button').addEventListener('click', () => {
+                showNotificationModal('새로운 알림', notificationList);
+            });
+
+            // General Alert Modal close listeners
+            paymentModalCloseButton.addEventListener('click', hidePaymentModal);
+            paymentModalConfirmButton.addEventListener('click', hidePaymentModal);
+            paymentModalOverlayElem.addEventListener('click', (event) => {
+                if (event.target === paymentModalOverlayElem) {
+                    hidePaymentModal();
+                }
+            });
+
+            // Notification Modal close listeners
+            notificationModalCloseButton.addEventListener('click', hideNotificationModal);
+            notificationModalConfirmButton.addEventListener('click', hideNotificationModal);
+            notificationModalOverlayElem.addEventListener('click', (event) => {
+                if (event.target === notificationModalOverlayElem) {
+                    hideNotificationModal();
+                }
+            });
+
+            // Review Input Modal listeners
+            reviewModalCloseButton.addEventListener('click', hideReviewInputModal);
+            document.getElementById('trigger-review-modal-button-header').addEventListener('click', () => {
+                showReviewInputModal();
+            });
+
+            reviewInputModalSubmitButton.addEventListener('click', async () => {
+                const content = reviewInputModalContent.value.trim();
+                const rating = currentRatingForModal;
+                const tags = Array.from(selectedTagsForModal);
+
+                if (!content) {
+                    showPaymentModal('알림', '내용을 입력하세요.');
+                    return;
+                }
+                if (rating === 0) {
+                    showPaymentModal('알림', '평점을 선택해 주세요.');
+                    return;
+                }
+
+                const result = await submitReview(content, rating, tags);
+                if (result.ok) {
+                    hideReviewInputModal();
+                    
+                    notificationList.unshift("새로운 후기 등록이 완료되었습니다!");
+                    updateNotificationBadgeDisplay();
+                    showNotificationModal('새로운 알림', notificationList);
+
+                    currentReviewPage = 1;
+                    loadReviews();
+                } else {
+                    showPaymentModal('알림', '후기 등록에 실패했습니다.');
+                }
+            });
+            reviewInputModalOverlayElem.addEventListener('click', (event) => {
+                if (event.target === reviewInputModalOverlayElem) {
+                    hideReviewInputModal();
+                }
+            });
+
+            // Tag statistics toggle listener
+            toggleTagStatsButton.addEventListener('click', () => {
+                showAllTagStats = !showAllTagStats;
+                updateTagStatistics();
+            });
+
+            // Review Pagination Listeners (manual navigation)
+            prevReviewPageButton.addEventListener('click', () => {
+                stopReviewSlider();
+                if (currentReviewPage > 1) {
+                    currentReviewPage--;
+                    loadReviews();
+                }
+            });
+            nextReviewPageButton.addEventListener('click', () => {
+                stopReviewSlider();
+                if (currentReviewPage < totalReviewPages) {
+                    currentReviewPage++;
+                    loadReviews();
+                }
+            });
+
+            // Initial update of notification badge on page load
+            updateNotificationBadgeDisplay();
+        });
+    </script>
+</body>
+</html>

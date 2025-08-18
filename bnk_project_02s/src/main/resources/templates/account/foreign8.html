@@ -89,7 +89,7 @@
     <!-- Header -->
     <header>
       <div class="header-bar">
-        <a href="/foreign0" class="header-back">
+        <a href="/foreign" class="header-back">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
           </svg>
@@ -247,7 +247,7 @@
     (function restore(){
       try{
         const raw=sessionStorage.getItem(STORAGE_KEY);
-        if(!raw){ info('이전 단계의 정보가 없습니다.\n처음 화면으로 이동합니다.'); setTimeout(()=>location.href='/foreign0',1200); return; }
+        if(!raw){ info('이전 단계의 정보가 없습니다.\n처음 화면으로 이동합니다.'); setTimeout(()=>location.href='/foreign',1200); return; }
         const data=JSON.parse(raw);
         const card=data.selectedCard;
         if(card?.id){ cardPreviewImg.src=mapCardImageById(card.id); cardPreviewImg.alt='선택한 카드'; }
@@ -258,7 +258,7 @@
         vOwnFunds.textContent=data.customer?.ownFunds==='yes'?'예':(data.customer?.ownFunds==='no'?'아니오':'-');
       }catch(e){
         info('정보 복원 중 오류가 발생했습니다.\n처음 화면으로 이동합니다.');
-        setTimeout(()=>location.href='/foreign0',1300);
+        setTimeout(()=>location.href='/foreign',1300);
       }
     })();
 
@@ -290,7 +290,7 @@
     // 완료 모달: 확인 → 세션 정리 → 홈 이동
     completeOk.addEventListener('click', ()=>{
       clearAllRelatedSessions();           // ★ 통장 + 카드 세션값 전부 제거(로그인 제외)
-      location.href='/foreign0';
+      location.href='/foreign';
     });
 
     // X 눌러도 그냥 닫기(세션 유지)
