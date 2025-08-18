@@ -1,10 +1,36 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 인터넷 권한 (WebView 필수) -->
+    <!-- 필수 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- 외부 HTTP 허용(필요 시) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ✅ Android 11+ 패키지 가시성 설정 -->
+    <queries>
+        <!-- 카카오톡 설치 여부 점검 -->
+        <package android:name="com.kakao.talk" />
+
+        <!-- kakaolink 스킴을 외부 앱으로 열 수 있게 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="kakaolink" />
+        </intent>
+
+        <!-- (선택) 웹 공유 시 브라우저로 열기 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+
+        <!-- (기존에 쓰던) WebView PROCESS_TEXT 허용 유지 -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
 
     <application
         android:label="bnk_project_02f"
@@ -22,29 +48,18 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:windowSoftInputMode="stateVisible|adjustResize">
 
-            <!-- Flutter 초기 테마 -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
-            <!-- 런처 Activity -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-        <!-- Flutter 엔진 설정 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-
-    <!-- WebView에서 텍스트 처리 허용 -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
-    </queries>
 </manifest>

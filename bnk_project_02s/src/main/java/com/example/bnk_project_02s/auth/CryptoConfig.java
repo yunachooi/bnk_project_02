@@ -31,7 +31,7 @@ public class CryptoConfig {
     @Qualifier("urlHmac")
     public HmacUtil urlHmac(@Value("${hmac.url.secret.base64:${hmac.secret.base64}}") String keyB64) {
         byte[] key = decodeKeyFlexible(keyB64); // 기존 CryptoConfig의 유틸 메서드 재사용
-        requireAtLeast(key, 32, "HMAC");
+        requireAtLeast(key, HMAC_MIN_LEN, "HMAC");
         return new HmacUtil(key);
     }
 
