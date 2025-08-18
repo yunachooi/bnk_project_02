@@ -72,7 +72,7 @@ public class ShoppingLogService {
         }
         
      // --- 2) 자식계좌 조회 ---
-        Optional<ChildAccount> childAccountOpt = childAccountRepository.findByCano(card.getCano());
+        Optional<ChildAccount> childAccountOpt = childAccountRepository.findById(card.getCano());
         if (childAccountOpt.isEmpty()) return createErrorResponse("CHILD_ACCOUNT_NOT_FOUND", "연결된 계좌를 찾을 수 없습니다.");
 
         ChildAccount childAccount = childAccountOpt.get();
