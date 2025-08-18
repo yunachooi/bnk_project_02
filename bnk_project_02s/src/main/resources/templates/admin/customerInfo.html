@@ -80,6 +80,7 @@
       <h2>고객 정보 관리</h2>
       <div class="report-toolbar">
         <button type="button" onclick="openDrawer()">+ 신규등록</button>
+        <button type="button" onclick="sendReco()" style="margin-left:8px">상품추천 알림 보내기</button>
       </div>
     </div>
 
@@ -285,6 +286,29 @@
         .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
         .then(()=>{ closeDrawer(); loadUsers(0); })
         .catch(()=>alert('저장 실패'));
+    }
+    
+ 	// 상품추천 인박스 적재 호출
+    async function sendReco() {
+      if (!confirm('상품 미가입 + 푸시동의 고객에게 "상품추천" 알림을 보냅니다. 진행할까요?')) return;
+
+      // CSRF 메타 태그가 있으면 자동으로 헤더 붙이기
+      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+      const headerName = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token && headerName) headers[headerName] = token;
+
+      try {
+        const res = await fetch('/api/admin/push/recommend?page=0&size=500', {
+          method: 'POST',
+          headers
+        });
+        if (!res.ok) throw new Error('요청 실패');
+        const j = await res.json();
+        alert(`인박스 적재 완료: ${j.inserted}건 (타깃 총 ${j.totalTargets}명)`);
+      } catch (e) {
+        alert(e.message || '실패');
+      }
     }
 
     // Enter 로도 검색

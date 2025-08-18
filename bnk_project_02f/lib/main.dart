@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
+import 'notify.dart';
 import 'login/signin.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initLocalNotifications(); // ← 권한 체크/요청 포함
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BNK WebView',
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const SignInWebViewPage(),
+      home: SignInWebViewPage(), // ← 로그인 WebView
     );
   }
 }

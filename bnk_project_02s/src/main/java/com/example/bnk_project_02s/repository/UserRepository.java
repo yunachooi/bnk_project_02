@@ -97,4 +97,20 @@ public interface UserRepository extends JpaRepository<User, String> {
     // 휴대폰은 AES-GCM이라 LIKE가 불가 → 동등검색만 지원.
     // @Convert가 파라미터에도 적용되므로, “평문”을 넘기면 내부에서 암호문으로 비교됨.
     Page<User> findByUphoneEnc(String phonePlain, Pageable pageable);
-}
+    
+    
+    @Query("""
+            select u from User u
+             where (u.ucheck is null or upper(trim(u.ucheck)) = 'N')
+               and upper(trim(u.upush)) = 'Y'
+        """)
+        Page<User> findRecommendationTargets(Pageable pageable); //push알림용
+
+        @Query("""
+            select count(u) from User u
+             where (u.ucheck is null or upper(trim(u.ucheck)) = 'N')
+               and upper(trim(u.upush)) = 'Y'
+        """)
+        long countRecommendationTargets(); //push알림용
+    }
+    
