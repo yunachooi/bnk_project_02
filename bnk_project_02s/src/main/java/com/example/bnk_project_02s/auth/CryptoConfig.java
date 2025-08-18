@@ -6,12 +6,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class CryptoConfig {
 
-    private static final int AES_KEY_LEN = 32;   // AES-256 = 32 bytes
-    private static final int HMAC_MIN_LEN = 32;  // HMAC은 256bit 이상 권장
+    private static final int AES_KEY_LEN = 32;
+    private static final int HMAC_MIN_LEN = 32;
 
     @Bean
     public AesGcmUtil aes(@Value("${aes.key.256.base64}") String aesKey) {
@@ -21,17 +22,18 @@ public class CryptoConfig {
     }
 
     @Bean
+    @Primary
     public HmacUtil hmac(@Value("${hmac.secret.base64}") String hmacKey) {
         byte[] key = decodeKeyFlexible(hmacKey);
         requireAtLeast(key, HMAC_MIN_LEN, "HMAC");
-        return new HmacUtil(key); // byte[] 생성자 사용
+        return new HmacUtil(key);
     }
     
     @Bean
     @Qualifier("urlHmac")
-    public HmacUtil urlHmac(@Value("${hmac.url.secret.base64:${hmac.secret.base64}}") String keyB64) {
-        byte[] key = decodeKeyFlexible(keyB64); // 기존 CryptoConfig의 유틸 메서드 재사용
-        requireAtLeast(key, 32, "HMAC");
+    public HmacUtil urlHmac(@Value("${hmac.url.secret.base64}") String hmacKey) {
+        byte[] key = decodeKeyFlexible(hmacKey);
+        requireAtLeast(key, HMAC_MIN_LEN, "HMAC");
         return new HmacUtil(key);
     }
 
