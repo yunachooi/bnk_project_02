@@ -33,12 +33,46 @@
       background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:8px;
       padding:12px 30px; font-size:1rem; cursor:pointer;
     }
+
+    /* 모달 */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal{background:#fff;width:92%;max-width:420px;border-radius:16px;padding:16px 16px 14px;box-shadow:0 12px 32px rgba(0,0,0,.15)}
+    .modal h3{margin:0 0 8px 0}
+    .modal p{margin:4px 0 0 0; color:#333}
+    .modal .btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+    .modal .btn{min-width:96px;height:40px;border-radius:10px;font-weight:800;border:2px solid transparent;cursor:pointer}
+    .modal .btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    .modal .btn.ghost{background:#fff;color:#2563eb;border-color:#2563eb}
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header" onclick="history.back()">&lt;뒤로가기</div>
   <div class="title-box" th:text="${currencyName}">미국 달러</div>
+
+  <!-- ① 로그인 필요 모달 -->
+  <div id="loginModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3>로그인이 필요합니다</h3>
+      <p>환율 그래프는 볼 수 있지만, 구매 등 일부 기능은 로그인이 필요해요.</p>
+      <div class="btns">
+        <button class="btn ghost" id="loginLaterBtn" type="button">나중에</button>
+        <button class="btn primary" id="goLoginBtn" type="button">로그인하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 상품 가입 모달 -->
+  <div id="joinModal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3>상품 가입이 필요합니다</h3>
+      <p>해당 외화 구매를 이용하려면 상품 가입이 필요합니다. 가입하시겠습니까?</p>
+      <div class="btns">
+        <button class="btn ghost" id="joinCancelBtn" type="button">취소</button>
+        <button class="btn primary" id="joinGoBtn" type="button">가입하기</button>
+      </div>
+    </div>
+  </div>
 
   <div class="rate-info">
     <p>금일 환율</p>
@@ -63,12 +97,17 @@
   </div>
 
   <div class="action-button">
-    <button class="buy-button" th:attr="data-code=${currencyCode}"onclick="goBuyPage(this)">구매하기</button>
+    <button class="buy-button" th:attr="data-code=${currencyCode}" onclick="goBuyPage(this)">구매하기</button>
   </div>
 </div>
 
 <script th:inline="javascript">
-  // 서버에서 주입되는 JSON (예: [{date:'YYYY-MM-DD', rvalue:'1350.1'}, ...])
+  /* ===== 서버 플래그/값 주입 ===== */
+  const LOGIN_REQUIRED    = /*[[${loginRequired}]]*/ false;
+  const NEED_SUBSCRIPTION = /*[[${needSubscription}]]*/ false;
+  const CURRENCY_CODE     = /*[['' + ${currencyCode}]]*/ 'USD';
+
+  /* ===== 데이터(차트) ===== */
   const weekData  = JSON.parse(/*[[${weekRatesJson}]]*/ '[]');
   const monthData = JSON.parse(/*[[${monthRatesJson}]]*/ '[]');
 
@@ -97,75 +136,69 @@
       return g;
     })();
 
-    // ✅ 최고/최저 점 + 텍스트(말풍선 없음, 라인과 비겹침)
+    // ✅ 최고/최저 점 + 텍스트
     const extremaPlugin = {
-	  id: 'extremaMarkers',
-	  afterDatasetsDraw(chartInstance) {
-	    const { ctx, chartArea, scales: { x, y } } = chartInstance;
-	    const ds = chartInstance.data.datasets[0].data;
-	    if (!ds?.length) return;
-	
-	    const max = Math.max(...ds);
-	    const min = Math.min(...ds);
-	    const maxIdx = ds.indexOf(max);
-	    const minIdx = ds.indexOf(min);
-	
-	    const px = (i) => x.getPixelForValue(i);
-	    const py = (v) => y.getPixelForValue(v);
-	
-	    const hi = getComputedStyle(document.documentElement)
-	                 .getPropertyValue('--hi-red').trim() || '#e53935';
-	    const lo = getComputedStyle(document.documentElement)
-	                 .getPropertyValue('--lo-blue').trim() || '#1e88e5';
-	
-	    const drawPoint = (px0, py0, color) => {
-	      ctx.save();
-	      ctx.fillStyle = color;
-	      ctx.shadowColor = color;
-	      ctx.shadowBlur = 8;
-	      ctx.beginPath();
-	      ctx.arc(px0, py0, 6, 0, Math.PI * 2);
-	      ctx.fill();
-	      ctx.globalAlpha = 0.25;
-	      ctx.beginPath();
-	      ctx.arc(px0, py0, 9, 0, Math.PI * 2);
-	      ctx.fill();
-	      ctx.globalAlpha = 1;
-	      ctx.restore();
-	    };
-	
-	    const drawText = (tx, ty, text, color) => {
-	      ctx.save();
-	      ctx.font = '700 13px Noto Sans KR';
-	      ctx.textAlign = 'center';
-	      ctx.textBaseline = 'middle';
-	
-	      // 좌우 경계 보정
-	      const tw = ctx.measureText(text).width;
-	      if (tx - tw / 2 < chartArea.left + 6) tx = chartArea.left + tw / 2 + 6;
-	      if (tx + tw / 2 > chartArea.right - 6) tx = chartArea.right - tw / 2 - 6;
-	
-	      // 흰색 외곽선
-	      ctx.lineWidth = 4;
-	      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-	      ctx.strokeText(text, tx, ty);
-	
-	      ctx.fillStyle = color;
-	      ctx.fillText(text, tx, ty);
-	      ctx.restore();
-	    };
-	
-	    // 최고 → 위쪽
-	    const pMax = { x: px(maxIdx), y: py(max) };
-	    drawPoint(pMax.x, pMax.y, hi);
-	    drawText(pMax.x, pMax.y - 16, `최고 ${nf1.format(max)}원`, hi);
-	
-	    // 최저 → 아래쪽
-	    const pMin = { x: px(minIdx), y: py(min) };
-	    drawPoint(pMin.x, pMin.y, lo);
-	    drawText(pMin.x, pMin.y + 16, `최저 ${nf1.format(min)}원`, lo);
-	  }
-	};
+      id: 'extremaMarkers',
+      afterDatasetsDraw(chartInstance) {
+        const { ctx, chartArea, scales: { x, y } } = chartInstance;
+        const ds = chartInstance.data.datasets[0].data;
+        if (!ds?.length) return;
+
+        const max = Math.max(...ds);
+        const min = Math.min(...ds);
+        const maxIdx = ds.indexOf(max);
+        const minIdx = ds.indexOf(min);
+
+        const px = (i) => x.getPixelForValue(i);
+        const py = (v) => y.getPixelForValue(v);
+
+        const hi = getComputedStyle(document.documentElement).getPropertyValue('--hi-red').trim() || '#e53935';
+        const lo = getComputedStyle(document.documentElement).getPropertyValue('--lo-blue').trim() || '#1e88e5';
+
+        const drawPoint = (px0, py0, color) => {
+          ctx.save();
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(px0, py0, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath();
+          ctx.arc(px0, py0, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.restore();
+        };
+
+        const drawText = (tx, ty, text, color) => {
+          ctx.save();
+          ctx.font = '700 13px Noto Sans KR';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          const tw = ctx.measureText(text).width;
+          if (tx - tw / 2 < chartArea.left + 6) tx = chartArea.left + tw / 2 + 6;
+          if (tx + tw / 2 > chartArea.right - 6) tx = chartArea.right - tw / 2 - 6;
+
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+          ctx.strokeText(text, tx, ty);
+
+          ctx.fillStyle = color;
+          ctx.fillText(text, tx, ty);
+          ctx.restore();
+        };
+
+        const pMax = { x: px(maxIdx), y: py(max) };
+        drawPoint(pMax.x, pMax.y, hi);
+        drawText(pMax.x, pMax.y - 16, `최고 ${nf1.format(max)}원`, hi);
+
+        const pMin = { x: px(minIdx), y: py(min) };
+        drawPoint(pMin.x, pMin.y, lo);
+        drawText(pMin.x, pMin.y + 16, `최저 ${nf1.format(min)}원`, lo);
+      }
+    };
 
     chart = new Chart(ctx, {
       type: 'line',
@@ -228,14 +261,49 @@
     createChart(type === 'week' ? weekData : monthData);
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    updateChart('week');
-  });
-  
-  function goBuyPage(btn){
-	  const code = btn.getAttribute("data-code");
-	  window.location.href = `/exchange/buy/${code}`;
+  /* ===== 모달/가드 로직 ===== */
+  const $ = (sel) => document.querySelector(sel);
+  const open = (sel) => { const el=$(sel); if(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); } };
+  const close= (sel) => { const el=$(sel); if(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); } };
+
+  function redirectToLogin(){
+	  const back = encodeURIComponent(location.pathname + location.search); // 예: /forex/detail?currency=USD
+	  location.href = '/user/login?redirect=' + back;
 	}
+  function goJoin(){
+    const next = encodeURIComponent(`/exchange/buy/${CURRENCY_CODE}`);
+    location.href = /*[[@{/account/foreign1}]]*/ '/account/foreign1' + `?next=${next}`;
+  }
+
+  function goBuyPage(btn){
+    if (LOGIN_REQUIRED) { open('#loginModal'); return; }
+    if (NEED_SUBSCRIPTION) { open('#joinModal'); return; }
+    const code = btn.getAttribute('data-code') || CURRENCY_CODE;
+    window.location.href = `/exchange/buy/${code}`;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 차트 초기 렌더
+    updateChart('week');
+
+    // 상태에 따른 모달 자동 오픈
+    if (LOGIN_REQUIRED) {
+      open('#loginModal');
+    } else if (NEED_SUBSCRIPTION) {
+      open('#joinModal');
+    }
+
+    // 모달 버튼 핸들러
+    $('#goLoginBtn')?.addEventListener('click', redirectToLogin);
+    $('#loginLaterBtn')?.addEventListener('click', () => close('#loginModal'));
+
+    $('#joinGoBtn')?.addEventListener('click', goJoin);
+    $('#joinCancelBtn')?.addEventListener('click', () => close('#joinModal'));
+
+    // 배경 클릭으로 닫기
+    $('#loginModal')?.addEventListener('click', (e)=>{ if(e.target.id==='loginModal') close('#loginModal'); });
+    $('#joinModal')?.addEventListener('click',  (e)=>{ if(e.target.id==='joinModal')  close('#joinModal');  });
+  });
 </script>
 </body>
 </html>

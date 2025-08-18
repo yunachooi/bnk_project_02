@@ -194,10 +194,18 @@ public class UserController {
     }
 
     /* ───────── 로그인/로그아웃 ───────── */
+
+    // ✅ 변경: redirect 파라미터를 받으면 세션 RETURN_TO로 저장
     @GetMapping("/login")
-    public String loginForm(Model m) {
+    public String loginForm(@RequestParam(value = "redirect", required = false) String redirect,
+                            Model m,
+                            HttpSession session) {
         if (!m.containsAttribute("userDto")) {
             m.addAttribute("userDto", new UserDto());
+        }
+        // redirect 파라미터가 유효하면 세션에 저장 (오픈 리다이렉트 방지)
+        if (StringUtils.hasText(redirect) && isSafeInternalPath(redirect)) {
+            session.setAttribute(RETURN_TO, redirect);
         }
         return "user/login";
     }
@@ -212,6 +220,7 @@ public class UserController {
         if (user == null) {
             ra.addFlashAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
             ra.addFlashAttribute("userDto", new UserDto());
+            // 실패 시엔 세션 RETURN_TO를 건드리지 않음(다음 로그인에서 재사용)
             return "redirect:/user/login";
         }
 
@@ -224,7 +233,7 @@ public class UserController {
         // 2) 없으면 역할별 기본 경로
         if (dest == null) {
             if ("ROLE_ADMIN".equals(user.getUrole())) {
-                dest = "/admin/dashboard"; // ✅ 관리자 기본 진입: 대시보드
+                dest = "/admin/adminMain";   // 기존 프로젝트 흐름에 맞춤
             } else {
                 dest = "/user/userhome";
             }
@@ -278,5 +287,9 @@ public class UserController {
             return null;
         }
         return s;
+    }
+    /** 내부 경로만 허용 (/로 시작하고 //로 시작하지 않음) */
+    private boolean isSafeInternalPath(String path) {
+        return path.startsWith("/") && !path.startsWith("//");
     }
 }

@@ -1,10 +1,14 @@
 package com.example.bnk_project_02s.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.example.bnk_project_02s.util.StringBigDecimalConverter;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -41,8 +45,9 @@ public class ChildAccount {
     @Column(name = "cajoin")
     private LocalDate cajoin;
 
-    @Column(name = "cabalance")
-    private String cabalance;
+    @Convert(converter = StringBigDecimalConverter.class)
+    @Column(name = "cabalance", length = 50, nullable = false)
+    private BigDecimal cabalance;
 
     @Column(name = "pabank")
     private String pabank;
