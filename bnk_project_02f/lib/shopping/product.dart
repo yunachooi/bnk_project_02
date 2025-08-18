@@ -4,12 +4,19 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:bnk_project_02f/account/accountMain.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart'
+    show KakaoSdk, launchBrowserTab;
 import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
 import 'package:kakao_flutter_sdk_template/kakao_flutter_sdk_template.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  runApp(ShoppingApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  KakaoSdk.init(
+    nativeAppKey: '',
+    javaScriptAppKey: '',
+  );
+  runApp(const ShoppingApp());
 }
 
 class ShoppingApp extends StatelessWidget {
@@ -21,9 +28,9 @@ class ShoppingApp extends StatelessWidget {
       title: '해외직구쇼핑몰',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        primaryColor: Color(0xFF1976D2),
+        primaryColor: const Color(0xFF1976D2),
       ),
-      home: ShoppingHomePage(),
+      home: const ShoppingHomePage(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -75,17 +82,15 @@ class Product {
     );
   }
 
-  String get displayName {
-    return (spnameKo != null && spnameKo!.isNotEmpty) ? spnameKo! : spname;
-  }
+  String get displayName =>
+      (spnameKo != null && spnameKo!.isNotEmpty) ? spnameKo! : spname;
 
-  String get displayDescription {
-    return (spdescriptionKo != null && spdescriptionKo!.isNotEmpty) ? spdescriptionKo! : spdescription;
-  }
+  String get displayDescription =>
+      (spdescriptionKo != null && spdescriptionKo!.isNotEmpty)
+          ? spdescriptionKo!
+          : spdescription;
 
-  String get formattedReviews {
-    return _addCommas(spreviews);
-  }
+  String get formattedReviews => _addCommas(spreviews);
 
   String _addCommas(int number) {
     return number.toString().replaceAllMapped(
@@ -98,16 +103,18 @@ class Product {
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8093';
 
-  // 공유
+  // 공유 링크(HMAC URL)
   static Future<String?> getShareUrl(String spno) async {
     try {
-      final response = await http.get(
+      final response = await http
+          .get(
         Uri.parse('$baseUrl/api/share/product/$spno'),
         headers: {'Accept': 'text/plain'},
-      ).timeout(const Duration(seconds: 10));
+      )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return response.body; // 보안 URL
+        return response.body;
       } else {
         return null;
       }
@@ -118,33 +125,30 @@ class ApiService {
 
   static Future<List<Product>> getProducts() async {
     try {
-      final response = await http.get(
+      final response = await http
+          .get(
         Uri.parse('$baseUrl/user/shopping/products'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-      ).timeout(Duration(seconds: 15));
+      )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final responseBody = response.body;
-
-        if (responseBody.isEmpty) {
-          return [];
-        }
+        if (responseBody.isEmpty) return [];
 
         List<dynamic> jsonList = json.decode(responseBody);
-
         List<Product> products = jsonList.map((json) {
           try {
             return Product.fromJson(json);
-          } catch (e) {
+          } catch (_) {
             return null;
           }
-        }).where((product) => product != null).cast<Product>().toList();
+        }).where((p) => p != null).cast<Product>().toList();
 
         return products;
-
       } else {
         throw Exception('서버 오류: ${response.statusCode}');
       }
@@ -155,26 +159,26 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getUserInfo() async {
     try {
-      final response = await http.get(
+      final response = await http
+          .get(
         Uri.parse('$baseUrl/user/shopping/user/info'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-      ).timeout(Duration(seconds: 10));
+      )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final responseBody = response.body;
         if (responseBody.isEmpty) {
           return {'isLoggedIn': false, 'uname': '회원'};
         }
-
-        Map<String, dynamic> result = json.decode(responseBody);
-        return result;
+        return json.decode(responseBody);
       } else {
         return {'isLoggedIn': false, 'uname': '회원'};
       }
-    } catch (e) {
+    } catch (_) {
       return {'isLoggedIn': false, 'uname': '회원'};
     }
   }
@@ -189,36 +193,46 @@ class ProductDetailPage extends StatelessWidget {
   });
 
   Future<void> _launchURL() async {
-    try {
-      final Uri url = Uri.parse(product.spurl);
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-        throw Exception('Could not launch $url');
-      }
-    } catch (e) {
+    final Uri url = Uri.parse(product.spurl);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('링크를 열 수 없습니다: ${product.spurl}');
     }
   }
 
+  // 상세화면에서 현재 상품 공유
   Future<void> _shareProduct(BuildContext context) async {
-    // 클릭 피드백 (눌렀는지 바로 보이게)
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(duration: Duration(milliseconds: 700), content: Text('공유 준비중...')),
+      const SnackBar(
+        duration: Duration(milliseconds: 700),
+        content: Text('공유 준비중...'),
+      ),
     );
 
+    String shareUrlForClipboard = product.spurl;
     try {
-      // HMAC URL 준비(없으면 원본으로 폴백)
-      final raw = await ApiService.getShareUrl(product.spno);
-      final shareUrl = (raw != null && raw.isNotEmpty) ? raw : product.spurl;
+      // 1) 서버 서명 URL (타임아웃 시 폴백)
+      final raw = await ApiService.getShareUrl(product.spno)
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
+
+      String shareUrl = (raw != null && raw.isNotEmpty) ? raw : product.spurl;
+      shareUrlForClipboard = shareUrl;
+
+      // 2) https 강제
+      final u = Uri.tryParse(shareUrl);
+      if (u == null || u.scheme != 'https') {
+        shareUrl = 'https://www.busanbank.co.kr'; // 안전 https 폴백
+      }
+
+      // 3) 이미지 https 보장
+      final img = product.spimgurl.startsWith('http')
+          ? product.spimgurl
+          : 'https://via.placeholder.com/600x400.png?text=BNK+SHOP';
 
       final template = FeedTemplate(
         content: Content(
           title: product.displayName,
           description: product.displayDescription,
-          imageUrl: Uri.parse(
-            product.spimgurl.isNotEmpty
-                ? product.spimgurl
-                : 'https://via.placeholder.com/300x200.png?text=No+Image',
-          ),
+          imageUrl: Uri.parse(img),
           link: Link(
             webUrl: Uri.parse(shareUrl),
             mobileWebUrl: Uri.parse(shareUrl),
@@ -235,49 +249,73 @@ class ProductDetailPage extends StatelessWidget {
         ],
       );
 
-      // 1) 카카오톡 앱
-      final available = await ShareClient.instance.isKakaoTalkSharingAvailable();
-      if (available) {
+      // 4) 카톡 설치 여부
+      final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
+      if (installed) {
         final uri = await ShareClient.instance.shareDefault(template: template);
         await ShareClient.instance.launchKakaoTalk(uri);
-        return;
-      }
-
-      // 2) 웹 공유 (외부 브라우저)
-      final webUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
-      final openedExternal =
-      await launchUrl(webUrl, mode: LaunchMode.externalApplication);
-      if (openedExternal) return;
-
-      // 3) 인앱 웹뷰 (에뮬레이터에 브라우저 없을 때)
-      final openedInApp = await launchUrl(webUrl, mode: LaunchMode.inAppWebView);
-      if (openedInApp) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('브라우저가 없어 앱 내에서 열었습니다.')),
+            const SnackBar(content: Text('카카오톡 공유창을 열었어요 ✅')),
           );
         }
         return;
       }
 
-      // 4) 최후: 링크 복사
-      await Clipboard.setData(ClipboardData(text: shareUrl));
+      // 5) 미설치 시 웹 공유 (3단 폴백)
+      final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
+
+      try {
+        await launchBrowserTab(sharerUrl, popupOpen: true);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(브라우저 탭) ✅')),
+          );
+        }
+        return;
+      } catch (_) {}
+
+      final okExternal =
+      await launchUrl(sharerUrl, mode: LaunchMode.externalApplication);
+      if (okExternal) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(외부 브라우저) ✅')),
+          );
+        }
+        return;
+      }
+
+      final okInApp = await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView);
+      if (okInApp) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(인앱 웹뷰) ✅')),
+          );
+        }
+        return;
+      }
+
+      // 6) 모두 실패 시 링크 복사
+      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('링크를 클립보드에 복사했습니다. 붙여넣어 공유하세요.')),
+          SnackBar(content: Text('브라우저가 없어 링크 복사함 📋: $shareUrlForClipboard')),
         );
       }
-    } catch (e) {
-      debugPrint('공유 실패: $e');
+    } catch (e, st) {
+      debugPrint('[share][detail][error] $e\n$st');
+      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('공유 실패: $e')),
+          SnackBar(content: Text('공유 실패. 링크 복사함 📋: $shareUrlForClipboard')),
         );
       }
     }
   }
 
-  void _showQuickShareToast(BuildContext context, {String text = '공유 준비중...'}) {
+  void _showQuickShareToast(BuildContext context,
+      {String text = '공유 준비중...'}) {
     final entry = OverlayEntry(
       builder: (_) => Positioned.fill(
         child: IgnorePointer(
@@ -286,17 +324,20 @@ class ProductDetailPage extends StatelessWidget {
             child: Material(
               color: Colors.transparent,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.75),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: [
+                  children: const [
                     SizedBox(
-                      width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     ),
                     SizedBox(width: 10),
                     Text('공유 준비중...', style: TextStyle(color: Colors.white)),
@@ -312,7 +353,6 @@ class ProductDetailPage extends StatelessWidget {
     Future.delayed(const Duration(seconds: 1), () => entry.remove());
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -320,14 +360,14 @@ class ProductDetailPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-        shadowColor: Colors.grey.withValues(alpha: 0.3),
+        shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Color(0xFF1976D2)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1976D2)),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        title: Text(
+        title: const Text(
           '뒤로가기',
           style: TextStyle(
             color: Color(0xFF1976D2),
@@ -337,26 +377,26 @@ class ProductDetailPage extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.black),
+            icon: const Icon(Icons.shopping_cart, color: Colors.black),
             onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.share, color: Colors.black),
             onPressed: () {
-              HapticFeedback.selectionClick();      // 살짝 진동
-              _showQuickShareToast(context);        // 즉시 오버레이 표시 (1초)
-              _shareProduct(context);               // 실제 공유 시도(안 되더라도 오버레이는 뜸)
+              HapticFeedback.selectionClick();
+              _showQuickShareToast(context);
+              _shareProduct(context);
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 '해외직구쇼핑몰',
                 style: TextStyle(
                   fontSize: 24,
@@ -364,7 +404,7 @@ class ProductDetailPage extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Container(
                 width: double.infinity,
                 height: 300,
@@ -385,30 +425,28 @@ class ProductDetailPage extends StatelessWidget {
                   child: Image.network(
                     product.spimgurl,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
                       return Center(
                         child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
+                          value: progress.expectedTotalBytes != null
+                              ? progress.cumulativeBytesLoaded /
+                              progress.expectedTotalBytes!
                               : null,
                         ),
                       );
                     },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          color: Colors.grey[400],
-                          size: 60,
-                        ),
-                      );
-                    },
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        color: Colors.grey[400],
+                        size: 60,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   ...List.generate(5, (index) {
@@ -420,7 +458,7 @@ class ProductDetailPage extends StatelessWidget {
                           : Colors.grey[300],
                     );
                   }),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     '(${product.formattedReviews}개 리뷰)',
                     style: TextStyle(
@@ -431,28 +469,28 @@ class ProductDetailPage extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 product.displayName,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Color(0xFFE3F2FD),
+                  color: const Color(0xFFE3F2FD),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Color(0xFF90CAF9), width: 1),
+                  border: Border.all(color: const Color(0xFF90CAF9), width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       '가격 정보',
                       style: TextStyle(
                         fontSize: 16,
@@ -460,20 +498,20 @@ class ProductDetailPage extends StatelessWidget {
                         color: Color(0xFF0D47A1),
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         color: Colors.black,
                         decoration: TextDecoration.lineThrough,
                         decorationColor: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       '${(product.spprice * 0.9).toStringAsFixed(2)} ${product.spcurrency} (카드 할인 적용 시)',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1976D2),
@@ -482,21 +520,24 @@ class ProductDetailPage extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: () async {
                   try {
-                    final Uri url = Uri.parse('https://www.busanbank.co.kr');
-                    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                    final Uri url =
+                    Uri.parse('https://www.busanbank.co.kr');
+                    if (!await launchUrl(url,
+                        mode: LaunchMode.externalApplication)) {
                       throw Exception('Could not launch $url');
                     }
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                          content:
+                          Text('링크를 열 수 없습니다: ${e.toString()}'),
                           backgroundColor: Colors.red,
-                          duration: Duration(seconds: 3),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     }
@@ -510,33 +551,31 @@ class ProductDetailPage extends StatelessWidget {
                     child: Image.asset(
                       'assets/images/ad4.jpg',
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '추천상품상품광고',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
-                              ),
+                      errorBuilder: (_, __, ___) => Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '추천상품상품광고',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
@@ -544,12 +583,12 @@ class ProductDetailPage extends StatelessWidget {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: const [
                     Row(
                       children: [
                         Icon(
                           Icons.warning_amber_rounded,
-                          color: Colors.orange[600],
+                          color: Color(0xFFFFA726),
                           size: 24,
                         ),
                         SizedBox(width: 8),
@@ -558,7 +597,7 @@ class ProductDetailPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange[800],
+                            color: Color(0xFFEF6C00),
                           ),
                         ),
                       ],
@@ -566,19 +605,19 @@ class ProductDetailPage extends StatelessWidget {
                     SizedBox(height: 12),
                     Text(
                       '• 아마존 글로벌 스토어에서 판매 중인 상품으로\n'
-                          '공식 판매자인 아마존 미국에서 판매/배송을 책입집니다.\n'
+                          '공식 판매자인 아마존 미국에서 판매/배송을 책임집니다.\n'
                           '• 제품 문의 시 아마존 고객센터로 문의해주세요',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.orange[700],
+                        color: Color(0xFFF57C00),
                         height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 20),
+              const Text(
                 '상품상세설명',
                 style: TextStyle(
                   fontSize: 16,
@@ -586,16 +625,16 @@ class ProductDetailPage extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 product.displayDescription,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   color: Colors.black87,
                   height: 1.5,
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -607,31 +646,30 @@ class ProductDetailPage extends StatelessWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                            content:
+                            Text('링크를 열 수 없습니다: ${e.toString()}'),
                             backgroundColor: Colors.red,
-                            duration: Duration(seconds: 3),
+                            duration: const Duration(seconds: 3),
                           ),
                         );
                       }
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1976D2),
+                    backgroundColor: const Color(0xFF1976D2),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     '판매 사이트에서 구매하기',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -690,19 +728,17 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
   }
 
   void _startAdSlider() {
-    Timer.periodic(Duration(seconds: 3), (Timer timer) {
+    Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
       if (_pageController.hasClients) {
         int nextPage = _pageController.page!.round() + 1;
-        if (nextPage >= adImages.length) {
-          nextPage = 0;
-        }
+        if (nextPage >= adImages.length) nextPage = 0;
         _pageController.animateToPage(
           nextPage,
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeIn,
         );
       }
@@ -716,7 +752,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         isLoggedIn = userInfo['isLoggedIn'] ?? false;
         username = userInfo['uname'] ?? '회원';
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         isLoggedIn = false;
         username = '회원';
@@ -752,11 +788,13 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         filteredProducts = filterByCategory(products);
       } else {
         List<Product> searchResults = products
-            .where((product) =>
-        product.displayName.toLowerCase().contains(query.toLowerCase()) ||
-            product.displayDescription.toLowerCase().contains(query.toLowerCase()) ||
-            product.spname.toLowerCase().contains(query.toLowerCase()) ||
-            product.spdescription.toLowerCase().contains(query.toLowerCase()))
+            .where((p) =>
+        p.displayName.toLowerCase().contains(query.toLowerCase()) ||
+            p.displayDescription
+                .toLowerCase()
+                .contains(query.toLowerCase()) ||
+            p.spname.toLowerCase().contains(query.toLowerCase()) ||
+            p.spdescription.toLowerCase().contains(query.toLowerCase()))
             .toList();
         filteredProducts = filterByCategory(searchResults);
       }
@@ -767,10 +805,10 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
     if (selectedCategory == '전체') {
       return productList.take(4).toList();
     }
-
-    String currency = selectedCategory;
-    return productList.where((product) =>
-    product.spcurrency.toUpperCase() == currency).toList();
+    final currency = selectedCategory;
+    return productList
+        .where((p) => p.spcurrency.toUpperCase() == currency)
+        .toList();
   }
 
   void selectCategory(String category) {
@@ -781,6 +819,122 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
     });
   }
 
+  // ✅ 홈 화면에서 첫 상품 공유 (공유 버튼용)
+  Future<void> _shareFromHome(BuildContext context) async {
+    if (filteredProducts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('공유할 상품이 없습니다. 먼저 상품을 불러오세요.')),
+      );
+      return;
+    }
+
+    final p = filteredProducts.first;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(milliseconds: 700),
+        content: Text('공유 준비중...'),
+      ),
+    );
+
+    String shareUrlForClipboard = p.spurl;
+    try {
+      final raw = await ApiService.getShareUrl(p.spno)
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
+
+      String shareUrl = (raw != null && raw.isNotEmpty) ? raw : p.spurl;
+      shareUrlForClipboard = shareUrl;
+
+      final u = Uri.tryParse(shareUrl);
+      if (u == null || u.scheme != 'https') {
+        shareUrl = 'https://www.busanbank.co.kr';
+      }
+
+      final img = p.spimgurl.startsWith('http')
+          ? p.spimgurl
+          : 'https://via.placeholder.com/600x400.png?text=BNK+SHOP';
+
+      final template = FeedTemplate(
+        content: Content(
+          title: p.displayName,
+          description: p.displayDescription,
+          imageUrl: Uri.parse(img),
+          link: Link(
+            webUrl: Uri.parse(shareUrl),
+            mobileWebUrl: Uri.parse(shareUrl),
+          ),
+        ),
+        buttons: [
+          Button(
+            title: '자세히 보기',
+            link:
+            Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
+          ),
+        ],
+      );
+
+      final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
+      if (installed) {
+        final uri = await ShareClient.instance.shareDefault(template: template);
+        await ShareClient.instance.launchKakaoTalk(uri);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('카카오톡 공유창을 열었어요 ✅')),
+          );
+        }
+        return;
+      }
+
+      final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
+
+      try {
+        await launchBrowserTab(sharerUrl, popupOpen: true);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(브라우저 탭) ✅')),
+          );
+        }
+        return;
+      } catch (_) {}
+
+      final okExternal =
+      await launchUrl(sharerUrl, mode: LaunchMode.externalApplication);
+      if (okExternal) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(외부 브라우저) ✅')),
+          );
+        }
+        return;
+      }
+
+      final okInApp = await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView);
+      if (okInApp) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('웹 공유창 열렸어요(인앱 웹뷰) ✅')),
+          );
+        }
+        return;
+      }
+
+      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('브라우저가 없어 링크 복사함 📋: $shareUrlForClipboard')),
+        );
+      }
+    } catch (e, st) {
+      debugPrint('[share][home][error] $e\n$st');
+      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('공유 실패. 링크 복사함 📋: $shareUrlForClipboard')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -788,9 +942,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
-        shadowColor: Colors.grey.withValues(alpha: 0.3),
+        shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -800,7 +954,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
             );
           },
         ),
-        title: Text(
+        title: const Text(
           '뒤로가기',
           style: TextStyle(
             color: Color(0xFF1976D2),
@@ -810,19 +964,14 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.shopping_cart, color: Colors.black),
+            icon: const Icon(Icons.shopping_cart, color: Colors.black),
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.share, color: Colors.black),
+            icon: const Icon(Icons.share, color: Colors.black),
             onPressed: () {
               HapticFeedback.selectionClick();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('공유 준비중...'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              _shareFromHome(context); // ✅ 실제 공유 수행
             },
           ),
         ],
@@ -830,13 +979,13 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
       body: RefreshIndicator(
         onRefresh: loadProducts,
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '해외직구쇼핑몰',
                   style: TextStyle(
                     fontSize: 24,
@@ -844,13 +993,13 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
                   height: 250,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(0xFF1976D2), width: 2),
+                    border: Border.all(color: const Color(0xFF1976D2), width: 2),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -866,44 +1015,43 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                         return Image.asset(
                           adImages[index],
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[200],
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.image,
-                                      color: Colors.grey[400],
-                                      size: 32,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[200],
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image,
+                                    color: Colors.grey[400],
+                                    size: 32,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '광고 ${index + 1}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      '광고 ${index + 1}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         );
                       },
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
                       Icon(Icons.search, color: Colors.grey[600], size: 20),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
                           controller: _searchController,
@@ -921,7 +1069,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -934,7 +1082,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                       return GestureDetector(
                         onTap: () => selectCategory(category),
                         child: Container(
-                          margin: EdgeInsets.only(right: 16),
+                          margin: const EdgeInsets.only(right: 16),
                           child: Column(
                             children: [
                               Container(
@@ -942,9 +1090,14 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                 height: 60,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: isSelected ? Color(0xFF1976D2) : Colors.grey[200],
+                                  color: isSelected
+                                      ? const Color(0xFF1976D2)
+                                      : Colors.grey[200],
                                   border: isSelected
-                                      ? Border.all(color: Color(0xFF1976D2), width: 3)
+                                      ? Border.all(
+                                    color: const Color(0xFF1976D2),
+                                    width: 3,
+                                  )
                                       : null,
                                 ),
                                 child: Center(
@@ -952,7 +1105,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                       ? Text(
                                     '전체',
                                     style: TextStyle(
-                                      color: isSelected ? Colors.white : Colors.black,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -964,36 +1119,40 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                                       child: Image.asset(
                                         imagePath,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.grey[300],
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                category,
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
+                                        errorBuilder: (_, __, ___) =>
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.grey[300],
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  category,
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 10,
+                                                    fontWeight:
+                                                    FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          );
-                                        },
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text(
                                 label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isSelected ? Color(0xFF1976D2) : Colors.black,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? const Color(0xFF1976D2)
+                                      : Colors.black,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -1003,7 +1162,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                     }),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1011,49 +1170,52 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                       selectedCategory == '전체'
                           ? '$username님을 위한 추천 상품'
                           : '상품 목록 (${filteredProducts.length}개)',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
                     ),
                     if (isLoading)
-                      SizedBox(
+                      const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                   ],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 if (errorMessage.isNotEmpty)
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFFE3F2FD),
+                      color: const Color(0xFFE3F2FD),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Color(0xFF90CAF9)),
+                      border: Border.all(color: const Color(0xFF90CAF9)),
                     ),
                     child: Column(
                       children: [
-                        Text(
+                        const Text(
                           '데이터를 불러오는 중 오류가 발생했습니다',
-                          style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Color(0xFF0D47A1),
+                              fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           errorMessage,
-                          style: TextStyle(color: Color(0xFF1976D2), fontSize: 12),
+                          style: const TextStyle(
+                              color: Color(0xFF1976D2), fontSize: 12),
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: loadProducts,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF1976D2),
+                            backgroundColor: const Color(0xFF1976D2),
                             foregroundColor: Colors.white,
                           ),
-                          child: Text('다시 시도'),
+                          child: const Text('다시 시도'),
                         ),
                       ],
                     ),
@@ -1074,8 +1236,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                   )
                       : GridView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 20,
@@ -1088,16 +1251,18 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProductDetailPage(product: filteredProducts[index]),
+                              builder: (context) => ProductDetailPage(
+                                  product: filteredProducts[index]),
                             ),
                           );
                         },
-                        child: ProductCard(product: filteredProducts[index]),
+                        child: ProductCard(
+                            product: filteredProducts[index]),
                       );
                     },
                   ),
                 if (isLoading && errorMessage.isEmpty)
-                  SizedBox(
+                  const SizedBox(
                     height: 200,
                     child: Center(
                       child: Column(
@@ -1109,14 +1274,14 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                             '상품을 불러오는 중...',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              color: Colors.grey,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -1142,10 +1307,10 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 3,
-            offset: Offset(0, 1),
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -1158,7 +1323,8 @@ class ProductCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: product.spimgurl.isEmpty
                   ? Center(
@@ -1169,31 +1335,30 @@ class ProductCard extends StatelessWidget {
                 ),
               )
                   : ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8)),
                 child: Image.network(
                   product.spimgurl,
                   fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
                     return Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
+                        value: progress.expectedTotalBytes != null
+                            ? progress.cumulativeBytesLoaded /
+                            progress.expectedTotalBytes!
                             : null,
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        color: Colors.grey[400],
-                        size: 40,
-                      ),
-                    );
-                  },
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      color: Colors.grey[400],
+                      size: 40,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1201,7 +1366,7 @@ class ProductCard extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Padding(
-              padding: EdgeInsets.all(6),
+              padding: const EdgeInsets.all(6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1217,7 +1382,7 @@ class ProductCard extends StatelessWidget {
                               : Colors.grey[300],
                         );
                       }),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
                         '(${product.formattedReviews})',
                         style: TextStyle(
@@ -1228,10 +1393,10 @@ class ProductCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     product.displayName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -1239,25 +1404,23 @@ class ProductCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${product.spprice.toStringAsFixed(2)} ${product
-                            .spcurrency}',
-                        style: TextStyle(
+                        '${product.spprice.toStringAsFixed(2)} ${product.spcurrency}',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black,
                           decoration: TextDecoration.lineThrough,
                           decorationColor: Colors.black,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        '${(product.spprice * 0.9).toStringAsFixed(2)} ${product
-                            .spcurrency}',
-                        style: TextStyle(
+                        '${(product.spprice * 0.9).toStringAsFixed(2)} ${product.spcurrency}',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1976D2),

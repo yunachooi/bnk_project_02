@@ -8,8 +8,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   KakaoSdk.init(
-    nativeAppKey: 'fb5bb650ccba4fbe35685bf0b2e2af4d',
-    javaScriptAppKey: '4e72545fa8c0e4a849eb05d1806a638f',
+    nativeAppKey: '',
+    javaScriptAppKey: '',
   );
 
   runApp(const MyApp());
