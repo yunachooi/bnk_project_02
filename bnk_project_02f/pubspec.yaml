@@ -41,7 +41,7 @@ dependencies:
   kakao_flutter_sdk: ^1.9.0
   kakao_flutter_sdk_share: ^1.9.0
   kakao_flutter_sdk_template: ^1.9.0
-  webview_cookie_manager: ^2.0.6
+  webview_cookie_manager_plus: ^2.0.16
 
 dev_dependencies:
   flutter_test:
