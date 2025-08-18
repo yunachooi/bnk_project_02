@@ -1,11 +1,14 @@
 package com.example.bnk_project_02s.dto;
 
 import java.time.LocalDateTime;
-
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ShoppingLogDto {
     private Long slno;
@@ -14,8 +17,8 @@ public class ShoppingLogDto {
     private String cardno;
     private String slamount;
     private String slcurrency;
-    private String slexrate;
     private String slstatus;
-    private LocalDateTime slrequest;
-    private LocalDateTime sldate;
+    private String slreason;
+    private LocalDateTime slreqat;
+    private LocalDateTime slcomat;
 }

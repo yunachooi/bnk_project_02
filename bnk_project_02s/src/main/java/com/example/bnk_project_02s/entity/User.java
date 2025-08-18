@@ -1,14 +1,20 @@
 package com.example.bnk_project_02s.entity;
 
+import com.example.bnk_project_02s.auth.AesGcmConverter;
+import com.example.bnk_project_02s.auth.HmacEntityListener;
+import com.example.bnk_project_02s.auth.HmacOf;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@EntityListeners(HmacEntityListener.class)
 @Table(
     name = "bnk_user2",
     indexes = {
         @Index(name = "ux_rrn_hmac",   columnList = "rrn_hmac",   unique = true),
-        @Index(name = "ux_phone_hmac", columnList = "phone_hmac", unique = true) // 휴대폰 중복 차단
+        @Index(name = "ux_phone_hmac", columnList = "phone_hmac", unique = true)
     }
 )
 @Getter @Setter
@@ -30,8 +36,8 @@ public class User {
 
     @Column(nullable = true, length = 10)    // YYYY-MM-DD
     private String ubirth;
-
-    // ⚠️ 호환용: 평문 휴대폰. 더 이상 저장하지 않음(서비스에서 uphoneEnc/Hmac만 사용).
+    
+    // 호환용: 평문 휴대폰(과거 데이터). 신규 저장은 enc/hmac만 사용 권장
     @Column(nullable = true, length = 13)    // 예: 010-1234-5678
     private String uphone;
 
@@ -49,27 +55,40 @@ public class User {
 
     @Column
     private Long ushare = 0L;                // 공유횟수
-    
+
     @Column
     private String upush;
-    
+
     @Column
     private String upushdate;
-    
+
     @Column
     private String ulocation;
 
-    /* ===== 주민등록번호 보호 ===== */
+    /* ===== 주민등록번호 보호 (AES-GCM + HMAC) ===== */
     @Column(name = "rrn_enc",  nullable = false, length = 512)
-    private String urrnEnc;                  // AES-GCM "iv:ct" (Base64)
+    @Convert(converter = AesGcmConverter.class)   // AES-GCM 자동 적용
+    private String urrnEnc;                        // DB에는 "iv:ct"(Base64) 저장
 
     @Column(name = "rrn_hmac", nullable = false, unique = true, length = 128)
-    private String urrnHmac;                 // HMAC-SHA256 (hex)
+    private String urrnHmac;                       // HMAC-SHA256(hex) — 64가 더 정확(선택)
 
-    /* ===== 휴대번호 보호 ===== */
+    /* ===== 휴대번호 보호 (AES-GCM + HMAC) ===== */
     @Column(name = "phone_enc",  nullable = true, length = 512)
-    private String uphoneEnc;                // AES-GCM "iv:ct" (Base64)
+    @Convert(converter = AesGcmConverter.class)
+    private String uphoneEnc;
 
     @Column(name = "phone_hmac", nullable = true, unique = true, length = 64)
-    private String uphoneHmac;               // HMAC-SHA256 (hex, 64자)
+    private String uphoneHmac;                    // HMAC-SHA256(hex, 64자)
+
+    /* ====== HMAC 자동계산 입력용(저장 안 함) ======
+       - 서비스에서 정규화/검증된 평문을 여기에만 넣어 주세요.
+       - 저장 시 HmacEntityListener가 지정된 to 필드에 HMAC을 채웁니다. */
+    @Transient
+    @HmacOf(to = "urrnHmac", domain = "rrn:")
+    private String rrnPlain;
+
+    @Transient
+    @HmacOf(to = "uphoneHmac", domain = "phone:")
+    private String phonePlain;
 }

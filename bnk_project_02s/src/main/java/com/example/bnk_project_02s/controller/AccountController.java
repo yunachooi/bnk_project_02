@@ -36,4 +36,19 @@ public class AccountController {
 		return "account/foreign5";
 	}
 	
+	@GetMapping("/foreign6") // 가입 3단계
+	public String foregin6() {
+		return "account/foreign6";
+	}
+	
+	@GetMapping("/foreign7") // 카드 가입 1단계
+	public String foregin7() {
+		return "account/foreign7";
+	}
+	
+	@GetMapping("/foreign8") // 카드 가입 2단계
+	public String foregin8() {
+		return "account/foreign8";
+	}
+	
 }

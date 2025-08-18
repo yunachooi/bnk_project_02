@@ -4,6 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.bnk_project_02s.entity.ShoppingProducts;
 
-public interface ShoppingProductRepository extends JpaRepository<ShoppingProducts, String> {
+public interface ShoppingProductsRepository extends JpaRepository<ShoppingProducts, String> {
 	
 }

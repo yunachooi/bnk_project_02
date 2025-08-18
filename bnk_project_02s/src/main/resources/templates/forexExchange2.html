@@ -121,7 +121,8 @@
     </div>
     <div class="row" id="acctRow">
       <div class="label">출금 계좌</div>
-      <div class="value" id="acctText" th:text="${accountMasked} + (${branchName} != null ? ' (' + ${branchName} + ')' : '')">112-2348-0440-08 (부산)</div>
+      <div class="value" id="acctText"
+     th:text="${#strings.isEmpty(pano) ? '미지정' : pano}"></div>
     </div>
     <div class="row">
       <div class="label">환전 수수료</div>
@@ -141,7 +142,7 @@
       <input type="hidden" name="finalRate" th:value="${finalRate}">
       <input type="hidden" name="rateDate"  th:value="${rateDate}">
       <input type="hidden" name="rateRound" th:value="${rateRound}">
-      <input type="hidden" name="account"   th:value="${accountMasked}">
+      <input type="hidden" name="account"   th:value="${pano}">
       <input type="hidden" name="savedFee"  th:value="${savedFee}">
       <button class="btn ok" type="submit">확인</button>
     </form>
@@ -161,7 +162,8 @@
   const RATE = /*[['' + ${finalRate}]]*/ '0';
   const SAVE = /*[['' + ${savedFee}]]*/ '0';
   const CODE = /*[['' + ${rateCode}]]*/ 'USD';
-  const ACCT = /*[['' + ${accountMasked}]]*/ '';
+  const ACCT   = /*[['' + ${pano}]]*/ '';
+  const BRANCH = /*[['' + ${branchName}]]*/ '';
 
   // 텍스트 치환
   document.getElementById('fxText').textContent   = `${fmtFx2(FX)} ${CODE}`;
@@ -169,12 +171,11 @@
   document.getElementById('rateText').textContent = `${fmtRate2(RATE)}원`;
   document.getElementById('saveText').textContent = `${fmtKRWInt(SAVE)}원 절약`;
 
-  // 출금계좌가 null/빈값이면 "미지정" 표시 (또는 행 숨김 원하면 아래 한 줄로 대체)
-  if(!ACCT || ACCT.toLowerCase() === 'null'){
-    document.getElementById('acctText').textContent = '미지정';
-    // 행 자체를 숨기려면:
-    // document.getElementById('acctRow').style.display = 'none';
-  }
+  if (!ACCT || ACCT.toLowerCase() === 'null') {
+	  document.getElementById('acctText').textContent = '미지정';
+	} else {
+	  document.getElementById('acctText').textContent = ACCT;
+	}
 
   function goPrev(){ history.back(); }
 </script>

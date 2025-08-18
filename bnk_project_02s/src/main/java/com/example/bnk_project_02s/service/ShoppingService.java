@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.bnk_project_02s.dto.ShoppingProductsDto;
 import com.example.bnk_project_02s.entity.ShoppingProducts;
-import com.example.bnk_project_02s.repository.ShoppingProductRepository;
+import com.example.bnk_project_02s.repository.ShoppingProductsRepository;
 import com.example.bnk_project_02s.util.ShoppingProductsConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,7 @@ import okhttp3.Response;
 public class ShoppingService {
 
     @Autowired
-    private ShoppingProductRepository shoppingProductRepository;
+    private ShoppingProductsRepository shoppingProductRepository;
     
     @Autowired
     private TranslationService translationService;

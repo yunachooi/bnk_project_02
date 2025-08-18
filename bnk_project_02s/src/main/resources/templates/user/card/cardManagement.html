@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카드 관리</title>
+    <link rel="stylesheet" href="/css/card.css">
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <div id="main-content" class="hidden">
+        
+        <div class="container">
+            <h1 class="page-title">카드 관리</h1>
+            
+            <div id="error-container"></div>
+            <div id="no-card-container"></div>
+            
+            <div id="card-content">
+                <div class="card-visual">
+                    <div class="card">
+                        <div class="chip"></div>
+                        <div class="card-number" id="cardVisualNumber">카드 번호 로딩중...</div>
+                        <div class="card-name" id="cardVisualName">카드명 로딩중...</div>
+                    </div>
+                </div>
+                
+                <div class="card-info">
+                    <div class="card-title" id="cardInfoName">카드명 로딩중...</div>
+                    <div class="card-type">
+                        <span class="visa-badge">VISA</span>
+                        <span class="card-last-digits" id="cardLastDigits">(****)</span>
+                    </div>
+                </div>
+                
+                <div class="details-section">
+                    <div class="card-number-section">
+                        <div class="section-title">카드번호</div>
+                        <div class="card-number-display">
+                            <span class="card-number-text" id="cardNumberDisplay">카드번호 로딩중...</span>
+                            <button class="toggle-button" id="toggleCardNumber" onclick="toggleCardNumber()">
+                                카드번호 보기
+                            </button>
+                        </div>
+                        <div class="card-type-info">
+                            <span class="visa-label">VISA</span>
+                            <span class="domestic-international">국내외겸용</span>
+                        </div>
+                        <div class="privacy-notice">
+                            개인 정보 보호를 위해 CVC번호는 실물 카드에서만 확인 가능합니다.
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="menu-item">
+                        <span class="menu-text">카드 활성화</span>
+                        <div class="switch" id="cardStatusSwitch" onclick="toggleCardStatus()">
+                            <div class="switch-handle"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="menu-item menu-item-clickable" onclick="changePaymentDate()">
+                        <span class="menu-text">결제일 변경</span>
+                        <div class="menu-right">
+                            <span id="paymentCycle">13일</span>
+                            <span class="arrow">▶</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="menu-section">
+                    <div class="menu-item menu-item-clickable" onclick="showCardBenefits()">
+                        <span class="menu-text">내 카드 혜택</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="menu-item menu-item-clickable" onclick="reportLostCard()">
+                        <span class="menu-text">분실신고/해제</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="menu-item menu-item-clickable" onclick="cancelCard()">
+                        <span class="menu-text">카드해지</span>
+                        <span class="arrow">▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="snackbar" class="snackbar"></div>
+    
+    <script src="/js/card.js"></script>
+</body>
+</html>

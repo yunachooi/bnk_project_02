@@ -148,7 +148,7 @@ public class BranchImportService {
         return updated;
     }
 
-    /* ===================== VWorld 지오코딩 호출 ===================== */
+    /* =================== VWorld 지오코딩 호출 ===================== */
 
     /** 성공 시 [lat, lng] 반환, 실패 시 null */
     private double[] geocodeVWorld(String address, String typeUpper) {
