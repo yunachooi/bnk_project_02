@@ -82,7 +82,7 @@ public class ShoppingLogService {
         BigDecimal paymentAmount  = parseAmount(slamount); // "1,234.56" 등 방어
 
         if (currentBalance.compareTo(paymentAmount) < 0) {
-            ShoppingLog failedLog = saveFailedLog(userOpt.get(), productOpt.get(), card, slamount, slcurrency, "8000");
+            ShoppingLog failedLog = saveFailedLog(userOpt.get(), productOpt.get(), card, slamount, slcurrency, "CC10");
             return createFailResponse(
                     "CC10",
                     "잔액이 부족합니다.",
