@@ -30,6 +30,9 @@ public class CryptoConfig {
 =======
     /* ========= HMAC: 기존과 동일하게 'hmac' 빈을 제공합니다 ========= */
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
