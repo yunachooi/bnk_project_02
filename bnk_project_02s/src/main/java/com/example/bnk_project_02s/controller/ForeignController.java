@@ -75,7 +75,8 @@ public class ForeignController {
             List<ChildAccount> children = childRepo.findByParentAccount_Pano(pa.getPano());
             model.addAttribute("children", children);
 
-            model.addAttribute("histories", historyRepo.findTop50ByPaaccountOrderByHdateDesc(pa.getPano()));
+            model.addAttribute("histories",
+            	    historyRepo.findTop20ByParentAccount_PanoOrderByHdateDesc(pa.getPano()));
         } else {
             // 안전: 가입 Y인데도 모계좌 없을 때
             model.addAttribute("pano", null);

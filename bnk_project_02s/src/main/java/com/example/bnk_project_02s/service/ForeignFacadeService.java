@@ -37,7 +37,7 @@ public class ForeignFacadeService {
                         .toList();
 
                 // uid 기준 최근 20건 (원하면 pa 기준 메서드로 교체)
-                List<History> histories = historyRepo.findTop20ByUidOrderByHdateDesc(uid);
+                List<History> histories = historyRepo.findTop20ByParentAccount_PanoOrderByHdateDesc(pa.getPano());
 
                 CardDto card = null;
                 try { card = cardService.getCardByUserId(uid); } catch(Exception ignore){}
