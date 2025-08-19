@@ -13,7 +13,7 @@ public class CryptoConfig {
     private static final int AES_KEY_LEN  = 32; // AES-256 = 32 bytes
     private static final int HMAC_MIN_LEN = 32; // 256-bit 이상 권장
 
-    /* ========= AES: 예전처럼 그대로 'aes' 빈을 제공합니다 ========= */
+    /* ========= AES (기존 유지) ========= */
     @Bean
     public AesGcmUtil aes(
             @Value("${aes.key.256.base64:}") String aesB64,
@@ -22,11 +22,11 @@ public class CryptoConfig {
     ) {
         byte[] key = firstNonEmptyBytes(aesB64, aesHex, aesRaw, "AES");
         requireLen(key, AES_KEY_LEN, "AES");
-        return new AesGcmUtil(key); // 기존과 동일: new AesGcmUtil(byte[] key)
+        return new AesGcmUtil(key);
     }
 
-    /* ========= HMAC: 기존과 동일하게 'hmac' 빈을 제공합니다 ========= */
-    @Bean
+    /* ========= HMAC: 'hmac' 와 'urlHmac' 둘 다 이름으로 등록 ========= */
+    @Bean(name = {"hmac", "urlHmac"})
     public HmacUtil hmac(
             @Value("${hmac.secret.base64:}") String hmacB64,
             @Value("${hmac.secret.hex:}")     String hmacHex,
@@ -34,20 +34,14 @@ public class CryptoConfig {
     ) {
         byte[] key = firstNonEmptyBytes(hmacB64, hmacHex, hmacRaw, "HMAC");
         requireAtLeast(key, HMAC_MIN_LEN, "HMAC");
-        return new HmacUtil(key); // 내부는 raw 바이트 키 사용
+        return new HmacUtil(key);
     }
 
     /* ======================= helpers ======================= */
     private static byte[] firstNonEmptyBytes(String b64, String hex, String raw, String who) {
-        if (b64 != null && !b64.isBlank()) {
-            return Base64.getDecoder().decode(b64.trim());
-        }
-        if (hex != null && !hex.isBlank()) {
-            return hexToBytes(hex.trim());
-        }
-        if (raw != null && !raw.isBlank()) {
-            return raw.getBytes(StandardCharsets.UTF_8);
-        }
+        if (b64 != null && !b64.isBlank()) return Base64.getDecoder().decode(b64.trim());
+        if (hex != null && !hex.isBlank()) return hexToBytes(hex.trim());
+        if (raw != null && !raw.isBlank()) return raw.getBytes(StandardCharsets.UTF_8);
         throw new IllegalArgumentException(who + " key missing");
     }
 
