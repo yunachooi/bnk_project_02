@@ -331,7 +331,7 @@
     <div class="container">
         <!-- Header -->
         <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <a href="/foreign0" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+            <a href="/foreign" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -628,10 +628,10 @@
         // --- 이벤트 리스너 등록 ---
         document.addEventListener('DOMContentLoaded', initializeUI);
 
-        // '홈으로' 버튼 클릭 시 /foreign0으로 이동
+        // '홈으로' 버튼 클릭 시 /foreign으로 이동
         homeButton.addEventListener('click', function(event) {
             event.preventDefault(); // 기본 링크 이동 방지
-            window.location.href = '/foreign0';
+            window.location.href = '/foreign';
         });
 
         personalInfoConsentHeader.addEventListener('click', () => {
