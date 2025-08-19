@@ -28,14 +28,9 @@
             overflow: hidden;
         }
 
-        /* Header styles */
-        header {
-            flex: none; /* Do not grow/shrink */
-        }
-        
         /* Footer styles */
         .bottom-bar {
-            flex: none; /* Do not grow/shrink */
+            flex: none;
             width: 100%;
             background-color: #ffffff;
             border-top: 1px solid #e2e8f0;
@@ -55,18 +50,16 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
-        .bottom-bar button:active {
-            transform: scale(0.98);
-        }
+        .bottom-bar button:active { transform: scale(0.98); }
 
         /* Main content area */
         .main-content {
-            flex-grow: 1; /* Allow content to fill available space */
-            padding: 0.75rem; 
+            flex-grow: 1;
+            padding: 0.75rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem; 
-            overflow-y: auto; 
+            gap: 1rem;
+            overflow-y: auto;
         }
 
         .section-block {
@@ -75,17 +68,17 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Ensure rounded corners */
+            overflow: hidden;
         }
 
         .section-title {
-            font-size: 1rem; /* Adjusted for consistency */
-            font-weight: 600; /* Adjusted for consistency */
+            font-size: 1rem;
+            font-weight: 600;
             color: #374151;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1.5rem; /* Padding added to title itself */
+            padding: 1.5rem;
             border-bottom: none;
             margin-bottom: 0; 
         }
@@ -102,9 +95,7 @@
         }
 
         /* Form elements */
-        .form-group {
-            margin-bottom: 1rem;
-        }
+        .form-group { margin-bottom: 1rem; }
         .form-group label {
             display: block;
             font-size: 0.9rem;
@@ -134,13 +125,8 @@
             cursor: not-allowed;
         }
 
-        .input-with-button {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .input-with-button input {
-            flex-grow: 1;
-        }
+        .input-with-button { display: flex; gap: 0.5rem; }
+        .input-with-button input { flex-grow: 1; }
         .input-with-button button {
             flex-shrink: 0;
             padding: 0.75rem 1rem;
@@ -158,88 +144,107 @@
             font-weight: 500;
         }
 
-        /* Step Indicator Styles */
+        /* Step Indicator */
         .step-indicator {
             display: flex;
             width: 100%;
-            height: 4px; 
-            background-color: #e0e0e0; 
+            height: 4px;
+            background-color: #e0e0e0;
             border-radius: 2px;
-            overflow: hidden; 
-            margin-top: 0.5rem; 
+            overflow: hidden;
+            margin-top: 0.5rem;
         }
-
         .step-indicator-progress {
-            width: 33.33%; 
+            width: 33.33%;
             height: 100%;
-            background-color: #2563eb; 
+            background-color: #2563eb;
             border-radius: 2px;
         }
 
-        /* Added for textContent \n support */
-        #encouragementMessage {
-            white-space: pre-wrap;
-            font-size: 1rem; /* Adjusted for consistency */
-        }
-        .hidden {
-            display: none !important;
-        }
+        #encouragementMessage { white-space: pre-wrap; font-size: 1rem; }
+        .hidden { display: none !important; }
 
-        /* Accordion styles */
+        /* Accordion */
         .section-content {
-            max-height: 1000px; /* Sufficiently large initial height */
+            max-height: 1000px;
             overflow: hidden;
             transition: max-height 0.5s ease-out;
-            border-top: none; /* No border by default */
-            margin-top: 0; /* No margin by default */
-            /* Removed direct padding from here */
+            border-top: none;
+            margin-top: 0;
         }
-        .section-content.collapsed {
-            max-height: 0;
-            /* Padding from inner div will also collapse */
-            border-top: none; 
-            margin-top: 0; 
-        }
-        .section-content:not(.collapsed) {
-            border-top: 1px solid #f0f4f8; 
-        }
+        .section-content.collapsed { max-height: 0; border-top: none; margin-top: 0; }
+        .section-content:not(.collapsed) { border-top: 1px solid #f0f4f8; }
+        .section-content-inner { padding: 1.5rem; }
 
-        .section-content-inner { /* New inner div for content padding */
-            padding: 1.5rem; /* Apply padding here */
-        }
+        .section-block.collapsible .section-title { cursor: pointer; }
+        .section-block.collapsible .section-title .toggle-icon { transition: transform 0.3s ease; display: inline-block; }
+        .section-block.collapsible .section-title.rotated .toggle-icon { transform: rotate(180deg); }
+        .section-block.collapsible.confirmed .section-title .toggle-icon { display: none; }
 
-        .section-block.collapsible .section-title {
-            cursor: pointer;
+        /* ===== 음성 안내 패널 ===== */
+        .voice-panel{
+            position:absolute;right:.75rem;top:3.25rem;width:300px;background:#fff;
+            border:1px solid #e5e7eb;border-radius:.75rem;box-shadow:0 10px 20px rgba(0,0,0,.08);
+            padding:.75rem;z-index:50;display:none
         }
-        .section-block.collapsible .section-title .toggle-icon {
-            transition: transform 0.3s ease;
-            display: inline-block;
+        .voice-panel.open{display:block}
+
+        /* ===== 흰색 확인 버튼 공통 ===== */
+        .btn-white{
+            background:#fff;
+            color:#1f2937; /* gray-800 */
+            border:1px solid #d1d5db; /* gray-300 */
         }
-        .section-block.collapsible .section-title.rotated .toggle-icon {
-            transform: rotate(180deg);
-        }
-        .section-block.collapsible.confirmed .section-title .toggle-icon {
-            display: none; 
-        }
+        .btn-white:hover{ background:#f9fafb; } /* gray-50 */
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container">
-        <!-- Header -->
-        <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <a href="/foreign" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+        <!-- Header: 가운데 정렬을 위해 3열 그리드 -->
+        <header class="grid grid-cols-3 items-center p-4 bg-white border-b border-gray-200">
+            <a href="/foreign" class="justify-self-start flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
                 홈으로
             </a>
-            <h1 class="text-xl font-bold text-gray-800">본인확인</h1>
-            <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300 opacity-0 cursor-default">
-                <!-- Placeholder for symmetry, or add a relevant icon if needed -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354v15.304m0 0l-6.5-6.5m6.5 6.5l6.5-6.5" />
-                </svg>
-            </button>
+
+            <h1 class="justify-self-center text-xl font-bold text-gray-800 text-center">본인확인</h1>
+
+            <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+            <div class="relative justify-self-end">
+                <button id="voiceGuideBtn"
+                        class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
+                        aria-pressed="false"
+                        aria-label="음성 안내 켜기"
+                        title="음성 안내 켜기">
+                    <!-- Play -->
+                    <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+                    </svg>
+                    <!-- Stop -->
+                    <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+                </button>
+
+                <!-- 패널: 도움말 + 다시 듣기 + 닫기 -->
+                <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+                        <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+                    </div>
+                    <div class="mb-3 text-xs text-gray-700 leading-5">
+                        <p class="mb-1">시작/정지: 우측 상단 ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요.</p>
+                        <p class="mb-1">휴대폰: <span class="font-semibold">통신사 선택 → 번호 입력 → 인증번호 요청</span> 후 코드 확인을 누르세요.</p>
+                        <p class="mb-0">계좌: <span class="font-semibold">은행 선택 → 계좌번호 입력 → 1원 송금 요청</span> 후 입금자명 3자리 확인을 누르세요.</p>
+                    </div>
+                    <div class="flex">
+                        <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Step Indicator -->
@@ -288,7 +293,8 @@
                             <label for="authCode">인증번호</label>
                             <div class="input-with-button">
                                 <input type="text" id="authCode" placeholder="인증번호 6자리" maxlength="6">
-                                <button id="verifyAuthCodeBtn" class="bg-gray-200 text-gray-700 hover:bg-gray-300">확인</button>
+                                <!-- 확인 버튼: 흰색 -->
+                                <button id="verifyAuthCodeBtn" class="btn-white">확인</button>
                             </div>
                             <p id="authCodeTimer" class="text-sm text-gray-500 mt-2 text-center"></p>
                         </div>
@@ -321,7 +327,6 @@
                                 <option value="농협은행">농협은행</option>
                                 <option value="부산은행">부산은행</option>
                                 <option value="BNK경남은행">BNK경남은행</option>
-                                <!-- 기타 은행 추가 가능 -->
                             </select>
                         </div>
                         <div class="form-group">
@@ -336,7 +341,8 @@
                             <label for="depositCode">입금자명</label>
                             <div class="input-with-button">
                                 <input type="text" id="depositCode" placeholder="입금자명 3자리 숫자를 입력하세요" maxlength="3">
-                                <button id="verifyDepositCodeBtn" class="bg-gray-200 text-gray-700 hover:bg-gray-300">확인</button>
+                                <!-- 확인 버튼: 흰색 -->
+                                <button id="verifyDepositCodeBtn" class="btn-white">확인</button>
                             </div>
                             <p id="depositCodeTimer" class="text-sm text-gray-500 mt-2 text-center"></p>
                         </div>
@@ -365,7 +371,7 @@
         const phoneAuthTitle = phoneAuthSection.querySelector('.section-title');
         const phoneCheckmark = document.getElementById('phoneCheckmark');
         const phoneAuthContent = document.getElementById('phoneAuthContent');
-        const phoneToggleIcon = document.getElementById('phoneToggleIcon'); // SVG 아이콘
+        const phoneToggleIcon = document.getElementById('phoneToggleIcon');
         const telecomProviderSelect = document.getElementById('telecomProvider');
         const phoneNumberInput = document.getElementById('phoneNumber');
         const requestAuthCodeBtn = document.getElementById('requestAuthCodeBtn');
@@ -380,7 +386,7 @@
         const accountAuthTitle = accountAuthSection.querySelector('.section-title');
         const accountCheckmark = document.getElementById('accountCheckmark');
         const accountAuthContent = document.getElementById('accountAuthContent');
-        const accountToggleIcon = document.getElementById('accountToggleIcon'); // SVG 아이콘
+        const accountToggleIcon = document.getElementById('accountToggleIcon');
         const bankNameSelect = document.getElementById('bankName');
         const accountNumberInput = document.getElementById('accountNumber');
         const requestTransferBtn = document.getElementById('requestTransferBtn');
@@ -390,6 +396,14 @@
         const depositCodeTimer = document.getElementById('depositCodeTimer');
         const accountCertStatus = document.getElementById('accountCertStatus');
 
+        // ===== 음성 안내 요소
+        const voiceBtn = document.getElementById('voiceGuideBtn');
+        const voiceIconPlay = document.getElementById('voiceIconPlay');
+        const voiceIconStop = document.getElementById('voiceIconStop');
+        const voiceLabel = document.getElementById('voiceLabel');
+        const voicePanel = document.getElementById('voicePanel');
+        const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+        const voiceReplayBtn = document.getElementById('voiceReplayBtn');
 
         // --- 상태 변수 ---
         let phoneAuthenticated = false;
@@ -398,62 +412,46 @@
         let phoneCountdownInterval;
         let accountCountdownInterval;
 
-        let simulatedAuthCode = '123456'; // 시뮬레이션용 휴대폰 인증번호
-        let simulatedDepositCode = ''; // 시뮬레이션용 계좌 입금자명 (3자리 숫자)
-
-        // localStorage에서 추출된 정보는 이 페이지에서 직접 사용되지 않지만, 다음 페이지를 위해 유지될 수 있음
-        const extractedUserInfo = JSON.parse(localStorage.getItem('extractedUserInfo')) || {
-            name: '정보 없음',
-            dob: '정보 없음',
-            gender: '정보 없음'
-        };
-
+        let simulatedAuthCode = '123456';
+        let simulatedDepositCode = '';
 
         // --- 초기 UI 설정 함수 ---
         function initializeUI() {
-            // 초기에는 두 섹션 모두 열려있게 설정
             phoneAuthContent.classList.remove('collapsed');
-            phoneAuthTitle.classList.add('rotated'); // 캐럿 표시
+            phoneAuthTitle.classList.add('rotated');
             accountAuthContent.classList.remove('collapsed');
-            accountAuthTitle.classList.add('rotated'); // 캐럿 표시
-            
-            // 모든 인증이 완료되지 않았다면 초기 메시지 설정
+            accountAuthTitle.classList.add('rotated');
             updateNextButtonState(); 
         }
 
-        // --- '다음' 버튼 활성화/비활성화 및 응원 메시지 업데이트 함수 ---
+        // --- '다음' 버튼 및 응원 메시지 ---
         function updateNextButtonState() {
             if (phoneAuthenticated && accountAuthenticated) {
                 nextButton.disabled = false;
                 nextButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
                 nextButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                // 변경된 메시지
                 encouragementMessageDiv.textContent = '모든 본인 확인 절차가 완료되었습니다! 🎉\n다음 단계로 이동해 주세요 😄';
-                // 배경색은 노란색으로 유지
             } else {
                 nextButton.disabled = true;
                 nextButton.classList.add('bg-gray-400', 'cursor-not-allowed');
                 nextButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                // 모든 인증이 완료되지 않았다면, 항상 이 초기 메시지를 표시
                 encouragementMessageDiv.textContent = '본인 확인의 마지막 단계입니다.\n조금만 더 힘내주세요! 💪';
-                // 배경색은 노란색으로 유지
             }
         }
 
-        // --- 인증번호/입금자명 타이머 공통 함수 ---
+        // --- 인증 타이머 공통 ---
         function startTimer(timerElement, buttonToDisable, buttonToEnable, duration, onExpireCallback) {
             let timer = duration;
-            // 모든 타이머 clearInterval 호출하여 혼동 방지 (동시에 여러 타이머가 돌지 않도록)
             clearInterval(phoneCountdownInterval); 
             clearInterval(accountCountdownInterval);
 
             let currentInterval;
             if (timerElement === authCodeTimer) {
                 currentInterval = setInterval(updateTimer, 1000);
-                phoneCountdownInterval = currentInterval; // 올바른 변수에 할당
+                phoneCountdownInterval = currentInterval;
             } else if (timerElement === depositCodeTimer) {
                 currentInterval = setInterval(updateTimer, 1000);
-                accountCountdownInterval = currentInterval; // 올바른 변수에 할당
+                accountCountdownInterval = currentInterval;
             }
             
             timerElement.classList.remove('hidden');
@@ -468,22 +466,20 @@
                 timerElement.textContent = `남은 시간: ${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
 
                 if (--timer < 0) {
-                    clearInterval(currentInterval); // 해당 타이머만 중지
+                    clearInterval(currentInterval);
                     timerElement.textContent = '인증 시간이 만료되었습니다. 다시 요청해주세요.';
-                    timerElement.style.color = '#ef4444'; // Red color
+                    timerElement.style.color = '#ef4444';
                     buttonToEnable.disabled = false;
                     buttonToEnable.classList.remove('bg-gray-400', 'cursor-not-allowed');
                     buttonToEnable.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    if (onExpireCallback) {
-                        onExpireCallback();
-                    }
+                    if (onExpireCallback) onExpireCallback();
                 }
             }
         }
 
-        // --- 휴대폰 번호 자동 포맷팅 함수 ---
+        // --- 휴대폰 번호 자동 포맷 ---
         phoneNumberInput.addEventListener('input', (event) => {
-            let value = event.target.value.replace(/[^0-9]/g, ''); // 숫자 이외의 문자 제거
+            let value = event.target.value.replace(/[^0-9]/g, '');
             let formattedValue = '';
 
             if (value.startsWith('010')) {
@@ -503,70 +499,58 @@
             event.target.value = formattedValue.substring(0, 13);
         });
 
-        // --- 아코디언 토글 함수 ---
+        // --- 아코디언 토글 ---
         function toggleAccordion(contentElement, titleElement, toggleIconElement, sectionBlockElement) {
-            // 이미 인증 완료된 섹션은 클릭해도 토글되지 않음
-            if (sectionBlockElement.classList.contains('confirmed')) {
-                return;
-            }
+            if (sectionBlockElement.classList.contains('confirmed')) return;
             contentElement.classList.toggle('collapsed');
             titleElement.classList.toggle('rotated');
             if (contentElement.classList.contains('collapsed')) {
-                toggleIconElement.classList.remove('rotated'); // 아이콘이 아래를 보도록
+                toggleIconElement.classList.remove('rotated');
             } else {
-                toggleIconElement.classList.add('rotated'); // 아이콘이 위를 보도록
+                toggleIconElement.classList.add('rotated');
             }
         }
 
         // --- 이벤트 핸들러 ---
 
-        // 휴대폰 인증번호 요청 버튼
+        // 휴대폰 인증번호 요청
         requestAuthCodeBtn.addEventListener('click', () => {
             const telecom = telecomProviderSelect.value;
             const phoneNum = phoneNumberInput.value;
 
-            if (!telecom || !phoneNum) {
-                alert('통신사와 휴대폰 번호를 모두 입력해주세요.');
-                return;
-            }
+            if (!telecom || !phoneNum) { alert('통신사와 휴대폰 번호를 모두 입력해주세요.'); return; }
 
             const phoneRegex = /^010-\d{4}-\d{4}$/;
-            if (!phoneRegex.test(phoneNum)) {
-                alert('유효한 휴대폰 번호 형식을 입력해주세요 (예: 010-XXXX-XXXX)');
-                return;
-            }
+            if (!phoneRegex.test(phoneNum)) { alert('유효한 휴대폰 번호 형식을 입력해주세요 (예: 010-XXXX-XXXX)'); return; }
 
-            // 새로운 인증번호 생성
             simulatedAuthCode = Math.floor(100000 + Math.random() * 900000).toString(); 
 
             authCodeGroup.classList.remove('hidden');
+            // 확인 버튼 활성화: 흰색 스타일 유지
             verifyAuthCodeBtn.disabled = false;
-            verifyAuthCodeBtn.classList.remove('bg-gray-200', 'cursor-not-allowed');
-            verifyAuthCodeBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            
-            // 3초 후 인증번호 자동 입력 (메시지 없음)
+            verifyAuthCodeBtn.classList.remove('bg-gray-200','bg-gray-400','cursor-not-allowed','bg-blue-600','hover:bg-blue-700');
+            verifyAuthCodeBtn.classList.add('btn-white');
+
             setTimeout(() => {
                 authCodeInput.value = simulatedAuthCode;
-                authCodeTimer.textContent = ''; // 메시지 제거
-                authCodeTimer.style.color = ''; // 스타일 초기화
-                clearInterval(phoneCountdownInterval); // 타이머 중지
-                requestAuthCodeBtn.disabled = true; // 요청 버튼 비활성화
+                authCodeTimer.textContent = '';
+                authCodeTimer.style.color = '';
+                clearInterval(phoneCountdownInterval);
+                requestAuthCodeBtn.disabled = true;
                 requestAuthCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
                 requestAuthCodeBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            }, 3000); // 3초 (3000 밀리초) 지연
+            }, 3000);
 
             startTimer(authCodeTimer, requestAuthCodeBtn, requestAuthCodeBtn, 180, () => {
-                // 이 콜백은 타이머가 0이 될 때 실행되지만, 자동 입력되면 이미 중지됨
-                // 만약 자동 입력 전에 타이머가 만료되면 이 메시지가 표시됨
-                if (!phoneAuthenticated) { // 이미 인증되지 않은 경우에만 타이머 만료 처리
-                    verifyAuthCodeBtn.disabled = true; 
+                if (!phoneAuthenticated) {
+                    verifyAuthCodeBtn.disabled = true;
+                    verifyAuthCodeBtn.classList.remove('btn-white');
                     verifyAuthCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    verifyAuthCodeBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 }
             }); 
         });
 
-        // 휴대폰 인증번호 확인 버튼
+        // 휴대폰 인증번호 확인
         verifyAuthCodeBtn.addEventListener('click', () => {
             const enteredCode = authCodeInput.value;
 
@@ -577,10 +561,9 @@
                 phoneCertStatus.style.color = '#10b981';
                 phoneCertStatus.classList.remove('hidden');
                 
-                // UI 잠금
                 verifyAuthCodeBtn.disabled = true;
+                verifyAuthCodeBtn.classList.remove('btn-white');
                 verifyAuthCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                verifyAuthCodeBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
 
                 requestAuthCodeBtn.disabled = true; 
                 requestAuthCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
@@ -593,64 +576,54 @@
                 phoneAuthenticated = true;
                 updateNextButtonState();
                 
-                // 인증 완료 메시지 표시 후 1초 뒤 아코디언 닫기
                 setTimeout(() => {
                     phoneAuthContent.classList.add('collapsed'); 
-                    phoneAuthTitle.classList.remove('rotated'); // 캐럿 숨기기
-                    phoneCheckmark.style.display = 'inline-block'; // 체크 표시 보이기
-                    phoneAuthSection.classList.add('confirmed'); // 인증 완료 상태 클래스 추가
-                }, 1000); // 1초 (1000 밀리초) 지연
+                    phoneAuthTitle.classList.remove('rotated'); 
+                    phoneCheckmark.style.display = 'inline-block';
+                    phoneAuthSection.classList.add('confirmed');
+                }, 1000);
             } else {
                 alert('인증번호가 일치하지 않습니다. 다시 확인해주세요.');
                 authCodeInput.value = '';
             }
         });
 
-        // 1원 송금 요청 버튼
+        // 1원 송금 요청
         requestTransferBtn.addEventListener('click', () => {
             const bank = bankNameSelect.value;
             const account = accountNumberInput.value;
 
-            if (!bank || !account) {
-                alert('은행과 계좌번호를 모두 입력해주세요.');
-                return;
-            }
+            if (!bank || !account) { alert('은행과 계좌번호를 모두 입력해주세요.'); return; }
+            if (!/^\d+$/.test(account)) { alert('유효한 계좌번호를 입력해주세요 (숫자만 입력).'); return; }
 
-            if (!/^\d+$/.test(account)) {
-                alert('유효한 계좌번호를 입력해주세요 (숫자만 입력).');
-                return;
-            }
-
-            // 새로운 입금자명 생성
             simulatedDepositCode = Math.floor(100 + Math.random() * 900).toString(); 
 
             depositCodeGroup.classList.remove('hidden');
+            // 확인 버튼 활성화: 흰색 스타일 유지
             verifyDepositCodeBtn.disabled = false;
-            verifyDepositCodeBtn.classList.remove('bg-gray-200', 'cursor-not-allowed');
-            verifyDepositCodeBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            verifyDepositCodeBtn.classList.remove('bg-gray-200','bg-gray-400','cursor-not-allowed','bg-blue-600','hover:bg-blue-700');
+            verifyDepositCodeBtn.classList.add('btn-white');
 
-            // 3초 후 입금자명 자동 입력 (메시지 없음)
             setTimeout(() => {
                 depositCodeInput.value = simulatedDepositCode;
-                depositCodeTimer.textContent = ''; // 메시지 제거
-                depositCodeTimer.style.color = ''; // 스타일 초기화
-                clearInterval(accountCountdownInterval); // 타이머 중지
-                requestTransferBtn.disabled = true; // 요청 버튼 비활성화
+                depositCodeTimer.textContent = '';
+                depositCodeTimer.style.color = '';
+                clearInterval(accountCountdownInterval);
+                requestTransferBtn.disabled = true;
                 requestTransferBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
                 requestTransferBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            }, 3000); // 3초 (3000 밀리초) 지연
+            }, 3000);
 
             startTimer(depositCodeTimer, requestTransferBtn, requestTransferBtn, 180, () => {
-                // 이 콜백은 타이머가 0이 될 때 실행되지만, 자동 입력되면 이미 중지됨
-                if (!accountAuthenticated) { // 이미 인증되지 않은 경우에만 타이머 만료 처리
+                if (!accountAuthenticated) {
                     verifyDepositCodeBtn.disabled = true;
+                    verifyDepositCodeBtn.classList.remove('btn-white');
                     verifyDepositCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    verifyDepositCodeBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 }
             });
         });
 
-        // 입금자명 확인 버튼
+        // 입금자명 확인
         verifyDepositCodeBtn.addEventListener('click', () => {
             const enteredCode = depositCodeInput.value;
 
@@ -661,7 +634,6 @@
                 accountCertStatus.style.color = '#10b981';
                 accountCertStatus.classList.remove('hidden');
                 
-                // UI 잠금
                 bankNameSelect.disabled = true;
                 accountNumberInput.disabled = true;
                 requestTransferBtn.disabled = true;
@@ -669,44 +641,46 @@
                 requestTransferBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 depositCodeInput.disabled = true;
                 verifyDepositCodeBtn.disabled = true;
+                verifyDepositCodeBtn.classList.remove('btn-white');
                 verifyDepositCodeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                verifyDepositCodeBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
 
                 accountAuthenticated = true;
                 updateNextButtonState();
                 
-                // 인증 완료 메시지 표시 후 1초 뒤 아코디언 닫기
                 setTimeout(() => {
                     accountAuthContent.classList.add('collapsed'); 
-                    accountAuthTitle.classList.remove('rotated'); // 캐럿 숨기기
-                    accountCheckmark.style.display = 'inline-block'; // 체크 표시 보이기
-                    accountAuthSection.classList.add('confirmed'); // 인증 완료 상태 클래스 추가
-                }, 1000); // 1초 (1000 밀리초) 지연
+                    accountAuthTitle.classList.remove('rotated'); 
+                    accountCheckmark.style.display = 'inline-block';
+                    accountAuthSection.classList.add('confirmed');
+                }, 1000);
             } else {
                 alert('입금자명이 일치하지 않습니다. 다시 확인해주세요.');
                 depositCodeInput.value = '';
             }
         });
 
-        // --- 내비게이션 버튼 이벤트 리스너 ---
+        // --- 내비게이션 버튼 ---
         homeButton.addEventListener('click', function(event) {
             event.preventDefault();
+            Voice.cancel();
             window.location.href = '/foreign';
         });
 
         prevButton.addEventListener('click', function() {
-            window.location.href = '/foreign3'; // 이전 페이지로 이동 (신분증 촬영 페이지)
+            Voice.cancel();
+            window.location.href = '/foreign3';
         });
 
         nextButton.addEventListener('click', function() {
             if (phoneAuthenticated && accountAuthenticated) {
-                window.location.href = '/foreign5'; // 다음 단계 페이지로 이동 (새로운 foreign5 페이지)
+                Voice.cancel();
+                window.location.href = '/foreign5';
             } else {
                 alert('모든 본인 확인 절차(휴대폰, 계좌)를 완료해야 다음 단계로 진행할 수 있습니다.');
             }
         });
 
-        // 섹션 제목 클릭 시 아코디언 토글 (인증 완료 상태가 아닐 때만)
+        // 섹션 제목 클릭 시 아코디언 토글
         phoneAuthTitle.addEventListener('click', () => {
             toggleAccordion(phoneAuthContent, phoneAuthTitle, phoneToggleIcon, phoneAuthSection);
         });
@@ -714,9 +688,112 @@
             toggleAccordion(accountAuthContent, accountAuthTitle, accountToggleIcon, accountAuthSection);
         });
 
-
-        // DOMContentLoaded 이벤트 발생 시 UI 초기화
+        // DOMContentLoaded
         document.addEventListener('DOMContentLoaded', initializeUI);
+
+        /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
+        const Voice = (function(){
+            let speaking = false;
+            let queue = [];
+            let current = null;
+
+            const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+            const hasAndroid = !!window.AndroidTTS?.speak;
+            const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+            function useNativeSpeak(text){
+                const r = 1.0;
+                if(hasAndroid){
+                    try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
+                }
+                if(hasIOS){
+                    try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
+                }
+                return false;
+            }
+            function useNativeStop(){
+                if(hasAndroid){
+                    try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
+                }
+                if(hasIOS){
+                    try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
+                }
+                return false;
+            }
+
+            function speakWeb(text, onend){
+                const u = new SpeechSynthesisUtterance(String(text));
+                u.lang = 'ko-KR';
+                u.rate = 1.0;
+                u.onend = onend || null;
+                u.onerror = function(){ onend && onend(); };
+                window.speechSynthesis.speak(u);
+            }
+
+            function nextInQueue(){
+                if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+                current = queue.shift();
+                if(useNativeSpeak(current)){
+                    speaking = true; setUI(true);
+                    const approx = Math.max(1500, current.length * 60);
+                    setTimeout(()=>{ nextInQueue(); }, approx);
+                }else if(hasWebSpeech){
+                    speaking = true; setUI(true);
+                    speakWeb(current, ()=> nextInQueue());
+                }else{
+                    speaking = false; setUI(false);
+                }
+            }
+
+            function setUI(isOn){
+                voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+                voiceIconPlay.classList.toggle('hidden', isOn);
+                voiceIconStop.classList.toggle('hidden', !isOn);
+                voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+                voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+                voiceBtn.setAttribute('title', voiceLabel.textContent);
+            }
+
+            function start(scriptLines){
+                if(speaking) cancel();
+                queue = Array.isArray(scriptLines) ? scriptLines.slice() : [String(scriptLines||'')];
+                nextInQueue();
+            }
+
+            function cancel(){
+                queue = [];
+                current = null;
+                speaking = false;
+                useNativeStop();
+                if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+                setUI(false);
+            }
+
+            function toggle(scriptLines){
+                if(speaking){ cancel(); }
+                else{ start(scriptLines); }
+            }
+
+            return { start, cancel, toggle, isSpeaking:()=>speaking };
+        })();
+
+        function buildVoiceScript(){
+            const s1 = '안내: 지금은 본인확인 단계입니다. 휴대폰 인증과 계좌 인증을 완료해 주세요.';
+            const s2 = '휴대폰 인증: 통신사를 선택하고 휴대폰 번호를 입력한 뒤 인증번호 요청을 누르세요. 인증번호를 입력하고 확인을 누르면 완료됩니다.';
+            const s3 = '계좌 인증: 은행을 선택하고 계좌번호를 입력한 뒤 1원 송금 요청을 누르세요. 도착한 입금자명 숫자 3자리를 입력하고 확인을 누르면 완료됩니다.';
+            const s4 = '두 인증이 모두 끝나면 하단의 다음으로 버튼이 활성화됩니다.';
+            return [s1, s2, s3, s4];
+        }
+
+        voiceBtn.addEventListener('click', function(){
+            voicePanel.classList.toggle('open');
+            Voice.toggle(buildVoiceScript());
+        });
+        voiceCloseBtn.addEventListener('click', function(){ voicePanel.classList.remove('open'); });
+        voiceReplayBtn.addEventListener('click', function(){ Voice.start(buildVoiceScript()); });
+
+        document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+        window.addEventListener('pagehide', ()=> Voice.cancel());
     </script>
 </body>
 </html>
