@@ -16,17 +16,24 @@ Future<void> initLocalNotifications() async {
   const init = InitializationSettings(android: androidInit);
   await flnp.initialize(init);
 
-  final android = flnp.resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>();
-  await android?.createNotificationChannel(const AndroidNotificationChannel(
-    _channelId, _channelName,
-    importance: Importance.high,
-  ));
+  final android = flnp
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+  await android?.createNotificationChannel(
+    const AndroidNotificationChannel(
+      _channelId,
+      _channelName,
+      importance: Importance.high,
+    ),
+  );
 }
 
 Future<bool> ensureNotificationPermission() async {
-  final android = flnp.resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>();
+  final android = flnp
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
   final enabled = await android?.areNotificationsEnabled() ?? true;
   if (enabled) return true;
   return await android?.requestNotificationsPermission() ?? false;
@@ -34,7 +41,8 @@ Future<bool> ensureNotificationPermission() async {
 
 Future<void> showLocalNotification(String title, String body) async {
   const androidDetails = AndroidNotificationDetails(
-    _channelId, _channelName,
+    _channelId,
+    _channelName,
     importance: Importance.high,
     priority: Priority.high,
   );
