@@ -24,7 +24,7 @@
 
     /* Header */
     header{ position:sticky; top:0; z-index:50; background:#fff; border-bottom:1px solid #e5e7eb; }
-    .header-bar{ display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; }
+    .header-bar{ position:relative; display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; }
     .header-back{ display:flex; align-items:center; gap:.25rem; color:#ef4444; font-weight:800; text-decoration:none; padding:.25rem .375rem; border-radius:.5rem;}
     .header-back svg{ width:20px; height:20px; }
     .header-title{ font-size:1.15rem; font-weight:800; }
@@ -134,6 +134,14 @@
     #zoomImg{ max-width:95vw; max-height:80vh; object-fit:contain; border-radius:.5rem; transform-origin:center center; transition:transform .15s ease; }
     .image-caption{ text-align:center; padding:.25rem .75rem 1rem; color:#e5e7eb; font-weight:700; }
 
+    /* ===== 음성 안내: 패널 ===== */
+    .voice-panel{
+      position:absolute; right:.25rem; top:2.9rem; width:300px; background:#fff;
+      border:1px solid #e5e7eb; border-radius:.75rem; box-shadow:0 10px 20px rgba(0,0,0,.08);
+      padding:.75rem; z-index:80; display:none;
+    }
+    .voice-panel.open{display:block}
+
     @media (max-width:420px){
       body{font-size:15px;}
       .pdf-viewer-iframe{ height:56vh; }
@@ -151,8 +159,42 @@
           </svg>
           홈으로
         </a>
-        <h1 class="header-title">카드 발급 신청</h1>
-        <span class="w-5 h-5 opacity-0"></span>
+
+        <!-- 가운데 정렬 제목 -->
+        <h1 class="header-title absolute left-1/2 -translate-x-1/2 m-0">카드 발급 신청</h1>
+
+        <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+        <div class="relative ml-auto">
+          <button id="voiceGuideBtn"
+                  class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center gap-1"
+                  aria-pressed="false"
+                  aria-label="음성 안내 켜기"
+                  title="음성 안내 켜기">
+            <!-- Play -->
+            <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+            </svg>
+            <!-- Stop -->
+            <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M6 6h12v12H6z"/>
+            </svg>
+            <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+          </button>
+
+          <!-- 패널 -->
+          <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+            <div class="mb-2 flex items-center justify-between">
+              <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+              <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+            </div>
+            <div class="mb-3 text-xs text-gray-700 leading-5">
+              <p class="mb-1"><span class="font-semibold">카드 가입 방법과 관련된 간단한 설명</span>을 음성으로 안내해 드립니다.</p>
+            </div>
+            <div class="flex">
+              <button id="voiceReplayBtn" class="flex-1 bg-red-500 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-red-600">다시 듣기</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -450,7 +492,7 @@
 
     const prevButton=document.getElementById('prevButton');
     const nextButton=document.getElementById('nextButton');
-    prevButton.addEventListener('click', ()=> location.href='/foreign');
+    prevButton.addEventListener('click', ()=> { Voice.cancel(); location.href='/foreign'; });
 
     let isCardDesignCompleted=false, isCustomerInfoCompleted=false, isTermsAndDocsCompleted=false;
 
@@ -793,8 +835,160 @@
     nextButton.addEventListener('click', ()=>{
       if(nextButton.disabled) return;
       saveState();
+      Voice.cancel();
       location.href = '/foreign8';
     });
+
+    /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
+    const voiceBtn = document.getElementById('voiceGuideBtn');
+    const voiceIconPlay = document.getElementById('voiceIconPlay');
+    const voiceIconStop = document.getElementById('voiceIconStop');
+    const voiceLabel = document.getElementById('voiceLabel');
+    const voicePanel = document.getElementById('voicePanel');
+    const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+    const voiceReplayBtn = document.getElementById('voiceReplayBtn');
+
+    const Voice = (function(){
+      let speaking = false;
+      let queue = [];
+      let current = null;
+
+      const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+      const hasAndroid = !!window.AndroidTTS?.speak;
+      const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+      function useNativeSpeak(text){
+        const r = 1.0;
+        if(hasAndroid){
+          try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+      function useNativeStop(){
+        if(hasAndroid){
+          try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+
+      function speakWeb(text, onend){
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.lang = 'ko-KR';
+        u.rate = 1.0;
+        u.onend = onend || null;
+        u.onerror = function(){ onend && onend(); };
+        window.speechSynthesis.speak(u);
+      }
+
+      function nextInQueue(){
+        if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+        current = queue.shift();
+        if(useNativeSpeak(current)){
+          speaking = true; setUI(true);
+          const approx = Math.max(1500, current.length * 60);
+          setTimeout(()=>{ nextInQueue(); }, approx);
+        }else if(hasWebSpeech){
+          speaking = true; setUI(true);
+          speakWeb(current, ()=> nextInQueue());
+        }else{
+          speaking = false; setUI(false);
+        }
+      }
+
+      function setUI(isOn){
+        voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        voiceIconPlay.classList.toggle('hidden', isOn);
+        voiceIconStop.classList.toggle('hidden', !isOn);
+        voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+        voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+        voiceBtn.setAttribute('title', voiceLabel.textContent);
+      }
+
+      function start(lines){
+        if(speaking) cancel();
+        queue = Array.isArray(lines) ? lines.slice() : [String(lines||'')];
+        nextInQueue();
+      }
+      function cancel(){
+        queue = [];
+        current = null;
+        speaking = false;
+        useNativeStop();
+        if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+        setUI(false);
+      }
+      function toggle(lines){
+        if(speaking){ cancel(); } else { start(lines); }
+      }
+      return { start, cancel, toggle, isSpeaking:()=>speaking };
+    })();
+
+    // 현재 입력 상태를 바탕으로 간단한 설명 + 항목별 안내 스크립트 생성
+    function buildVoiceScript(){
+      const lines = [];
+      lines.push('카드 발급 신청 화면입니다. 아래 순서대로 진행해 주세요. 카드 디자인 선택, 고객 정보 입력, 약관 동의가 완료되면 다음으로 버튼이 활성화됩니다.');
+
+      // 카드 디자인
+      if(selectedCardId){
+        lines.push(`선택한 카드 디자인은 ${cardNameById(selectedCardId)} 입니다.`);
+      }else{
+        lines.push('아직 카드 디자인을 선택하지 않으셨어요. 카드 디자인 선택 영역에서 원하는 디자인을 고르신 뒤 선택 버튼을 눌러 주세요.');
+      }
+
+      // 고객 정보
+      const nameVal = (englishNameInput.value || '').trim();
+      const jobVal = (occupationSelect.value || '').trim();
+      const ownVal = (document.querySelector('input[name="own-funds"]:checked')?.value || '').trim();
+      const addrOk = postalCodeInput.value && baseAddressInput.value && detailAddressInput.value.trim();
+
+      if(nameVal){ lines.push(`영문명은 ${nameVal}로 입력되어 있습니다.`); }
+      else{ lines.push('영문명이 비어 있습니다. 예시, 홍길동은 에이치 오 엔 지, 공백, 지 아이 엘 디 오 엔 지, 와 같이 입력해 주세요.'); }
+
+      if(jobVal){ lines.push(`직업은 ${jobVal}로 선택되어 있습니다.`); }
+      else{ lines.push('직업 구분을 선택해 주세요.'); }
+
+      if(ownVal){ lines.push(`자금 출처는 ${ownVal === 'yes' ? '본인 자금' : '본인 외 자금'}으로 선택하셨습니다.`); }
+      else{ lines.push('자금이 본인 자금인지 여부를 선택해 주세요.'); }
+
+      if(addrOk){
+        lines.push(`카드 수령 주소가 입력되어 있습니다. 우편번호 ${postalCodeInput.value}, 기본주소와 상세주소가 확인되었습니다.`);
+      }else{
+        lines.push('카드 수령 주소가 아직 완료되지 않았습니다. 우편번호 찾기 버튼으로 주소를 입력해 주세요.');
+      }
+
+      // 약관
+      if(isTermsAndDocsCompleted){
+        lines.push('약관 및 설명서 동의와 서류 전달이 완료되었습니다.');
+      }else{
+        lines.push('약관 및 설명서 동의가 필요합니다. 약관 보기 버튼을 눌러 순서대로 확인 후 동의해 주세요.');
+      }
+
+      // 전체 진행 상태
+      if(isCardDesignCompleted && isCustomerInfoCompleted && isTermsAndDocsCompleted){
+        lines.push('모든 항목이 완료되었습니다. 하단의 다음으로 버튼을 눌러 진행해 주세요.');
+      }else{
+        lines.push('모든 항목이 완료되면 하단의 다음으로 버튼이 빨간색으로 활성화됩니다.');
+      }
+      return lines;
+    }
+
+    // 음성 안내 버튼/패널
+    voiceBtn.addEventListener('click', function(){
+      voicePanel.classList.toggle('open');
+      Voice.toggle(buildVoiceScript());
+    });
+    voiceCloseBtn.addEventListener('click', function(){ voicePanel.classList.remove('open'); });
+    voiceReplayBtn.addEventListener('click', function(){ Voice.start(buildVoiceScript()); });
+
+    // 페이지를 떠날 때 정지
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+    window.addEventListener('pagehide', ()=> Voice.cancel());
   </script>
 </body>
 </html>

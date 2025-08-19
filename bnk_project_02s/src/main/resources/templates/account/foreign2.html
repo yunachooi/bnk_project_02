@@ -1,670 +1,525 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BNK 쇼핑환전통장 - 본인확인</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Inter for modern look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            border-radius: 1rem;
-            overflow: hidden;
-        }
-
-        /* Header styles */
-        header {
-            flex: none; /* Do not grow/shrink */
-        }
-        
-        /* Footer styles */
-        .bottom-bar {
-            flex: none; /* Do not grow/shrink */
-            width: 100%;
-            background-color: #ffffff;
-            border-top: 1px solid #e2e8f0;
-            padding: 0.75rem 1rem;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
-            display: flex;
-            justify-content: space-around;
-            gap: 0.5rem;
-            z-index: 10;
-        }
-        .bottom-bar button {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .bottom-bar button:active {
-            transform: scale(0.98);
-        }
-
-        /* Main content area */
-        .main-content {
-            flex-grow: 1; /* Allow content to fill available space */
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem; /* Spacing between content blocks */
-            overflow-y: auto; /* Allow scrolling if content overflows */
-        }
-
-        .content-block {
-            background-color: #ffffff;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            min-height: 120px; /* Minimum height for visual consistency */
-        }
-
-        .content-block.interactive {
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-            justify-content: space-between; /* To push arrow to right */
-            flex-direction: row; /* For side-by-side content and arrow */
-            padding: 1rem 1.5rem; /* Adjusted padding for interactive block */
-        }
-
-        .content-block.interactive:hover {
-            background-color: #f8fafc;
-            transform: translateY(-2px);
-        }
-        .content-block.interactive:active {
-            transform: scale(0.98);
-        }
-
-        /* Consent specific styles */
-        .consent-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            color: #4a5568;
-            margin-top: 0.5rem;
-        }
-        .consent-status.agreed {
-            color: #10b981; /* Green for agreed */
-            font-weight: 600;
-        }
-        .consent-status svg {
-            margin-right: 0.25rem;
-        }
-
-        /* Modal styles from foreign1 for consistency */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        .modal-overlay.open {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-content {
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            max-width: 350px;
-            width: 90%;
-            transform: translateY(-20px);
-            transition: transform 0.3s ease;
-        }
-        .modal-overlay.open .modal-content {
-            transform: translateY(0);
-        }
-        .modal-message-break-word {
-            word-break: keep-all;
-            white-space: normal;
-        }
-        .modal-content-details {
-            max-height: 60vh; /* Allow scrolling for long content */
-            overflow-y: auto;
-            text-align: left;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            color: #4a5568;
-            margin-top: 1rem;
-            padding-right: 0.5rem; /* For scrollbar if present */
-        }
-        /* Style for disabled modal close button */
-        .modal-content button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* New accordion styles for consent sections */
-        .consent-accordion-item {
-            width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.75rem;
-            margin-bottom: 0.75rem;
-            overflow: hidden; /* Ensure rounded corners */
-            background-color: #fff;
-        }
-
-        .consent-accordion-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.25rem;
-            cursor: pointer;
-            background-color: #ffffff;
-            transition: background-color 0.2s ease;
-        }
-        .consent-accordion-header:hover {
-            background-color: #f8fafc;
-        }
-
-        .consent-accordion-title {
-            display: flex;
-            align-items: center;
-            flex-grow: 1;
-            text-align: left;
-        }
-
-        .consent-accordion-text {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #374151; /* Gray-700 */
-        }
-        .consent-checkmark {
-            color: #10b981; /* Green checkmark */
-            font-size: 1.2rem;
-            margin-left: 0.5rem;
-            display: none; /* Hidden by default */
-        }
-
-        .consent-accordion-subtitle { /* Keeping this style although its content is removed from HTML */
-            font-size: 0.75rem;
-            color: #6b7280; /* Gray-500 */
-            margin-top: 0.25rem;
-            text-align: left;
-        }
-
-        .consent-accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-out, padding 0.5s ease-out;
-            padding: 0; /* Remove initial padding to collapse completely */
-            color: #4a5568;
-            line-height: 1.5;
-            border-top: 1px solid #e2e8f0; /* Separator line between header and content */
-            margin-top: 0; /* Remove top margin here to reduce blank space */
-        }
-        .consent-accordion-content.open {
-            max-height: 80vh; /* Increased height to utilize more screen space */
-            padding: 1rem 1.25rem; /* Re-apply padding when open, to match inner content margin */
-        }
-        .consent-accordion-icon {
-            transition: transform 0.3s ease;
-            color: #9ca3af; /* Gray-400 */
-        }
-        .consent-accordion-icon.rotate {
-            transform: rotate(180deg);
-        }
-
-        /* Styles for the "동의합니다" button wrapper within the accordion content */
-        .agree-button-container-in-content {
-            display: flex;
-            justify-content: center;
-            padding-top: 1rem; /* Padding above button within content */
-            border-top: 1px solid #e2e8f0; /* Separator above button */
-            margin-top: 1rem; /* Space above the separator */
-        }
-        .agree-button {
-            background-color: #2563eb; /* Blue-600 */
-            color: #ffffff;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: background-color 0.2s ease;
-            cursor: pointer;
-            width: 100%; /* Make button full width within its container */
-        }
-        .agree-button:hover:not(:disabled) {
-            background-color: #1d4ed8; /* Blue-700 */
-        }
-        .agree-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Styles for distinguishing summary and full content */
-        .summary-styled-section {
-            background-color: #e0f2fe; /* Light blue background */
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem; /* Space below summary */
-            text-align: left;
-        }
-
-        .full-content-styled-section { /* New wrapper for full content and its button */
-            background-color: #FFF9FC; /* Very light pink background, even lighter than rose-50 */
-            border-radius: 0.5rem;
-            padding: 1rem; /* Inner padding for the content itself */
-            display: flex; /* Use flex to control content and button layout */
-            flex-direction: column;
-            text-align: left; /* Ensure all text inside is left-aligned */
-        }
-
-        .full-content-styled-section h4 {
-            margin-top: 0; /* Remove default margin for h4 inside this section */
-            margin-bottom: 0.5rem; /* Keep some space below its own title */
-            text-align: left; /* Ensure its title is left-aligned */
-        }
-
-        .full-content-scroll-area {
-            max-height: 150px; /* Adjusted to be closer to summary height */
-            overflow-y: auto;
-            text-align: left;
-            padding-right: 0.5rem;
-            flex-grow: 1; /* Allow the scroll area to take up available space */
-        }
-        /* Style for highlighted text */
-        .highlighted-text {
-            color: #2563eb; /* Blue-600 for emphasis */
-            font-weight: 600; /* Keep bold for emphasis */
-        }
-
-        /* Step Indicator Styles */
-        .step-indicator {
-            display: flex;
-            width: 100%;
-            height: 4px; /* Height of the progress bar */
-            background-color: #e0e0e0; /* Light gray for undone steps */
-            border-radius: 2px;
-            overflow: hidden; /* Ensure rounded corners for the progress bar */
-            margin-top: 0.5rem; /* Space below title */
-        }
-
-        .step-indicator-progress {
-            width: 33.33%; /* 1/3 for the first step */
-            height: 100%;
-            background-color: #2563eb; /* Blue for the current step */
-            border-radius: 2px;
-        }
-
-        /* Added for textContent \n support */
-        #encouragementMessage {
-            white-space: pre-wrap;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BNK 쇼핑환전통장 - 본인확인</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Inter',sans-serif;background:#f0f4f8;margin:0;padding:0;overflow-x:hidden}
+    .container{max-width:500px;margin:0 auto;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.05);min-height:100vh;display:flex;flex-direction:column;border-radius:1rem;overflow:hidden}
+    header{flex:none}
+    /* Voice panel */
+    .voice-panel{position:absolute;right:.75rem;top:3.25rem;width:300px;background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;box-shadow:0 10px 20px rgba(0,0,0,.08);padding:.75rem;z-index:50;display:none}
+    .voice-panel.open{display:block}
+    /* Bottom bar */
+    .bottom-bar{flex:none;width:100%;background:#fff;border-top:1px solid #e2e8f0;padding:.75rem 1rem;box-shadow:0 -4px 12px rgba(0,0,0,.03);display:flex;justify-content:space-around;gap:.5rem;z-index:10}
+    .bottom-bar button{flex:1;padding:.75rem 1rem;border-radius:.75rem;font-weight:600;font-size:.95rem;transition:.3s;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+    .bottom-bar button:active{transform:scale(.98)}
+    /* Main */
+    .main-content{flex-grow:1;padding:1rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto}
+    .content-block{background:#fff;border-radius:.75rem;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:1.5rem;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:120px}
+    .content-block.interactive{cursor:pointer;transition:.2s;justify-content:space-between;flex-direction:row;padding:1rem 1.5rem}
+    .content-block.interactive:hover{background:#f8fafc;transform:translateY(-2px)}
+    .content-block.interactive:active{transform:scale(.98)}
+    /* Consent */
+    .consent-status{display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#4a5568;margin-top:.5rem}
+    .consent-status.agreed{color:#10b981;font-weight:600}
+    .consent-status svg{margin-right:.25rem}
+    .consent-accordion-item{width:100%;border:1px solid #e2e8f0;border-radius:.75rem;margin-bottom:.75rem;overflow:hidden;background:#fff}
+    .consent-accordion-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;cursor:pointer;background:#fff;transition:.2s}
+    .consent-accordion-header:hover{background:#f8fafc}
+    .consent-accordion-title{display:flex;align-items:center;flex-grow:1;text-align:left}
+    .consent-accordion-text{font-size:1rem;font-weight:600;color:#374151}
+    .consent-checkmark{color:#10b981;font-size:1.2rem;margin-left:.5rem;display:none}
+    .consent-accordion-content{max-height:0;overflow:hidden;transition:max-height .5s ease-out,padding .5s ease-out;padding:0;color:#4a5568;line-height:1.5;border-top:1px solid #e2e8f0;margin-top:0}
+    .consent-accordion-content.open{max-height:80vh;padding:1rem 1.25rem}
+    .consent-accordion-icon{transition:transform .3s ease;color:#9ca3af}
+    .consent-accordion-icon.rotate{transform:rotate(180deg)}
+    .summary-styled-section{background:#e0f2fe;border-radius:.5rem;padding:1rem;margin-bottom:1rem;text-align:left}
+    .full-content-styled-section{background:#FFF9FC;border-radius:.5rem;padding:1rem;display:flex;flex-direction:column;text-align:left}
+    .full-content-styled-section h4{margin-top:0;margin-bottom:.5rem;text-align:left}
+    .full-content-scroll-area{max-height:150px;overflow-y:auto;text-align:left;padding-right:.5rem;flex-grow:1}
+    .agree-button-container-in-content{display:flex;justify-content:center;padding-top:1rem;border-top:1px solid #e2e8f0;margin-top:1rem}
+    .agree-button{background:#2563eb;color:#fff;padding:.75rem 1.5rem;border-radius:.5rem;font-weight:600;transition:.2s;cursor:pointer;width:100%}
+    .agree-button:hover:not(:disabled){background:#1d4ed8}
+    .agree-button:disabled{opacity:.5;cursor:not-allowed}
+    .highlighted-text{color:#2563eb;font-weight:600}
+    /* Modals */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+    .modal-overlay.open{opacity:1;visibility:visible}
+    .modal-content{background:#fff;padding:2rem;border-radius:.75rem;box-shadow:0 8px 16px rgba(0,0,0,.2);text-align:center;max-width:350px;width:90%;transform:translateY(-20px);transition:transform .25s}
+    .modal-overlay.open .modal-content{transform:translateY(0)}
+    .modal-message-break-word{word-break:keep-all;white-space:normal}
+    .modal-content-details{max-height:60vh;overflow-y:auto;text-align:left;font-size:.875rem;line-height:1.5;color:#4a5568;margin-top:1rem;padding-right:.5rem}
+    .modal-content button:disabled{opacity:.5;cursor:not-allowed}
+    /* Step bar */
+    .step-indicator{display:flex;width:100%;height:4px;background:#e0e0e0;border-radius:2px;overflow:hidden;margin-top:.5rem}
+    .step-indicator-progress{width:33.33%;height:100%;background:#2563eb;border-radius:2px}
+    #encouragementMessage{white-space:pre-wrap}
+  </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="container">
-        <!-- Header -->
-        <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <a href="/foreign" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-                홈으로
-            </a>
-            <h1 class="text-xl font-bold text-gray-800">본인확인</h1>
-            <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300 opacity-0 cursor-default">
-                <!-- Placeholder for symmetry, or add a relevant icon if needed -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354v15.304m0 0l-6.5-6.5m6.5 6.5l6.5-6.5" />
-                </svg>
-            </button>
-        </header>
+  <div class="container">
+    <!-- Header: 3열 그리드로 중앙 정렬 보장 -->
+    <header class="relative grid grid-cols-3 items-center p-4 bg-white border-b border-gray-200">
+      <a href="/foreign" class="justify-self-start flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300" aria-label="홈으로 이동">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        홈으로
+      </a>
 
-        <!-- Step Indicator (Added below header and before encouragement message) -->
-        <div class="step-indicator mx-4 mt-4">
-            <div class="step-indicator-progress"></div>
+      <h1 class="justify-self-center text-xl font-bold text-gray-800 text-center" aria-live="polite">본인확인</h1>
+
+      <!-- 음성 안내: 버튼 + 패널 -->
+      <div class="justify-self-end relative">
+        <button id="voiceGuideBtn"
+                class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
+                aria-pressed="false"
+                aria-label="음성 안내 켜기"
+                title="음성 안내 켜기">
+          <!-- Play -->
+          <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+          </svg>
+          <!-- Stop -->
+          <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M6 6h12v12H6z"/>
+          </svg>
+          <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+        </button>
+
+        <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+            <!-- 닫아도 재생 유지 -->
+            <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+          </div>
+
+          <!-- 속도 영역 대신 도움말 텍스트 -->
+          <div class="mb-3 text-xs text-gray-700 leading-5">
+            <p class="mb-1">시작/정지: 우측 상단 ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요. 창을 닫아도 음성은 계속 재생됩니다. 필요 시 버튼을 다시 눌러 중지할 수 있어요.</p>
+          </div>
+
+          <div class="flex">
+            <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
+          </div>
         </div>
+      </div>
+    </header>
 
-        <!-- Encouragement Message -->
-        <div id="encouragementMessage" class="text-center text-base font-semibold text-gray-700 p-3 rounded-lg bg-yellow-100 mx-4 mt-4 shadow-sm">
-            <!-- Message will be updated by JS -->
-        </div>
-
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- 필수 정보 수집 및 이용 동의 블록 -->
-            <div class="content-block h-auto py-6">
-                <p class="text-lg font-bold text-gray-800 mb-4">필수 정보 수집 및 이용 동의</p>
-
-                <!-- 개인정보 수집 및 이용 동의 Accordion Item -->
-                <div class="consent-accordion-item" id="personalInfoConsentItem">
-                    <div class="consent-accordion-header" data-target="personalInfoConsentContent">
-                        <div class="consent-accordion-title">
-                            <span class="consent-accordion-text">개인정보 수집 및 이용 동의</span>
-                            <span id="personalInfoCheckmark" class="consent-checkmark">✔</span>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 consent-accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    <div id="personalInfoConsentContent" class="consent-accordion-content">
-                        <div class="summary-styled-section">
-                            <h4 class="font-semibold text-sm mb-1">핵심 요약</h4>
-                            <p class="mb-0">
-                                BNK쇼핑환전예금 통장 및 카드 개설, 환전/결제 서비스 제공을 위해 성명, 주민등록번호, 연락처, 계좌/카드 이용 내역 등 최소한의 개인정보를 수집 및 이용합니다.
-                            </p>
-                        </div>
-                        <div class="full-content-styled-section">
-                            <h4 class="font-semibold text-sm mb-1">전체 내용</h4>
-                            <div class="full-content-scroll-area" id="personalInfoFullContent">
-                                <h4 class="font-semibold text-sm mb-1">1. 수집 목적</h4>
-                                <p class="mb-2">
-                                    BNK쇼핑환전예금 통장 개설 및 쇼핑환전체크카드 발급, 환전 및 해외 결제 서비스 제공, 고객 본인 확인 및 인증, 금융거래 관련 업무 처리(예: 원화/외화 이체, 환전 기록 관리, 부정거래 방지 등).
-                                    고객 상담 및 민원 처리, 법령상 의무 이행.
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">2. 수집 항목</h4>
-                                <p class="mb-2">
-                                    <span class="highlighted-text">개인식별정보:</span> 성명, 주민등록번호(또는 외국인등록번호), 휴대폰 번호, 주소, 이메일 주소, 직업. <br>
-                                    <span class="highlighted-text">금융거래정보:</span> 계좌번호, 거래내역, 잔액, 환전 기록, 카드 이용 내역 등. <br>
-                                    <span class="highlighted-text">신분증 정보:</span> 신분증(주민등록증, 운전면허증 등) 사본에 포함된 정보 (성명, 주민등록번호, 발급일, 사진 등). <br>
-                                    <span class="highlighted-text">접근매체 정보:</span> 전자금융거래 시 이용하는 비밀번호, 공인인증서 정보 등.
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">3. 보유 및 이용 기간</h4>
-                                <p class="mb-2">
-                                    금융거래 종료일로부터 5년간 (전자금융거래법 및 특정 금융거래정보의 보고 및 이용 등에 관한 법률 등 관련 법령에 따라 보존 의무가 있는 경우 해당 법령의 보존 기간 준수). <br>
-                                    서비스 해지 또는 목적 달성 시 즉시 파기.
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">4. 동의 거부 시 불이익</h4>
-                                <p class="mb-2">
-                                    위 개인정보 수집 및 이용에 동의하지 않으실 경우, BNK쇼핑환전예금 통장 개설 및 쇼핑환전체크카드 발급, 그리고 관련 해외 결제 서비스 이용이 불가능합니다.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="agree-button-container-in-content">
-                            <button id="personalInfoAgreeBtn" class="agree-button">동의합니다</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 민감한 정보 수집 및 이용 동의 Accordion Item -->
-                <div class="consent-accordion-item" id="sensitiveInfoConsentItem" style="display: block;">
-                    <div class="consent-accordion-header" data-target="sensitiveInfoConsentContent">
-                        <div class="consent-accordion-title">
-                            <span class="consent-accordion-text">민감한 정보 수집 및 이용 동의</span>
-                            <span id="sensitiveInfoCheckmark" class="consent-checkmark">✔</span>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 consent-accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    <div id="sensitiveInfoConsentContent" class="consent-accordion-content">
-                        <div class="summary-styled-section">
-                            <h4 class="font-semibold text-sm mb-1">핵심 요약</h4>
-                            <p class="mb-0">
-                                비대면 실명 확인을 위해 특정 민감 정보 (생체인식 정보 등)를 수집하며, 이는 본인 확인 및 금융거래 안정성 확보 목적으로만 사용됩니다.
-                            </p>
-                        </div>
-                        <div class="full-content-styled-section">
-                            <h4 class="font-semibold text-sm mb-1">전체 내용</h4>
-                            <div class="full-content-scroll-area" id="sensitiveInfoFullContent">
-                                <h4 class="font-semibold text-sm mb-1">1. 수집 목적</h4>
-                                <p class="mb-2">
-                                    온라인 계좌 개설 및 카드 발급 시 비대면 본인 확인을 위한 민감 정보 활용, 금융거래의 안정성 확보, 부정 사용 방지.
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">2. 수집 항목</h4>
-                                <p class="mb-2">
-                                    <span class="highlighted-text">민감 정보:</span> 비대면 본인 확인에 필요한 특정 정보 (생체인식 정보 등). <br>
-                                    <span class="highlighted-text">신분증 내 민감 정보:</span> 신분증 사본에 포함된 특정 정보 (지문 등).
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">3. 보유 및 이용 기간</h4>
-                                <p class="mb-2">
-                                    본인 확인 절차 완료 시 또는 서비스 제공 목적 달성 시 즉시 파기. <br>
-                                    단, 관련 법령(예: 금융실명거래 및 비밀보장에 관한 법률 등)에 따라 보존 의무가 있는 경우 해당 법령의 보존 기간까지 보유할 수 있습니다.
-                                </p>
-                                <h4 class="font-semibold text-sm mb-1">4. 동의 거부 시 불이익</h4>
-                                <p class="mb-2">
-                                    위 민감 정보 수집 및 이용에 동의하지 않으실 경우, 비대면 본인 확인 절차를 이용하실 수 없으며, 계좌 개설 및 카드 발급이 제한될 수 있습니다. 다른 본인 확인 방법(예: 타행 계좌 인증 등)을 이용하시게 됩니다.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="agree-button-container-in-content">
-                            <button id="sensitiveInfoAgreeBtn" class="agree-button">동의합니다</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="consentStatus" class="consent-status mt-3 hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="agreed">모든 필수 동의 완료</span>
-                </div>
-            </div>
-        </main>
-
-        <!-- Fixed Bottom Bar -->
-        <footer class="bottom-bar">
-            <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
-            <button id="nextButton" class="bg-blue-600 text-white hover:bg-blue-700">신분증 촬영</button>
-        </footer>
+    <!-- Step Indicator -->
+    <div class="step-indicator mx-4 mt-4" aria-hidden="true">
+      <div class="step-indicator-progress"></div>
     </div>
 
-    <!-- Login Required Modal (기존 모달) -->
-    <div id="loginRequiredModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">로그인 필요 안내</h3>
-            <p class="text-gray-700 mb-6 modal-message-break-word">
-                죄송합니다, 고객님.<br>
-                해당 서비스는 로그인이 필요합니다.<br>
-                로그인 후 다시 이용해주세요.
-            </p>
-            <div class="flex justify-center">
-                <button id="loginRequiredConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+    <!-- Encouragement -->
+    <div id="encouragementMessage" class="text-center text-base font-semibold text-gray-700 p-3 rounded-lg bg-yellow-100 mx-4 mt-4 shadow-sm"></div>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="content-block h-auto py-6">
+        <p class="text-lg font-bold text-gray-800 mb-4">필수 정보 수집 및 이용 동의</p>
+
+        <!-- 개인정보 동의 -->
+        <div class="consent-accordion-item" id="personalInfoConsentItem">
+          <div class="consent-accordion-header" id="personalInfoHeader" data-target="personalInfoConsentContent" role="button" tabindex="0" aria-controls="personalInfoConsentContent" aria-expanded="false" aria-describedby="personalInfoSummary">
+            <div class="consent-accordion-title">
+              <span class="consent-accordion-text">개인정보 수집 및 이용 동의</span>
+              <span id="personalInfoCheckmark" class="consent-checkmark" aria-hidden="true">✔</span>
             </div>
-        </div>
-    </div>
-
-    <!-- ID Card Guidance Modal (새로 추가된 모달) -->
-    <div id="idCardGuidanceModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">신분증 촬영 안내</h3>
-            <p class="text-gray-700 mb-6 modal-message-break-word">
-                정확한 인식을 위해 촬영 전<br>
-                렌즈를 깨끗이 닦아 주세요! 😊
-            </p>
-            <div class="flex justify-center">
-                <button id="idCardGuidanceConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 consent-accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+          <div id="personalInfoConsentContent" class="consent-accordion-content" role="region" aria-labelledby="personalInfoHeader">
+            <div class="summary-styled-section" id="personalInfoSummary">
+              <h4 class="font-semibold text-sm mb-1">핵심 요약</h4>
+              <p class="mb-0">BNK쇼핑환전예금 통장 및 카드 개설, 환전/결제 제공을 위해 최소한의 개인정보를 수집·이용합니다.</p>
             </div>
+            <div class="full-content-styled-section">
+              <h4 class="font-semibold text-sm mb-1">전체 내용</h4>
+              <div class="full-content-scroll-area" id="personalInfoFullContent">
+                <h4 class="font-semibold text-sm mb-1">1. 수집 목적</h4>
+                <p class="mb-2">통장 개설, 카드 발급, 환전/해외결제 제공, 본인확인, 거래 처리(이체, 환전 기록, 부정거래 방지 등), 상담/민원 처리, 법령상 의무 이행.</p>
+                <h4 class="font-semibold text-sm mb-1">2. 수집 항목</h4>
+                <p class="mb-2">
+                  <span class="highlighted-text">개인식별정보:</span> 성명, 주민/외국인등록번호, 휴대폰, 주소, 이메일, 직업.<br>
+                  <span class="highlighted-text">금융거래정보:</span> 계좌번호, 거래내역, 잔액, 환전 기록, 카드 이용 내역.<br>
+                  <span class="highlighted-text">신분증 정보:</span> 성명, 번호, 발급일, 사진 등.<br>
+                  <span class="highlighted-text">접근매체:</span> 전자금융 비밀번호, 인증서 등.
+                </p>
+                <h4 class="font-semibold text-sm mb-1">3. 보유 기간</h4>
+                <p class="mb-2">금융거래 종료일로부터 5년(관련 법령에 따른 보존기간 우선), 목적 달성 또는 해지 시 파기.</p>
+                <h4 class="font-semibold text-sm mb-1">4. 동의 거부 시 불이익</h4>
+                <p class="mb-2">동의하지 않으면 통장/카드 개설 및 관련 서비스 이용이 제한됩니다.</p>
+              </div>
+            </div>
+            <div class="agree-button-container-in-content">
+              <button id="personalInfoAgreeBtn" class="agree-button" aria-describedby="personalInfoSummary">동의합니다</button>
+            </div>
+          </div>
         </div>
+
+        <!-- 민감정보 동의 -->
+        <div class="consent-accordion-item" id="sensitiveInfoConsentItem" style="display:block">
+          <div class="consent-accordion-header" id="sensitiveInfoHeader" data-target="sensitiveInfoConsentContent" role="button" tabindex="0" aria-controls="sensitiveInfoConsentContent" aria-expanded="false" aria-describedby="sensitiveInfoSummary">
+            <div class="consent-accordion-title">
+              <span class="consent-accordion-text">민감한 정보 수집 및 이용 동의</span>
+              <span id="sensitiveInfoCheckmark" class="consent-checkmark" aria-hidden="true">✔</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 consent-accordion-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+          <div id="sensitiveInfoConsentContent" class="consent-accordion-content" role="region" aria-labelledby="sensitiveInfoHeader">
+            <div class="summary-styled-section" id="sensitiveInfoSummary">
+              <h4 class="font-semibold text-sm mb-1">핵심 요약</h4>
+              <p class="mb-0">비대면 실명확인을 위해 필요한 범위의 민감정보(예: 생체정보)를 본인확인 및 안정성 확보 목적으로만 사용합니다.</p>
+            </div>
+            <div class="full-content-styled-section">
+              <h4 class="font-semibold text-sm mb-1">전체 내용</h4>
+              <div class="full-content-scroll-area" id="sensitiveInfoFullContent">
+                <h4 class="font-semibold text-sm mb-1">1. 수집 목적</h4>
+                <p class="mb-2">계좌 개설·카드 발급 시 비대면 본인확인, 부정사용 방지, 거래 안정성 확보.</p>
+                <h4 class="font-semibold text-sm mb-1">2. 수집 항목</h4>
+                <p class="mb-2"><span class="highlighted-text">민감 정보:</span> 본인확인에 필요한 생체 등 특정 정보. <br><span class="highlighted-text">신분증 내 민감 정보:</span> 지문 등 포함 가능.</p>
+                <h4 class="font-semibold text-sm mb-1">3. 보유 기간</h4>
+                <p class="mb-2">절차 완료 또는 목적 달성 시 파기(법령 보존의무 시 그 기간 준수).</p>
+                <h4 class="font-semibold text-sm mb-1">4. 동의 거부 시 불이익</h4>
+                <p class="mb-2">동의하지 않으면 비대면 본인확인을 이용할 수 없으며 다른 인증수단(타행 계좌 인증 등)을 사용합니다.</p>
+              </div>
+            </div>
+            <div class="agree-button-container-in-content">
+              <button id="sensitiveInfoAgreeBtn" class="agree-button" aria-describedby="sensitiveInfoSummary">동의합니다</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="consentStatus" class="consent-status mt-3 hidden" aria-live="polite">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="agreed">모든 필수 동의 완료</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom bar -->
+    <footer class="bottom-bar">
+      <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
+      <button id="nextButton" class="bg-blue-600 text-white hover:bg-blue-700">신분증 촬영</button>
+    </footer>
+  </div>
+
+  <!-- Login Required Modal -->
+  <div id="loginRequiredModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4 text-gray-800">로그인 필요 안내</h3>
+      <p class="text-gray-700 mb-6 modal-message-break-word">
+        죄송합니다, 고객님.<br>해당 서비스는 로그인이 필요합니다.<br>로그인 후 다시 이용해주세요.
+      </p>
+      <div class="flex justify-center">
+        <button id="loginRequiredConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // --- DOM 요소 정의 ---
-        const personalInfoConsentItem = document.getElementById('personalInfoConsentItem');
-        const personalInfoConsentHeader = personalInfoConsentItem.querySelector('.consent-accordion-header');
-        const personalInfoAgreeBtn = document.getElementById('personalInfoAgreeBtn');
-        const personalInfoCheckmark = document.getElementById('personalInfoCheckmark');
-        const personalInfoAccordionIcon = personalInfoConsentItem.querySelector('.consent-accordion-icon');
-        const personalInfoConsentContent = personalInfoConsentItem.querySelector('.consent-accordion-content');
+  <!-- ID Card Guidance Modal -->
+  <div id="idCardGuidanceModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-4 text-gray-800">신분증 촬영 안내</h3>
+      <p class="text-gray-700 mb-6 modal-message-break-word">
+        정확한 인식을 위해 촬영 전<br>렌즈를 깨끗이 닦아 주세요! 😊
+      </p>
+      <div class="flex justify-center">
+        <button id="idCardGuidanceConfirmBtn" class="bg-blue-600 text-white px-5 py-2 rounded-md font-semibold hover:bg-blue-700 transition duration-200">확인</button>
+      </div>
+    </div>
+  </div>
 
-        const sensitiveInfoConsentItem = document.getElementById('sensitiveInfoConsentItem');
-        const sensitiveInfoConsentHeader = sensitiveInfoConsentItem.querySelector('.consent-accordion-header');
-        const sensitiveInfoAgreeBtn = document.getElementById('sensitiveInfoAgreeBtn');
-        const sensitiveInfoCheckmark = document.getElementById('sensitiveInfoCheckmark');
-        const sensitiveInfoAccordionIcon = sensitiveInfoConsentItem.querySelector('.consent-accordion-icon');
-        const sensitiveInfoConsentContent = sensitiveInfoConsentItem.querySelector('.consent-accordion-content');
+  <script>
+    /* =========================
+       공통 DOM
+    ========================= */
+    const personalInfoConsentItem = document.getElementById('personalInfoConsentItem');
+    const personalInfoConsentHeader = document.getElementById('personalInfoHeader');
+    const personalInfoAgreeBtn = document.getElementById('personalInfoAgreeBtn');
+    const personalInfoCheckmark = document.getElementById('personalInfoCheckmark');
+    const personalInfoAccordionIcon = personalInfoConsentItem.querySelector('.consent-accordion-icon');
+    const personalInfoConsentContent = personalInfoConsentItem.querySelector('.consent-accordion-content');
 
-        const consentStatusDiv = document.getElementById('consentStatus');
-        const nextButton = document.getElementById('nextButton');
-        const prevButton = document.getElementById('prevButton');
-        const homeButton = document.querySelector('header a'); // '홈으로' 버튼 선택
-        const encouragementMessageDiv = document.getElementById('encouragementMessage');
+    const sensitiveInfoConsentItem = document.getElementById('sensitiveInfoConsentItem');
+    const sensitiveInfoConsentHeader = document.getElementById('sensitiveInfoHeader');
+    const sensitiveInfoAgreeBtn = document.getElementById('sensitiveInfoAgreeBtn');
+    const sensitiveInfoCheckmark = document.getElementById('sensitiveInfoCheckmark');
+    const sensitiveInfoAccordionIcon = sensitiveInfoConsentItem.querySelector('.consent-accordion-icon');
+    const sensitiveInfoConsentContent = sensitiveInfoConsentItem.querySelector('.consent-accordion-content');
 
-        const loginRequiredModal = document.getElementById('loginRequiredModal');
-        const loginRequiredConfirmBtn = document.getElementById('loginRequiredConfirmBtn');
-        const idCardGuidanceModal = document.getElementById('idCardGuidanceModal'); // 새로 추가된 모달
-        const idCardGuidanceConfirmBtn = document.getElementById('idCardGuidanceConfirmBtn'); // 새로 추가된 모달의 확인 버튼
+    const consentStatusDiv = document.getElementById('consentStatus');
+    const nextButton = document.getElementById('nextButton');
+    const prevButton = document.getElementById('prevButton');
+    const homeLink = document.querySelector('header a');
+    const encouragementMessageDiv = document.getElementById('encouragementMessage');
 
-        // --- 동의 상태 추적 변수 ---
-        let isPersonalInfoAgreed = false;
-        let isSensitiveInfoAgreed = false;
+    const loginRequiredModal = document.getElementById('loginRequiredModal');
+    const loginRequiredConfirmBtn = document.getElementById('loginRequiredConfirmBtn');
+    const idCardGuidanceModal = document.getElementById('idCardGuidanceModal');
+    const idCardGuidanceConfirmBtn = document.getElementById('idCardGuidanceConfirmBtn');
 
-        // --- 초기 상태 설정 함수 ---
-        function initializeUI() {
-            // 초기 메시지 설정
-            updateEncouragementMessage('✨ 통장 개설을 위해 필수 약관에 동의해주세요.');
-            
-            // 개인정보 동의 섹션 닫힌 상태로 시작 (기본 CSS에 open 클래스 제거)
-            personalInfoConsentContent.classList.remove('open');
-            personalInfoAccordionIcon.classList.remove('rotate');
-            personalInfoCheckmark.style.display = 'none';
+    // Voice UI
+    const voiceBtn = document.getElementById('voiceGuideBtn');
+    const voiceIconPlay = document.getElementById('voiceIconPlay');
+    const voiceIconStop = document.getElementById('voiceIconStop');
+    const voiceLabel = document.getElementById('voiceLabel');
+    const voicePanel = document.getElementById('voicePanel');
+    const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+    const voiceReplayBtn = document.getElementById('voiceReplayBtn');
 
-            // 민감 정보 동의 섹션도 닫힌 상태로 시작 (기본 CSS에 open 클래스 제거)
-            sensitiveInfoConsentContent.classList.remove('open');
-            sensitiveInfoAccordionIcon.classList.remove('rotate');
-            sensitiveInfoCheckmark.style.display = 'none';
+    /* =========================
+       상태
+    ========================= */
+    let isPersonalInfoAgreed = false;
+    let isSensitiveInfoAgreed = false;
 
-            // '다음' 버튼 비활성화
-            disableNextButton();
-            
-            // 전체 동의 상태 메시지 숨김
-            consentStatusDiv.classList.add('hidden');
+    /* =========================
+       초기화
+    ========================= */
+    function initializeUI(){
+      updateEncouragementMessage('✨ 통장 개설을 위해 필수 약관에 동의해주세요.');
 
-            // 신분증 촬영 안내 모달 초기 숨김
-            idCardGuidanceModal.classList.remove('open');
+      // 아코디언 접기
+      personalInfoConsentContent.classList.remove('open');
+      personalInfoAccordionIcon.classList.remove('rotate');
+      personalInfoCheckmark.style.display = 'none';
+
+      sensitiveInfoConsentContent.classList.remove('open');
+      sensitiveInfoAccordionIcon.classList.remove('rotate');
+      sensitiveInfoCheckmark.style.display = 'none';
+
+      disableNextButton();
+      consentStatusDiv.classList.add('hidden');
+    }
+
+    /* =========================
+       UI 유틸
+    ========================= */
+    function toggleAccordion(contentEl, iconEl){
+      contentEl.classList.toggle('open');
+      iconEl.classList.toggle('rotate');
+    }
+    function updateEncouragementMessage(msg){ encouragementMessageDiv.textContent = msg; }
+    function disableNextButton(){
+      nextButton.disabled = true;
+      nextButton.classList.add('bg-gray-400','cursor-not-allowed');
+      nextButton.classList.remove('bg-blue-600','hover:bg-blue-700');
+    }
+    function enableNextButton(){
+      nextButton.disabled = false;
+      nextButton.classList.remove('bg-gray-400','cursor-not-allowed');
+      nextButton.classList.add('bg-blue-600','hover:bg-blue-700');
+    }
+
+    function updateAgreementState(){
+      if(isPersonalInfoAgreed && isSensitiveInfoAgreed){
+        consentStatusDiv.classList.remove('hidden');
+        enableNextButton();
+        updateEncouragementMessage('🎉 모든 필수 약관에 동의했어요!\n이제 신분증 촬영을 진행해주세요.');
+        Voice.announce('모든 필수 약관 동의가 완료되었습니다. 화면 하단의 신분증 촬영 버튼을 눌러 다음 단계로 이동하세요.');
+      }else{
+        consentStatusDiv.classList.add('hidden');
+        disableNextButton();
+        updateEncouragementMessage('✨ 통장 개설을 위해 필수 약관에 동의해주세요.');
+      }
+    }
+
+    /* =========================
+       음성 안내 (WebSpeech + Native Bridge)
+    ========================= */
+    const Voice = (function(){
+      let speaking = false;
+      let queue = [];
+      let current = null;
+
+      const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+      const hasAndroid = !!window.AndroidTTS?.speak;
+      const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+      function useNativeSpeak(text){
+        const r = 1.0;
+        if(hasAndroid){
+          try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
         }
-
-        // --- 기능 함수 ---
-        function toggleAccordion(contentElement, iconElement) {
-            contentElement.classList.toggle('open');
-            iconElement.classList.toggle('rotate');
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
         }
-
-        function updateEncouragementMessage(message) {
-            // innerHTML 대신 textContent를 사용하고 \n으로 줄바꿈 처리
-            // CSS 'white-space: pre-wrap;'과 함께 사용하면 줄바꿈이 정상적으로 표시됩니다.
-            encouragementMessageDiv.textContent = message; 
+        return false;
+      }
+      function useNativeStop(){
+        if(hasAndroid){
+          try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
         }
-
-        function disableNextButton() {
-            nextButton.disabled = true;
-            nextButton.classList.add('bg-gray-400', 'cursor-not-allowed');
-            nextButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
         }
+        return false;
+      }
 
-        function enableNextButton() {
-            nextButton.disabled = false;
-            nextButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
-            nextButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+      function speakWeb(text, onend){
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.lang = 'ko-KR';
+        u.rate = 1.0;
+        u.onend = onend || null;
+        u.onerror = function(){ console.warn('TTS error'); onend && onend(); };
+        window.speechSynthesis.speak(u);
+      }
+
+      function nextInQueue(){
+        if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+        current = queue.shift();
+        if(useNativeSpeak(current)){
+          speaking = true; setUI(true);
+          const approx = Math.max(1500, current.length * 60); // 대략 길이에 따른 추정
+          setTimeout(()=>{ nextInQueue(); }, approx);
+        }else if(hasWebSpeech){
+          speaking = true; setUI(true);
+          speakWeb(current, ()=> nextInQueue());
+        }else{
+          speaking = false; setUI(false);
         }
+      }
 
-        // --- 동의 상태 업데이트 및 UI 제어 함수 ---
-        function updateAgreementState() {
-            if (isPersonalInfoAgreed && isSensitiveInfoAgreed) {
-                consentStatusDiv.classList.remove('hidden');
-                enableNextButton();
-                updateEncouragementMessage('🎉 모든 필수 약관에 동의했어요!\n이제 신분증 촬영을 진행해주세요.');
-            } else {
-                consentStatusDiv.classList.add('hidden');
-                disableNextButton();
-                updateEncouragementMessage('✨ 통장 개설을 위해 필수 약관에 동의해주세요.');
-            }
+      function setUI(isOn){
+        voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        voiceIconPlay.classList.toggle('hidden', isOn);
+        voiceIconStop.classList.toggle('hidden', !isOn);
+        voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+        voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+        voiceBtn.setAttribute('title', voiceLabel.textContent);
+      }
+
+      function start(scriptLines){
+        if(speaking) cancel();
+        queue = Array.isArray(scriptLines) ? scriptLines.slice() : [String(scriptLines||'')];
+        nextInQueue();
+      }
+
+      function cancel(){
+        queue = [];
+        current = null;
+        speaking = false;
+        useNativeStop();
+        if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+        setUI(false);
+      }
+
+      function toggle(scriptLines){
+        if(speaking){ cancel(); }
+        else{ start(scriptLines); }
+      }
+
+      function announce(shortText){
+        if(!shortText) return;
+        if(!useNativeSpeak(shortText) && ('speechSynthesis' in window)){
+          speakWeb(shortText);
         }
+      }
 
-        // --- 이벤트 핸들러 함수 ---
-        function handlePersonalInfoAgree() {
-            isPersonalInfoAgreed = true;
-            personalInfoCheckmark.style.display = 'inline-block';
-            
-            // 아코디언 닫기
-            personalInfoConsentContent.classList.remove('open');
-            personalInfoAccordionIcon.classList.remove('rotate');
+      function isSpeaking(){ return speaking; }
 
-            updateAgreementState();
-        }
+      return { start, cancel, toggle, announce, isSpeaking };
+    })();
 
-        function handleSensitiveInfoAgree() {
-            isSensitiveInfoAgreed = true;
-            sensitiveInfoCheckmark.style.display = 'inline-block';
-            
-            // 아코디언 닫기
-            sensitiveInfoConsentContent.classList.remove('open');
-            sensitiveInfoAccordionIcon.classList.remove('rotate');
+    /* =========================
+       음성 스크립트 생성
+    ========================= */
+    function buildVoiceScript(){
+      const intro = '안내: 지금은 본인확인 단계입니다.';
+      const core = '첫째, 개인정보 수집 및 이용. 둘째, 민감정보 수집 및 이용.';
+      const how = '두 항목 모두 동의하면, 화면 하단의 신분증 촬영 버튼으로 다음 단계로 진행할 수 있습니다.';
+      const tips = '글자가 작다면 두 손가락으로 화면을 확대해 보세요.';
+      return [intro, core, how, tips];
+    }
 
-            updateAgreementState();
-        }
+    /* =========================
+       이벤트 바인딩
+    ========================= */
+    document.addEventListener('DOMContentLoaded', initializeUI);
 
-        function handleAccordionClick(headerElement, contentElement, iconElement) {
-            // 동의 상태와 관계없이 클릭 시 토글
-            toggleAccordion(contentElement, iconElement);
-        }
+    // 홈/이전/다음
+    homeLink.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='/foreign'; });
+    prevButton.addEventListener('click', ()=>{ window.location.href='/foreign1'; });
 
-        // --- 이벤트 리스너 등록 ---
-        document.addEventListener('DOMContentLoaded', initializeUI);
+    nextButton.addEventListener('click', function(){
+      if(isPersonalInfoAgreed && isSensitiveInfoAgreed){
+        idCardGuidanceModal.classList.add('open');
+        Voice.announce('신분증 촬영 안내를 확인하세요.');
+      }else{
+        alert('모든 필수 동의 항목에 동의해야 다음 단계로 진행할 수 있습니다.');
+        Voice.announce('필수 동의가 아직 완료되지 않았습니다.');
+      }
+    });
 
-        // '홈으로' 버튼 클릭 시 /foreign으로 이동
-        homeButton.addEventListener('click', function(event) {
-            event.preventDefault(); // 기본 링크 이동 방지
-            window.location.href = '/foreign';
-        });
+    loginRequiredConfirmBtn.addEventListener('click', ()=> loginRequiredModal.classList.remove('open'));
+    idCardGuidanceConfirmBtn.addEventListener('click', function(){
+      idCardGuidanceModal.classList.remove('open');
+      Voice.cancel();
+      window.location.href = '/foreign3';
+    });
 
-        personalInfoConsentHeader.addEventListener('click', () => {
-            handleAccordionClick(personalInfoConsentHeader, personalInfoConsentContent, personalInfoAccordionIcon);
-        });
-        personalInfoAgreeBtn.addEventListener('click', handlePersonalInfoAgree);
+    // 아코디언
+    function handleAccordionClick(contentEl, iconEl, titleText){
+      toggleAccordion(contentEl, iconEl);
+    }
+    personalInfoConsentHeader.addEventListener('click', ()=> handleAccordionClick(personalInfoConsentContent, personalInfoAccordionIcon));
+    sensitiveInfoConsentHeader.addEventListener('click', ()=> handleAccordionClick(sensitiveInfoConsentContent, sensitiveInfoAccordionIcon));
 
-        sensitiveInfoConsentHeader.addEventListener('click', () => {
-            handleAccordionClick(sensitiveInfoConsentHeader, sensitiveInfoConsentContent, sensitiveInfoAccordionIcon);
-        });
-        sensitiveInfoAgreeBtn.addEventListener('click', handleSensitiveInfoAgree);
+    // 키보드 접근
+    personalInfoConsentHeader.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); personalInfoConsentHeader.click(); }});
+    sensitiveInfoConsentHeader.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); sensitiveInfoConsentHeader.click(); }});
 
-        prevButton.addEventListener('click', function() {
-            window.location.href = '/foreign1'; // 이전 페이지로 이동
-        });
+    // 동의 버튼
+    function handlePersonalInfoAgree(){
+      isPersonalInfoAgreed = true;
+      personalInfoCheckmark.style.display = 'inline-block';
+      personalInfoConsentContent.classList.remove('open');
+      personalInfoAccordionIcon.classList.remove('rotate');
+      updateAgreementState();
+      Voice.announce('개인정보 동의 완료');
+    }
+    function handleSensitiveInfoAgree(){
+      isSensitiveInfoAgreed = true;
+      sensitiveInfoCheckmark.style.display = 'inline-block';
+      sensitiveInfoConsentContent.classList.remove('open');
+      sensitiveInfoAccordionIcon.classList.remove('rotate');
+      updateAgreementState();
+      Voice.announce('민감정보 동의 완료');
+    }
+    personalInfoAgreeBtn.addEventListener('click', handlePersonalInfoAgree);
+    sensitiveInfoAgreeBtn.addEventListener('click', handleSensitiveInfoAgree);
 
-        nextButton.addEventListener('click', function() {
-            if (isPersonalInfoAgreed && isSensitiveInfoAgreed) {
-                idCardGuidanceModal.classList.add('open'); // 신분증 촬영 안내 모달 열기
-            } else {
-                alert('모든 필수 동의 항목에 동의해야 다음 단계로 진행할 수 있습니다.');
-            }
-        });
-        
-        loginRequiredConfirmBtn.addEventListener('click', function() {
-            loginRequiredModal.classList.remove('open');
-        });
+    // 음성 버튼/패널
+    voiceBtn.addEventListener('click', function(){
+      voicePanel.classList.toggle('open');   // 패널 열고/닫기
+      Voice.toggle(buildVoiceScript());      // 재생/중지
+    });
+    // 패널의 '닫기'는 재생 유지
+    voiceCloseBtn.addEventListener('click', function(){
+      voicePanel.classList.remove('open');
+    });
 
-        // 신분증 촬영 안내 모달의 '확인' 버튼 클릭 시
-        idCardGuidanceConfirmBtn.addEventListener('click', function() {
-            idCardGuidanceModal.classList.remove('open'); // 모달 닫기
-            window.location.href = '/foreign3'; // 다음 페이지로 이동
-        });
-    </script>
+    // 다시 듣기
+    voiceReplayBtn.addEventListener('click', function(){
+      Voice.start(buildVoiceScript());
+    });
+
+    // 페이지 전환/백그라운드 시 정지
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+    window.addEventListener('pagehide', ()=> Voice.cancel());
+  </script>
 </body>
 </html>

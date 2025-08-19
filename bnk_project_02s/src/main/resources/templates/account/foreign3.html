@@ -28,14 +28,9 @@
             overflow: hidden;
         }
 
-        /* Header styles */
-        header {
-            flex: none; /* Do not grow/shrink */
-        }
-        
         /* Footer styles */
         .bottom-bar {
-            flex: none; /* Do not grow/shrink */
+            flex: none; 
             width: 100%;
             background-color: #ffffff;
             border-top: 1px solid #e2e8f0;
@@ -61,11 +56,11 @@
 
         /* Main content area */
         .main-content {
-            flex-grow: 1; /* Allow content to fill available space */
-            padding: 0.75rem 1.5rem 1.5rem; /* Adjusted padding */
+            flex-grow: 1;
+            padding: 0.75rem 1.5rem 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem; /* Increased gap */
+            gap: 1.5rem;
             overflow-y: auto; 
         }
 
@@ -75,7 +70,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Ensure rounded corners */
+            overflow: hidden;
         }
         .section-title {
             font-size: 1rem;
@@ -101,9 +96,7 @@
         }
 
         /* Form elements */
-        .form-group {
-            margin-bottom: 1rem;
-        }
+        .form-group { margin-bottom: 1rem; }
         .form-group label {
             display: block;
             font-size: 0.9rem;
@@ -113,7 +106,7 @@
         }
         .form-group input,
         .form-group select,
-        .form-group textarea { /* Added textarea */
+        .form-group textarea {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 1px solid #d1d5db;
@@ -125,13 +118,13 @@
         }
         .form-group input:focus,
         .form-group select:focus,
-        .form-group textarea:focus { /* Added textarea */
+        .form-group textarea:focus {
             outline: none;
             border-color: #2563eb;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
         .form-group input[disabled],
-        .form-group textarea[disabled] { /* Added textarea */
+        .form-group textarea[disabled] {
             background-color: #e5e7eb; 
             cursor: not-allowed;
         }
@@ -146,9 +139,8 @@
             overflow: hidden; 
             margin-top: 0.5rem; 
         }
-
         .step-indicator-progress {
-            width: 33.33%; /* 1/3 progress */
+            width: 33.33%;
             height: 100%;
             background-color: #2563eb; 
             border-radius: 2px;
@@ -156,29 +148,27 @@
 
         /* ID Card Frame and Capture Button Styles */
         .id-card-frame {
-            border: 2px solid #a0aec0; /* Darker border for definition */
+            border: 2px solid #a0aec0;
             border-radius: 0.75rem;
-            background-color: #f0f4f8; /* Light background for the card */
-            aspect-ratio: 1.585 / 1; /* Standard ID card aspect ratio (e.g., Credit Card 85.6mm x 53.98mm) */
-            max-width: 90%; /* Max width relative to parent */
-            width: 320px; /* Fixed width for better control on larger screens, will shrink on small */
-            height: auto; /* Maintain aspect ratio */
-            margin: 0 auto; /* Center the frame */
+            background-color: #f0f4f8;
+            aspect-ratio: 1.585 / 1;
+            max-width: 90%;
+            width: 320px;
+            height: auto;
+            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden; /* Ensure image fits within rounded corners */
-            position: relative; /* For overlay positioning */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* More subtle shadow */
-            cursor: pointer; /* Indicate clickability */
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
             transition: all 0.3s ease;
         }
-
         .id-card-frame:hover {
             border-color: #2563eb;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
-
         .capture-overlay {
             display: flex;
             flex-direction: column;
@@ -191,30 +181,20 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent overlay */
-            z-index: 10; /* Ensure it's on top */
-            border-radius: 0.75rem; /* Match frame */
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            border-radius: 0.75rem;
         }
-
-        .photo-placeholder-icon {
-            font-size: 3rem; /* Larger icon */
-            color: #9ca3af; /* Gray color */
-            margin-bottom: 0.5rem;
-        }
-        .photo-placeholder-text {
-            color: #4b5563;
-            font-size: 1.1rem; /* Slightly larger text */
-            font-weight: 600;
-        }
+        .photo-placeholder-icon { font-size: 3rem; color: #9ca3af; margin-bottom: 0.5rem; }
+        .photo-placeholder-text { color: #4b5563; font-size: 1.1rem; font-weight: 600; }
 
         .action-buttons {
             display: flex;
-            justify-content: center; /* Center the buttons */
-            gap: 0.75rem; /* Space between buttons */
-            margin-top: 2rem; /* Spacing from ID card frame */
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 2rem;
         }
-
-        .action-button { /* General style for action buttons */
+        .action-button {
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
             font-weight: 600;
@@ -224,49 +204,25 @@
             transition: background-color 0.2s ease, transform 0.1s ease;
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
+        .capture-btn { background-color: #2563eb; color: white; }
+        .capture-btn:hover { background-color: #1d4ed8; }
+        .capture-btn:active { transform: scale(0.98); }
+        .confirm-btn { background-color: #10b981; color: white; }
+        .confirm-btn:hover { background-color: #0d926b; }
+        .retake-btn { background-color: #ef4444; color: white; }
+        .retake-btn:hover { background-color: #cc2929; }
 
-        .capture-btn { /* Specific style for initial capture button */
-            background-color: #2563eb;
-            color: white;
-        }
-        .capture-btn:hover {
-            background-color: #1d4ed8;
-        }
-        .capture-btn:active {
-            transform: scale(0.98);
-        }
-
-        .confirm-btn {
-            background-color: #10b981; /* Green for confirm */
-            color: white;
-        }
-        .confirm-btn:hover {
-            background-color: #0d926b;
-        }
-
-        .retake-btn {
-            background-color: #ef4444; /* Red for retake */
-            color: white;
-        }
-        .retake-btn:hover {
-            background-color: #cc2929;
-        }
-
-        /* Styles for live camera feed and captured image */
         #cameraFeed, #previewImage {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures the video/image covers the area without distortion */
-            border-radius: 0.75rem; /* Match frame radius */
-            position: absolute; /* Position within the frame */
+            object-fit: cover;
+            border-radius: 0.75rem;
+            position: absolute;
             top: 0;
             left: 0;
-            z-index: 1; /* Below overlay, above background */
+            z-index: 1;
         }
-        
-        .hidden {
-            display: none !important;
-        }
+        .hidden { display: none !important; }
 
         /* Accordion styles */
         .section-content {
@@ -276,52 +232,86 @@
             border-top: none; 
             margin-top: 0; 
         }
-        .section-content.collapsed {
-            max-height: 0;
-            /* No padding here */
-            border-top: none; 
-            margin-top: 0; 
-        }
-        .section-content:not(.collapsed) {
-            border-top: 1px solid #f0f4f8; 
-        }
+        .section-content.collapsed { max-height: 0; border-top: none; margin-top: 0; }
+        .section-content:not(.collapsed) { border-top: 1px solid #f0f4f8; }
+        .section-content-inner { padding: 1.5rem; }
+        .section-block.collapsible .section-title { cursor: pointer; }
+        .section-block.collapsible .section-title .toggle-icon { transition: transform 0.3s ease; display: inline-block; }
+        .section-block.collapsible .section-title.rotated .toggle-icon { transform: rotate(180deg); }
+        .section-block.collapsible.confirmed .section-title .toggle-icon { display: none; }
 
-        .section-content-inner { /* Inner div for content padding */
-            padding: 1.5rem; 
+        /* ===== 음성 안내: 패널 ===== */
+        .voice-panel{
+            position:absolute;right:.75rem;top:3.25rem;width:300px;background:#fff;
+            border:1px solid #e5e7eb;border-radius:.75rem;box-shadow:0 10px 20px rgba(0,0,0,.08);
+            padding:.75rem;z-index:50;display:none
         }
+        .voice-panel.open{display:block}
 
-        .section-block.collapsible .section-title {
-            cursor: pointer;
+        /* ===== 로딩 오버레이 (OCR 호출 중) ===== */
+        .loading-overlay{
+            position: fixed; inset: 0; background: rgba(255,255,255,.6);
+            display:none; align-items:center; justify-content:center; z-index:100;
         }
-        .section-block.collapsible .section-title .toggle-icon {
-            transition: transform 0.3s ease;
-            display: inline-block;
+        .loading-overlay.open{display:flex}
+        .spinner{
+            width: 52px; height: 52px; border-radius: 9999px; border: 6px solid #e5e7eb; border-top-color:#2563eb; animation: spin 0.9s linear infinite;
         }
-        .section-block.collapsible .section-title.rotated .toggle-icon {
-            transform: rotate(180deg);
+        @keyframes spin { to { transform: rotate(360deg);} }
+        .toast{
+            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+            background:#111827; color:#fff; padding:.6rem .9rem; border-radius:.6rem; font-size:.9rem;
+            box-shadow:0 10px 20px rgba(0,0,0,.18); display:none; z-index:120;
         }
-        .section-block.collapsible.confirmed .section-title .toggle-icon {
-            display: none; 
-        }
+        .toast.open{display:block}
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container">
-        <!-- Header -->
-        <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <a href="/foreign" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+        <!-- Header: 3열 그리드로 가운데 정렬 보장 -->
+        <header class="grid grid-cols-3 items-center p-4 bg-white border-b border-gray-200">
+            <a href="/foreign" class="justify-self-start flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
                 홈으로
             </a>
-            <h1 class="text-xl font-bold text-gray-800">신분증 제출</h1>
-            <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors duration-300 opacity-0 cursor-default">
-                <!-- Placeholder for symmetry -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354v15.304m0 0l-6.5-6.5m6.5 6.5l6.5-6.5" />
-                </svg>
-            </button>
+
+            <h1 class="justify-self-center text-xl font-bold text-gray-800 text-center">신분증 제출</h1>
+
+            <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+            <div class="relative justify-self-end">
+                <button id="voiceGuideBtn"
+                        class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
+                        aria-pressed="false"
+                        aria-label="음성 안내 켜기"
+                        title="음성 안내 켜기">
+                    <!-- Play -->
+                    <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+                    </svg>
+                    <!-- Stop -->
+                    <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+                </button>
+
+                <!-- 패널: 도움말 + 다시 듣기 + 닫기 -->
+                <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+                        <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+                    </div>
+                    <div class="mb-3 text-xs text-gray-700 leading-5">
+                        <p class="mb-1">시작/정지: 우측 상단 ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요.</p>
+                        <p class="mb-1">촬영 안내: <span class="font-semibold">주민등록증을 네모 칸에 맞춘 뒤 촬영</span>해 주세요. 사진을 확인하고 정보가 맞으면 <span class="font-semibold">정보 확인</span> 버튼을 누르면 됩니다.</p>
+                    </div>
+                    <div class="flex">
+                        <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Step Indicator -->
@@ -402,6 +392,10 @@
         </footer>
     </div>
 
+    <!-- 로딩/토스트 -->
+    <div id="loadingOverlay" class="loading-overlay"><div class="spinner" aria-label="처리 중"></div></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
     <script>
         // --- DOM 요소 정의 ---
         const homeButton = document.querySelector('header a');
@@ -416,10 +410,10 @@
         const idCardContent = document.getElementById('idCardContent');
 
         const idCardFrame = document.getElementById('idCardFrame');
-        const cameraFeed = document.getElementById('cameraFeed'); // Changed from idCardInput
+        const cameraFeed = document.getElementById('cameraFeed');
         const previewImage = document.getElementById('previewImage');
         const captureOverlay = document.getElementById('captureOverlay');
-        const hiddenCanvas = document.getElementById('hiddenCanvas'); // New canvas element
+        const hiddenCanvas = document.getElementById('hiddenCanvas');
         
         const actionButtonsDiv = document.getElementById('actionButtons');
         const captureButton = document.getElementById('captureButton'); 
@@ -429,7 +423,7 @@
         // 추출된 정보 섹션 관련 요소
         const extractedInfoSection = document.getElementById('extractedInfoSection');
         const extractedInfoTitle = document.getElementById('extractedInfoTitle');
-        const extractedInfoCheckmark = document.getElementById('extractedInfoCheckmark');
+        const theExtractedInfoCheckmark = document.getElementById('extractedInfoCheckmark'); // ← const 로 수정
         const extractedInfoToggleIcon = document.getElementById('extractedInfoToggleIcon');
         const extractedInfoContent = document.getElementById('extractedInfoContent');
 
@@ -437,32 +431,40 @@
         const extractedResidentIdInput = document.getElementById('extractedResidentId'); 
         const confirmInfoButton = document.getElementById('confirmInfoButton'); 
 
+        // ===== 음성 안내 요소
+        const voiceBtn = document.getElementById('voiceGuideBtn');
+        const voiceIconPlay = document.getElementById('voiceIconPlay');
+        const voiceIconStop = document.getElementById('voiceIconStop');
+        const voiceLabel = document.getElementById('voiceLabel');
+        const voicePanel = document.getElementById('voicePanel');
+        const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+        const voiceReplayBtn = document.getElementById('voiceReplayBtn');
+
+        // 로딩/토스트
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const toast = document.getElementById('toast');
+        function showLoading(on){ loadingOverlay.classList.toggle('open', !!on); }
+        function showToast(msg){ toast.textContent = msg; toast.classList.add('open'); setTimeout(()=>toast.classList.remove('open'), 2500); }
+
         // --- 상태 변수 ---
-        let idCardPhotoConfirmed = false; // 신분증 사진 촬영 및 확인 완료 여부
-        let extractedInfoConfirmed = false; // 추출된 정보 확인 완료 여부
-        let cameraStream = null; // To hold the MediaStream object
+        let idCardPhotoConfirmed = false;
+        let extractedInfoConfirmed = false;
+        let cameraStream = null;
 
         // --- 카메라 시작 함수 ---
         async function startCamera() {
             try {
-                // Request camera access, preferring the rear camera on mobile
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'environment' 
-                    }
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }});
                 cameraFeed.srcObject = stream;
-                cameraFeed.play(); // Start playing the video stream
-                
-                cameraFeed.style.display = 'block'; // Show the video feed
-                captureOverlay.classList.add('hidden'); // Hide the initial overlay
-                cameraStream = stream; // Store the stream for later stopping
+                cameraFeed.play();
+                cameraFeed.style.display = 'block';
+                captureOverlay.classList.add('hidden');
+                cameraStream = stream;
             } catch (err) {
                 console.error("Error accessing camera: ", err);
-                // If camera access fails, keep the overlay as a fallback visual.
-                // You might want to display a user-friendly message here.
                 cameraFeed.style.display = 'none';
                 captureOverlay.classList.remove('hidden');
+                showToast('카메라 권한을 확인해 주세요.');
             }
         }
 
@@ -472,56 +474,49 @@
                 alert('카메라 스트림이 활성화되지 않았습니다. 잠시 후 다시 시도하거나 권한을 확인해주세요.');
                 return;
             }
-
-            // Set canvas dimensions to match video dimensions
             hiddenCanvas.width = cameraFeed.videoWidth;
             hiddenCanvas.height = cameraFeed.videoHeight;
-
             const context = hiddenCanvas.getContext('2d');
-            // Draw the current video frame onto the canvas
             context.drawImage(cameraFeed, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
-            // Stop the camera stream after taking a snapshot
+            // 카메라 정지
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraFeed.srcObject = null;
                 cameraStream = null;
             }
 
-            // Display the captured image
+            // 미리보기 표시
             previewImage.src = hiddenCanvas.toDataURL('image/png');
-            previewImage.style.display = 'block'; // Show the captured image
-            cameraFeed.style.display = 'none'; // Hide the live camera feed
+            previewImage.style.display = 'block';
+            cameraFeed.style.display = 'none';
 
-            idCardPhotoConfirmed = false; // Photo is taken, but not yet 'confirmed' by the user
-            updateNextButtonState(); // Update next button state
+            idCardPhotoConfirmed = false;
+            updateNextButtonState();
 
-            simulateOcrExtraction(); // Simulate OCR
-            
-            // Button states
+            // 버튼 상태 전환
             captureButton.classList.add('hidden');
             confirmButton.classList.remove('hidden');
             retakeButton.classList.remove('hidden');
             confirmButton.disabled = false;
             confirmButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
             confirmButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+            // --- (변경) 촬영 직후 OCR 시작 ---
+            ocrViaServer(previewImage.src);
         }
 
         // --- 초기 UI 설정 함수 ---
         function initializeUI() {
-            // 초기에는 ID 카드 섹션이 열려있게 설정
             idCardContent.classList.remove('collapsed');
-            idCardTitle.classList.add('rotated'); // 캐럿 표시
+            idCardTitle.classList.add('rotated');
 
-            // 신분증 정보 섹션은 처음에는 완전히 숨김
             extractedInfoSection.classList.add('hidden');
             extractedInfoContent.classList.add('collapsed'); 
-            extractedInfoCheckmark.style.display = 'none';
+            theExtractedInfoCheckmark.style.display = 'none';
 
-            // 카메라 스트림 시작
             startCamera(); 
 
-            // 초기 버튼 상태 설정
             captureButton.classList.remove('hidden');
             confirmButton.classList.add('hidden');
             retakeButton.classList.add('hidden');
@@ -531,158 +526,145 @@
 
         // --- 아코디언 토글 함수 ---
         function toggleAccordion(contentElement, titleElement, toggleIconElement, sectionBlockElement) {
-            // 이미 인증 완료된 섹션은 클릭해도 토글되지 않음
-            if (sectionBlockElement.classList.contains('confirmed')) {
-                return;
-            }
+            if (sectionBlockElement.classList.contains('confirmed')) return;
             contentElement.classList.toggle('collapsed');
             titleElement.classList.toggle('rotated');
-            if (contentElement.classList.contains('collapsed')) {
-                toggleIconElement.classList.remove('rotated'); 
-            } else {
-                toggleIconElement.classList.add('rotated'); 
-            }
+            if (contentElement.classList.contains('collapsed')) toggleIconElement.classList.remove('rotated');
+            else toggleIconElement.classList.add('rotated');
         }
 
         // --- 이벤트 핸들러 ---
-        
-        // ID 카드 프레임 클릭 시 스냅샷 촬영 트리거 (카메라 피드가 활성화된 상태일 때만)
         idCardFrame.addEventListener('click', () => {
-            if (cameraFeed.style.display === 'block') { // Live camera feed is visible
-                takeSnapshot();
-            }
+            if (cameraFeed.style.display === 'block') takeSnapshot();
         });
-        
-        // 촬영 버튼 클릭 시 스냅샷 촬영 트리거
         captureButton.addEventListener('click', (event) => {
             event.stopPropagation(); 
             takeSnapshot();
         });
-        
-        // 재촬영 버튼 클릭 시
         retakeButton.addEventListener('click', () => {
-            // 상태 초기화
             idCardPhotoConfirmed = false;
             extractedInfoConfirmed = false;
             updateNextButtonState();
 
-            // 이미지 미리보기 초기화
             previewImage.src = "#";
             previewImage.style.display = 'none';
-            // captureOverlay.classList.remove('hidden'); // Overlay is handled by startCamera()
             
-            // 추출된 정보 섹션 숨기기 및 초기화
             extractedInfoSection.classList.add('hidden'); 
             extractedInfoContent.classList.add('collapsed'); 
             extractedInfoTitle.classList.remove('rotated'); 
-            extractedInfoCheckmark.style.display = 'none'; 
+            theExtractedInfoCheckmark.style.display = 'none'; 
             extractedNameInput.value = '';
             extractedResidentIdInput.value = '';
 
-            // 버튼 상태 초기화: '촬영' 보이기, '확인'/'재촬영' 숨기기
             captureButton.classList.remove('hidden');
             confirmButton.classList.add('hidden');
             retakeButton.classList.add('hidden');
 
-            // 입력 활성화
             extractedNameInput.disabled = false;
             extractedResidentIdInput.disabled = false;
             confirmInfoButton.disabled = false; 
 
-            // 아코디언 다시 열기
             idCardContent.classList.remove('collapsed');
             idCardTitle.classList.add('rotated');
             idCardCheckmark.style.display = 'none'; 
             idCardSection.classList.remove('confirmed'); 
 
-            // 카메라 재시작
             startCamera();
         });
 
-        // 촬영 확인 버튼 클릭 시 (신분증 사진 확인)
+        // "확인" 클릭 시: 촬영 완료 처리 + 정보 섹션 오픈
         confirmButton.addEventListener('click', () => {
             idCardPhotoConfirmed = true; 
             updateNextButtonState(); 
-
-            // 주민등록증 촬영 옆에 체크 표시
             idCardCheckmark.style.display = 'inline-block'; 
             idCardSection.classList.add('confirmed'); 
-            
-            // 촬영 관련 버튼 숨기기
             confirmButton.classList.add('hidden');
             retakeButton.classList.add('hidden');
-
-            // 1초 뒤 주민등록증 촬영 아코디언 닫기
             setTimeout(() => {
                 idCardContent.classList.add('collapsed'); 
                 idCardTitle.classList.remove('rotated'); 
-
-                // 신분증 정보 아코디언 나오게 하고 열기
                 extractedInfoSection.classList.remove('hidden'); 
                 extractedInfoContent.classList.remove('collapsed');
                 extractedInfoTitle.classList.add('rotated');
                 extractedInfoSection.classList.remove('confirmed'); 
-                extractedInfoCheckmark.style.display = 'none'; 
-
-                // '정보 확인' 버튼 보이게
+                theExtractedInfoCheckmark.style.display = 'none'; 
                 confirmInfoButton.classList.remove('hidden');
                 confirmInfoButton.disabled = false;
                 confirmInfoButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
                 confirmInfoButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                
-            }, 1000); 
+            }, 600);
         });
 
-        // 정보 확인 버튼 클릭 시 (추출된 신분증 정보 확인)
+        // 정보 확인 버튼
         confirmInfoButton.addEventListener('click', () => {
-            // 유효성 검사 (실제 환경에서는 더 정교하게)
             if (!extractedNameInput.value.trim() || !extractedResidentIdInput.value.trim()) {
                 alert('성명과 주민등록번호를 모두 입력해주세요.');
                 return;
             }
-
             extractedInfoConfirmed = true; 
             updateNextButtonState(); 
-
-            // 신분증 정보 옆에 체크 표시
-            extractedInfoCheckmark.style.display = 'inline-block';
+            theExtractedInfoCheckmark.style.display = 'inline-block';
             extractedInfoSection.classList.add('confirmed'); 
-
-            // 정보 입력 필드 비활성화
             extractedNameInput.disabled = true;
             extractedResidentIdInput.disabled = true;
             confirmInfoButton.disabled = true;
             confirmInfoButton.classList.add('bg-gray-400', 'cursor-not-allowed');
             confirmInfoButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-
-            // 1초 뒤 아코디언 닫기
             setTimeout(() => {
                 extractedInfoContent.classList.add('collapsed');
                 extractedInfoTitle.classList.remove('rotated'); 
-            }, 1000);
+            }, 600);
         });
 
+        // === (신규) 서버 OCR 호출 ===
+        async function ocrViaServer(dataUrl){
+            try{
+                showLoading(true);
+                // dataUrl: "data:image/png;base64,......"
+                const res = await fetch('/api/ocr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageDataUrl: dataUrl })
+                });
+                if(!res.ok){
+                    const t = await res.text();
+                    throw new Error(t || 'OCR 요청 실패');
+                }
+                const json = await res.json();
+                // 추출값 반영
+                if(json.name){ extractedNameInput.value = json.name; }
+                if(json.residentId){ extractedResidentIdInput.value = json.residentId; }
 
-        // OCR 추출 시뮬레이션 함수
-        function simulateOcrExtraction() {
-            // 더미 데이터
-            const dummyName = "홍길동"; 
-            const dummyResidentId = "900101-1234567"; 
+                // 정보 섹션 열어주기
+                extractedInfoSection.classList.remove('hidden');
+                extractedInfoContent.classList.remove('collapsed');
+                extractedInfoTitle.classList.add('rotated');
 
-            extractedNameInput.value = dummyName;
-            extractedResidentIdInput.value = dummyResidentId;
-            
-            // 다음 페이지에서 사용할 정보를 localStorage에 저장
-            const userInfo = {
-                name: dummyName,
-                residentId: dummyResidentId
-            };
-            localStorage.setItem('extractedUserInfo', JSON.stringify(userInfo));
+                // 안내
+                if(!json.name && !json.residentId){
+                    showToast('인식률이 낮아요. 값을 확인/수정해 주세요.');
+                }else{
+                    showToast('OCR 완료: 값이 채워졌어요. 확인을 눌러주세요.');
+                }
+
+                // 로컬 스토리지 저장(옵션)
+                try{
+                    localStorage.setItem('extractedUserInfo', JSON.stringify({
+                        name: extractedNameInput.value || '',
+                        residentId: extractedResidentIdInput.value || '',
+                        raw: json.rawText || ''
+                    }));
+                }catch(e){}
+            }catch(e){
+                console.error(e);
+                showToast('OCR 실패: 네트워크 또는 할당량을 확인해 주세요.');
+            }finally{
+                showLoading(false);
+            }
         }
 
-        // --- '다음' 버튼 활성화/비활성화 함수 ---
+        // 다음 버튼 상태
         function updateNextButtonState() {
-            // 신분증 사진 확인과 추출된 정보 확인이 모두 완료되어야 '다음' 버튼 활성화
             if (idCardPhotoConfirmed && extractedInfoConfirmed) {
                 nextButton.disabled = false;
                 nextButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
@@ -694,35 +676,135 @@
             }
         }
         
-        // --- 내비게이션 버튼 이벤트 리스너 ---
+        // 내비게이션
         homeButton.addEventListener('click', function(event) {
             event.preventDefault();
+            Voice.cancel();
             window.location.href = '/foreign';
         });
-
         prevButton.addEventListener('click', function() {
+            Voice.cancel();
             window.location.href = '/foreign2'; 
         });
-
         nextButton.addEventListener('click', function() {
             if (idCardPhotoConfirmed && extractedInfoConfirmed) {
+                Voice.cancel();
                 window.location.href = '/foreign4'; 
             } else {
                 alert('모든 신분증 관련 절차를 완료해야 다음 단계로 진행할 수 있습니다.'); 
             }
         });
-
-        // 섹션 제목 클릭 시 아코디언 토글 (인증 완료 상태가 아닐 때만)
         idCardTitle.addEventListener('click', () => {
             toggleAccordion(idCardContent, idCardTitle, idCardToggleIcon, idCardSection);
         });
         extractedInfoTitle.addEventListener('click', () => {
             toggleAccordion(extractedInfoContent, extractedInfoTitle, extractedInfoToggleIcon, extractedInfoSection);
         });
-
-        // DOMContentLoaded 이벤트 발생 시 UI 초기화
         document.addEventListener('DOMContentLoaded', initializeUI);
 
+        /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
+        const Voice = (function(){
+            let speaking = false;
+            let queue = [];
+            let current = null;
+
+            const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+            const hasAndroid = !!window.AndroidTTS?.speak;
+            const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+            function useNativeSpeak(text){
+                const r = 1.0;
+                if(hasAndroid){
+                    try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
+                }
+                if(hasIOS){
+                    try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
+                }
+                return false;
+            }
+            function useNativeStop(){
+                if(hasAndroid){
+                    try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
+                }
+                if(hasIOS){
+                    try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
+                }
+                return false;
+            }
+
+            function speakWeb(text, onend){
+                const u = new SpeechSynthesisUtterance(String(text));
+                u.lang = 'ko-KR';
+                u.rate = 1.0;
+                u.onend = onend || null;
+                u.onerror = function(){ console.warn('TTS error'); onend && onend(); };
+                window.speechSynthesis.speak(u);
+            }
+
+            function nextInQueue(){
+                if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+                current = queue.shift();
+                if(useNativeSpeak(current)){
+                    speaking = true; setUI(true);
+                    const approx = Math.max(1500, current.length * 60);
+                    setTimeout(()=>{ nextInQueue(); }, approx);
+                }else if(hasWebSpeech){
+                    speaking = true; setUI(true);
+                    speakWeb(current, ()=> nextInQueue());
+                }else{
+                    speaking = false; setUI(false);
+                }
+            }
+
+            function setUI(isOn){
+                voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+                voiceIconPlay.classList.toggle('hidden', isOn);
+                voiceIconStop.classList.toggle('hidden', !isOn);
+                voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+                voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+                voiceBtn.setAttribute('title', voiceLabel.textContent);
+            }
+
+            function start(scriptLines){
+                if(speaking) cancel();
+                queue = Array.isArray(scriptLines) ? scriptLines.slice() : [String(scriptLines||'')];
+                nextInQueue();
+            }
+            function cancel(){
+                queue = [];
+                current = null;
+                speaking = false;
+                useNativeStop();
+                if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+                setUI(false);
+            }
+            function toggle(scriptLines){
+                if(speaking){ cancel(); }
+                else{ start(scriptLines); }
+            }
+            return { start, cancel, toggle, isSpeaking:()=>speaking };
+        })();
+
+        function buildVoiceScript(){
+            const line1 = '안내: 주민등록증을 네모 칸에 맞춘 뒤, 촬영 버튼을 눌러 주세요.';
+            const line2 = '사진을 확인하고 정보가 맞으면, 정보 확인 버튼을 눌러 다음 단계로 진행합니다.';
+            const line3 = '모든 절차가 끝나면 하단의 다음으로 버튼이 활성화됩니다.';
+            return [line1, line2, line3];
+        }
+
+        voiceBtn.addEventListener('click', function(){
+            voicePanel.classList.toggle('open');
+            Voice.toggle(buildVoiceScript());
+        });
+        voiceCloseBtn.addEventListener('click', function(){
+            voicePanel.classList.remove('open');
+        });
+        voiceReplayBtn.addEventListener('click', function(){
+            Voice.start(buildVoiceScript());
+        });
+
+        document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+        window.addEventListener('pagehide', ()=> Voice.cancel());
     </script>
 </body>
 </html>

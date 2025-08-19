@@ -44,6 +44,7 @@
     /* 헤더 */
     header { flex:none; position: sticky; top: 0; z-index: 20; }
     .header-bar {
+      position: relative;                 /* 제목 절대 중앙 정렬용 */
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -58,19 +59,19 @@
     }
     .header-back:active { background:#eff6ff; }
     .header-back svg { width:20px; height:20px; }
-    .header-title { font-size:1.1rem; font-weight:700; color:#111827; } /* 굵기 한 단계 낮춤 */
+    .header-title { font-size:1.1rem; font-weight:700; color:#111827; } /* 기본 스타일 (위치 지정은 Tailwind 클래스로) */
 
-    /* 진행 바: 참고 코드 스타일로 간격 조정 */
+    /* 진행 바 */
     .step-indicator {
       display:flex; width:100%; height:4px;
       background:#e5e7eb; border-radius:2px; overflow:hidden;
-      margin: .5rem 1rem 0;           /* ← 위 코드 참고해 간격 정리 */
+      margin: .5rem 1rem 0;
     }
     .step-indicator-progress { width:100%; height:100%; background:#2563eb; }
 
-    /* 응원 문구: 진행바와의 간격도 부드럽게 */
+    /* 응원 문구 */
     #encouragementMessage {
-      white-space: pre-wrap; text-align: center; font-weight: 600;  /* 굵기 약화 */
+      white-space: pre-wrap; text-align: center; font-weight: 600;
       color: #4b5563;
       padding: 0.6rem 1rem; border-radius: 0.6rem; background-color: #fef3c7;
       margin: .4rem 1rem .2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -99,9 +100,9 @@
       display:flex; align-items:center; justify-content:space-between;
     }
     .section-title {
-      font-weight:700; color:#111827;          /* 굵기 낮춤 */
+      font-weight:700; color:#111827;
       text-align:center; width:100%;
-      font-size: 1.15rem; line-height: 1.35;   /* 사이즈도 아주 약간만 낮춤 */
+      font-size: 1.15rem; line-height: 1.35;
     }
     .section-body { padding:.7rem 1rem; }
 
@@ -110,10 +111,10 @@
       padding:.5rem 0; border-bottom:1px dashed #e5e7eb; gap:.75rem;
     }
     .row:last-child { border-bottom:none; }
-    .label { color:#6b7280; font-weight:600; font-size:.95rem; }   /* 굵기 낮춤 */
-    .value { color:#111827; font-weight:700; text-align:right; white-space: pre-wrap; font-size:1rem; } /* 굵기 낮춤 */
+    .label { color:#6b7280; font-weight:600; font-size:.95rem; }
+    .value { color:#111827; font-weight:700; text-align:right; white-space: pre-wrap; font-size:1rem; }
 
-    /* 전자서명 미리보기: 항상 표시 */
+    /* 전자서명 미리보기 */
     .sig-wrap { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; justify-content:flex-end; }
     .sig-img { border:1px dashed #d1d5db; background:#fff; border-radius:.5rem; width:180px; height:90px; object-fit:contain; }
 
@@ -124,7 +125,7 @@
       display:flex; align-items:center; justify-content:space-between; gap:.7rem;
     }
     .confirm-btn {
-      background:#2563eb; color:#fff; font-weight:700;      /* 굵기 낮춤 */
+      background:#2563eb; color:#fff; font-weight:700;
       padding:.55rem 1rem; border-radius:.6rem;
       transition:transform .15s ease, background-color .2s ease;
       min-width: 110px; text-align:center; user-select:none; -webkit-user-select:none;
@@ -155,7 +156,7 @@
     }
     .bottom-bar button {
       flex: 1; padding: .85rem 1rem; border-radius: .9rem;
-      font-weight: 700; font-size: 1rem;                    /* 굵기 낮춤 */
+      font-weight: 700; font-size: 1rem;
       transition: background-color .2s ease, transform .15s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08); border: none;
       user-select:none; -webkit-user-select:none;
@@ -205,6 +206,14 @@
     }
     .password-error-message { color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; text-align: left; }
 
+    /* ===== 음성 안내 패널 ===== */
+    .voice-panel{
+      position:absolute; right:.25rem; top:2.9rem; width:300px; background:#fff;
+      border:1px solid #e5e7eb; border-radius:.75rem; box-shadow:0 10px 20px rgba(0,0,0,.08);
+      padding:.75rem; z-index:50; display:none;
+    }
+    .voice-panel.open{display:block}
+
     @media (max-width: 420px){
       .header-title{font-size:1.05rem}
       .section-title { font-size: 1.08rem; }
@@ -223,11 +232,44 @@
         </svg>
         홈으로
       </a>
-      <div class="header-title">개설 확인</div>
-      <span style="width:24px;height:24px;opacity:0" aria-hidden="true"></span>
+
+      <!-- 제목: 절대 중앙 정렬 -->
+      <h1 class="header-title absolute left-1/2 -translate-x-1/2 m-0">개설 확인</h1>
+
+      <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+      <div class="relative ml-auto">
+        <button id="voiceGuideBtn"
+                class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
+                aria-pressed="false"
+                aria-label="음성 안내 켜기"
+                title="음성 안내 켜기">
+          <!-- Play -->
+          <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+          </svg>
+          <!-- Stop -->
+          <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M6 6h12v12H6z"/>
+          </svg>
+          <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+        </button>
+
+        <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+            <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+          </div>
+          <div class="mb-3 text-xs text-gray-700 leading-5">
+            <p class="mb-1">버튼을 누르면 <span class="font-semibold">간단한 설명</span>과 <span class="font-semibold">가입한 정보</span>를 차례대로 읽어드립니다. 내용이 바뀌면 <span class="font-semibold">다시 듣기</span>로 최신 정보를 안내받을 수 있어요.</p>
+          </div>
+          <div class="flex">
+            <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <!-- 진행 바 (간격 조정) -->
+    <!-- 진행 바 -->
     <div class="step-indicator" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
       <div class="step-indicator-progress"></div>
     </div>
@@ -263,7 +305,7 @@
             <div class="value" id="interestText">0.01000</div>
           </div>
 
-          <!-- 전자서명: 항상 보이게 유지 -->
+          <!-- 전자서명 -->
           <div class="row" id="signatureRow" style="margin-top:.3rem; padding-bottom:0; border-bottom:none;">
             <div class="label">전자서명</div>
             <div class="value sig-wrap">
@@ -301,12 +343,12 @@
       <!-- Password input fields -->
       <div id="passwordInputs" style="display: none;">
         <div class="password-input-group">
-          <label for="password">비밀번호 설정</label>
-          <input type="password" id="password" placeholder="비밀번호 4자리를 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
+          <label for="password">통장 비밀번호 설정</label>
+          <input type="password" id="password" placeholder="통장 비밀번호 4자리를 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
         </div>
         <div class="password-input-group">
-          <label for="passwordConfirm">비밀번호 확인</label>
-          <input type="password" id="passwordConfirm" placeholder="비밀번호 4자리를 다시 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
+          <label for="passwordConfirm">통장 비밀번호 확인</label>
+          <input type="password" id="passwordConfirm" placeholder="통장 비밀번호 4자리를 다시 입력하세요" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
           <p id="passwordError" class="password-error-message" style="display: none;">비밀번호가 일치하지 않습니다.</p>
         </div>
       </div>
@@ -432,14 +474,14 @@
       acctText.textContent = DEFAULT_ACCT;
       interestText.textContent = '0.01000';
 
-      // 전자서명: 항상 노출 (이미지 없으면 힌트 표시)
+      // 전자서명
       if (data.signatureDataUrl) {
         sigImg.src = data.signatureDataUrl;
         sigImg.alt = '서명 이미지';
         sigImg.style.display = 'block';
         sigHint.textContent = '';
       } else {
-        sigImg.style.display = 'block';  // 프레임은 유지
+        sigImg.style.display = 'block';
         sigImg.src = '';
         sigHint.textContent = '서명 이미지가 없습니다';
       }
@@ -460,7 +502,6 @@
         doneBtn.textContent = '통장 개설 완료';
         confirmBoxText.textContent = '통장 개설 완료';
         cardIssueBtn.style.display = 'block';
-        // 전자서명은 계속 보이도록 더 이상 숨기지 않음
         encouragementMessageDiv.textContent = '🎉 통장 개설이 완료되었습니다!\n카드 발급을 진행해주세요.';
         confirmBtn.classList.add('confirmed');
         confirmBtn.textContent = '확인됨';
@@ -515,7 +556,7 @@
       }
     }
 
-    document.getElementById('prevBtn').addEventListener('click', () => history.back());
+    document.getElementById('prevBtn').addEventListener('click', () => { Voice.cancel(); history.back(); });
 
     document.getElementById('doneBtn').addEventListener('click', () => {
       if (!confirmed) {
@@ -529,14 +570,9 @@
       setTimeout(() => {
         doneBtn.textContent = '통장 개설 완료';
         confirmBoxText.textContent = '통장 개설 완료';
-
         cardIssueBtn.style.display = 'block';
-        // 전자서명은 계속 표시
-
         encouragementMessageDiv.textContent = '🎉 통장 개설이 완료되었습니다!\n카드 발급을 진행해주세요.';
-
         sessionStorage.setItem('bnkEnrollmentComplete', 'true');
-
         confirmBtn.classList.add('confirmed');
         confirmBtn.textContent = '확인됨';
         confirmBtn.disabled = true;
@@ -545,6 +581,141 @@
     });
 
     window.addEventListener('load', init);
+
+    /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
+    const voiceBtn = document.getElementById('voiceGuideBtn');
+    const voiceIconPlay = document.getElementById('voiceIconPlay');
+    const voiceIconStop = document.getElementById('voiceIconStop');
+    const voiceLabel = document.getElementById('voiceLabel');
+    const voicePanel = document.getElementById('voicePanel');
+    const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+    const voiceReplayBtn = document.getElementById('voiceReplayBtn');
+
+    const Voice = (function(){
+      let speaking = false;
+      let queue = [];
+      let current = null;
+
+      const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+      const hasAndroid = !!window.AndroidTTS?.speak;
+      const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+      function useNativeSpeak(text){
+        const r = 1.0;
+        if(hasAndroid){
+          try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+      function useNativeStop(){
+        if(hasAndroid){
+          try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+
+      function speakWeb(text, onend){
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.lang = 'ko-KR';
+        u.rate = 1.0;
+        u.onend = onend || null;
+        u.onerror = function(){ onend && onend(); };
+        window.speechSynthesis.speak(u);
+      }
+
+      function nextInQueue(){
+        if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+        current = queue.shift();
+        if(useNativeSpeak(current)){
+          speaking = true; setUI(true);
+          const approx = Math.max(1500, current.length * 60);
+          setTimeout(()=>{ nextInQueue(); }, approx);
+        }else if(hasWebSpeech){
+          speaking = true; setUI(true);
+          speakWeb(current, ()=> nextInQueue());
+        }else{
+          speaking = false; setUI(false);
+        }
+      }
+
+      function setUI(isOn){
+        voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        voiceIconPlay.classList.toggle('hidden', isOn);
+        voiceIconStop.classList.toggle('hidden', !isOn);
+        voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+        voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+        voiceBtn.setAttribute('title', voiceLabel.textContent);
+      }
+
+      function start(lines){
+        if(speaking) cancel();
+        queue = Array.isArray(lines) ? lines.slice() : [String(lines||'')];
+        nextInQueue();
+      }
+      function cancel(){
+        queue = [];
+        current = null;
+        speaking = false;
+        useNativeStop();
+        if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+        setUI(false);
+      }
+      function toggle(lines){
+        if(speaking){ cancel(); } else { start(lines); }
+      }
+      return { start, cancel, toggle, isSpeaking:()=>speaking };
+    })();
+
+    // 간단 설명 + 가입 정보 하나씩 읽기
+    function buildVoiceScript(){
+      const lines = [];
+      // 간단한 설명
+      lines.push('개설 확인 화면입니다. 입력하신 가입 정보를 순서대로 안내해 드릴게요.');
+
+      if(!data){
+        lines.push('이전 단계의 가입 정보가 없어 안내를 진행할 수 없습니다.');
+        return lines;
+      }
+
+      const currencyDisp = data.currencyDisplay || 'USD';
+      const amt = Number(data.amount || 0);
+      const krw = Number(data.krwEstimate || 0);
+      const rate = (amt > 0) ? (krw / amt) : 0;
+      const dateStr = ymd(data.timestamp || Date.now());
+      const hasSig = !!data.signatureDataUrl;
+
+      // 항목별 낭독
+      lines.push(`상품 종류: 외화 보통 예금입니다.`);
+      lines.push(`가입 금액: ${currencyDisp} ${amt.toLocaleString('ko-KR')} , 한화로 약 ${krw.toLocaleString('ko-KR')} 원입니다.`);
+      if(rate > 0){
+        lines.push(`적용 환율: 1 ${currencyDisp} 당 ${rate.toLocaleString('ko-KR', {maximumFractionDigits: 2})} 원, ${dateStr} 기준입니다.`);
+      }else{
+        lines.push('적용 환율 정보가 없습니다.');
+      }
+      lines.push(`출금 계좌: ${acctText.textContent} 입니다.`);
+      lines.push(`적용 금리: ${interestText.textContent} 입니다.`);
+      lines.push(`전자 서명: ${hasSig ? '이미지가 확인되었습니다.' : '이미지가 없습니다.'}`);
+      lines.push('내용이 맞으면, 고객 확인을 완료하고, 하단의 통장 가입 완료 버튼을 눌러 주세요.');
+      return lines;
+    }
+
+    // 음성 안내 버튼/패널
+    voiceBtn.addEventListener('click', function(){
+      voicePanel.classList.toggle('open');
+      Voice.toggle(buildVoiceScript());
+    });
+    voiceCloseBtn.addEventListener('click', function(){ voicePanel.classList.remove('open'); });
+    voiceReplayBtn.addEventListener('click', function(){ Voice.start(buildVoiceScript()); });
+
+    // 페이지를 떠날 때 정지
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+    window.addEventListener('pagehide', ()=> Voice.cancel());
   </script>
 </body>
 </html>
