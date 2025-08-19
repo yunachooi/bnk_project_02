@@ -8,7 +8,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts - Inter for modern look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -199,7 +199,7 @@
             display: flex;
             gap: 12px; /* Space between buttons */
             width: 100%;
-            margin-top: 2rem; /* Consistent margin from previous section */
+            /* margin-top will be set dynamically or via utility classes */
             padding: 0 1rem; /* Padding to align with content-box */
         }
         .quick-action-button {
@@ -225,8 +225,9 @@
             box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
         }
 
-        .mono {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        /* Revert mono-font if not needed for general text */
+        .general-text {
+            font-family: 'Inter', sans-serif; /* Explicitly set to Inter for general text */
         }
         .muted {
             color:#666;
@@ -252,12 +253,13 @@
             font-size: 0.85rem;
             cursor: pointer;
             transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
-            margin: 0.5rem auto; /* Center with auto margins and provide vertical spacing */
+            margin: 0.5rem; /* Adjust margin for horizontal scrolling */
             justify-content: center; /* Center content within button */
             align-items: center; /* Center content vertically */
             gap: 0.5rem; /* Space between emoji and text */
             width: auto; /* Allow content to dictate width */
             min-width: 120px; /* Give a minimum width for better appearance */
+            flex-shrink: 0; /* Prevent tags from shrinking */
         }
         /* When selected, override with primary blue */
         .review-tag-button.selected {
@@ -322,7 +324,6 @@
             display: flex; /* Allow emoji and text to be inline */
             align-items: center;
             gap: 0.25rem; /* Space between emoji and text */
-            /* color will be set dynamically for each tag */
         }
         .tag-stats-count {
             font-size: 0.95rem;
@@ -377,20 +378,139 @@
             opacity: 1;
             transform: translateY(0); /* Slide to center */
         }
+
+        /* Styles for average rating display - HIDDEN */
+        #average-rating-display-container {
+            display: none;
+        }
+        #average-rating-display {
+            display: none;
+        }
+        #total-reviews-summary {
+            display: none;
+        }
+        /* Benefit text styling */
+        .benefit-text {
+            color: #2563eb; /* Blue for the general text */
+        }
+        .benefit-value {
+            color: #dc2626; /* Red for the number and unit */
+        }
+        /* Header for benefits section */
+        #benefits-section-title {
+            font-size: 1.3rem; /* Smaller font size */
+            font-weight: 600; /* Bolder font weight */
+            line-height: 1.4; /* Adjust line height for readability */
+        }
+
+        /* New styles for gradient border wrapper */
+        .gradient-border-wrapper {
+            position: relative;
+            padding: 2px; /* Controls the thickness of the gradient border */
+            border-radius: 1rem; /* Match the border-radius of the inner content-box */
+            background: linear-gradient(45deg, #E4002B, #FFD700, #007BFF, #333333);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Keep original shadow for wrapper */
+        }
+
+        .gradient-border-wrapper .content-box {
+            background-color: #ffffff;
+            box-shadow: none;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Horizontal Scroll for Tags - General (now used in modal too) */
+        .tag-scroll-container {
+            display: flex;
+            flex-wrap: nowrap; /* Prevent wrapping */
+            overflow-x: auto; /* Enable horizontal scrolling */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            padding-bottom: 0.5rem; /* Add some padding for scrollbar visibility */
+            margin-bottom: 1rem; /* Space below the tags */
+        }
+        /* Hide scrollbar for aesthetic purposes */
+        .tag-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        .tag-scroll-container {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Specific styles for the tag scroll container inside the modal */
+        .tag-scroll-container-modal {
+            max-height: 150px; /* Approximate 3 lines of tags + padding */
+            overflow-y: auto; /* Enable vertical scrolling if more than 3 lines */
+            flex-wrap: wrap; /* Allow wrapping within modal */
+            justify-content: center; /* Center tags when wrapped */
+            padding: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+        }
+        .tag-scroll-container-modal .review-tag-button {
+            margin: 0.25rem;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Simple toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111827;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            z-index: 1100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-6px);
+            pointer-events: auto;
+        }
+
+        /* --- NEW: ensure newline in modal message is shown --- */
+        .modal-content p {
+            white-space: pre-line;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1 class="text-2xl font-bold text-gray-800">BNK 쇼핑환전 앱</h1>
+            <h1 class="text-2xl font-bold text-gray-800">BNK 쇼핑환전 앱 🌐</h1>
             <div class="flex items-center space-x-2">
-                <!-- Notification Bell -->
-                <button id="notification-bell-button" class="relative focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <!-- Notification Bell (모든 알림 통합) -->
+                <button id="notification-bell-button" class="relative focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="알림함 열기">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                     </svg>
-                    <!-- Notification Badge -->
+                    <!-- 통합 알림 배지 -->
                     <span id="notification-badge" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center -mt-1 -mr-1 hidden"></span>
                 </button>
             </div>
@@ -404,7 +524,7 @@
             </div>
 
             <!-- Quick Action Buttons: Card Payment / Find Branch -->
-            <div class="quick-action-buttons-container">
+            <div class="quick-action-buttons-container mt-6">
                 <!-- 카드 결제 -->
                 <a id="card-payment-tile" href="/user/card" class="quick-action-button" aria-label="카드 결제">
                     카드 결제
@@ -415,48 +535,56 @@
                 </a>
             </div>
 
-
             <div class="mt-6 content-box">
-                <h3 class="text-lg font-extrabold text-blue-700 mb-3 text-center">현재 BNK 쇼핑환전통장을 이용하신 고객님들께서 받고 계신 혜택이에요! ✨</h3>
+                <h3 id="benefits-section-title" class="text-blue-700 mb-3 text-center">BNK 쇼핑환전통장 가입<br>✨ 고객님들이 받은 혜택이에요! ✨</h3>
                 <div id="benefits-info" class="p-8 bg-blue-50 rounded-lg shadow-md text-center text-gray-800 font-medium border border-blue-200 relative overflow-hidden h-48">
-                    <div id="benefits-slider-content">
-                        <!-- Dynamic content will go here -->
-                    </div>
+                    <div id="benefits-slider-content"></div>
                 </div>
             </div>
 
             <!-- Section: Product Reviews -->
             <section class="mt-6 content-box" id="reviews">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-semibold text-gray-700">상품 후기 <span id="total-reviews-count" class="text-sm font-normal text-gray-500 ml-2">(총 0개)</span></h3>
-                    <button id="trigger-review-modal-button-header" class="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 focus:outline-none">
-                        리뷰 작성
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                    </button>
+                    <h3 class="text-lg font-semibold text-gray-700">상품 후기</h3>
+                    <div class="flex items-center gap-3">
+                        <!-- (요청사항) 여기 있던 종 아이콘 제거됨 -->
+                        <button id="summarize-reviews-button" class="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 focus:outline-none">
+                            AI 후기 요약 ✨
+                        </button>
+                        <button id="trigger-review-modal-button-header" class="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1 focus:outline-none">
+                            리뷰 작성
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Average Rating Display - HIDDEN -->
+                <div id="average-rating-display-container">
+                    <div id="average-rating-display"></div>
+                    <span id="total-reviews-summary"></span>
+                </div>
+
                 <div class="card p-4 rounded-lg border border-gray-200 bg-white">
                     <div id="tag-statistics" class="mb-4">
                         <div class="flex justify-between items-center mb-2">
-                            <p class="font-semibold text-gray-700">어떤 점이 좋았나요?</p>
+                            <p class="font-semibold text-gray-700">어떤 점이 좋았나요? <span id="tag-reviews-count" class="text-sm font-normal text-gray-500"></span></p>
                             <button id="toggle-tag-stats" class="text-blue-600 text-sm font-medium hover:underline focus:outline-none">
                                 펼치기 >
                             </button>
                         </div>
-                        <div id="tag-stats-list">
-                            <!-- Tag statistics will be rendered here -->
-                        </div>
+                        <div id="tag-stats-list"></div>
                     </div>
+
                     <div id="reviewList" class="grid gap-4"></div>
                     <div id="review-pagination" class="flex justify-center items-center space-x-4 mt-4">
                         <button id="prev-review-page" class="pagination-button"><</button>
                         <span id="review-page-info" class="text-gray-700 text-sm"></span>
                         <button id="next-review-page" class="pagination-button">></button>
                     </div>
-                    <div style="margin-top:10px" id="review-input-section">
-                        <!-- Review input will be conditionally rendered here -->
-                    </div>
+
+                    <div style="margin-top:10px" id="review-input-section"></div>
                     <div class="muted mt-4" id="review-login-prompt">로그인하면 후기를 남길 수 있어요.</div>
                 </div>
             </section>
@@ -464,21 +592,23 @@
 
         <!-- Navigation Bar -->
         <nav class="nav-bar">
-            <!-- 해외직구 (Shopping Bag Icon) -->
+            <!-- 해외직구 -->
             <a class="nav-button" href="/user/shopping/products" aria-label="해외직구">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                 </svg>
                 <span>해외직구</span>
             </a>
             <!-- 홈 -->
             <a class="nav-button active" href="#" aria-current="page">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
                 <span>홈</span>
             </a>
-            <!-- 환전 (Exchange/Arrows Icon) -->
+            <!-- 환전 -->
             <a class="nav-button" href="/forex" aria-label="환전">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
                 <span>환전</span>
@@ -486,44 +616,41 @@
         </nav>
     </div>
 
-    <!-- Custom Modal Structure for General Alerts -->
+    <!-- General Alert Modal -->
     <div id="payment-modal-overlay" class="modal-overlay">
         <div class="modal-content">
-            <button id="modal-close-button" class="modal-close-button">&times;</button>
+            <button id="modal-close-button" class="modal-close-button" aria-label="닫기">&times;</button>
             <h3 class="text-xl font-bold text-gray-800 mb-4">알림</h3>
-            <p class="text-gray-700 mb-6">카드 결제 페이지로 이동합니다. (기능 미구현)</p>
+            <p class="text-gray-700 mb-6">메시지</p>
             <button id="modal-confirm-button" class="primary-button">확인</button>
         </div>
     </div>
 
-    <!-- New Modal for Notification Push -->
-    <div id="notification-modal-overlay" class="modal-overlay">
+    <!-- 통합 알림함 모달 (상단 종 아이콘 전용) -->
+    <div id="inbox-modal-overlay" class="modal-overlay">
         <div class="modal-content">
-            <button id="notification-modal-close-button" class="modal-close-button">&times;</button>
-            <h3 class="text-xl font-bold text-gray-800 mb-4">새로운 알림</h3>
-            <div id="notification-list" class="space-y-2 mb-6">
-                <!-- Notifications will be listed here -->
+            <button id="inbox-modal-close-button" class="modal-close-button" aria-label="닫기">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">알림함</h3>
+            <div id="inbox-list" class="space-y-2 mb-4"></div>
+            <div class="flex gap-2 w-full">
+                <button id="inbox-clear-button" class="secondary-button w-1/2">모두 삭제</button>
+                <button id="inbox-modal-confirm-button" class="primary-button w-1/2">확인</button>
             </div>
-            <button id="notification-modal-confirm-button" class="primary-button">확인</button>
         </div>
     </div>
 
-    <!-- New Modal for Review Input -->
+    <!-- Review Input Modal -->
     <div id="review-input-modal-overlay" class="modal-overlay">
         <div class="modal-content">
-            <button id="review-modal-close-button" class="modal-close-button">&times;</button>
+            <button id="review-modal-close-button" class="modal-close-button" aria-label="닫기">&times;</button>
             <h3 class="text-xl font-bold text-gray-800 mb-4">후기 작성</h3>
             <p class="font-semibold text-gray-700 mb-2">후기를 남겨주시면 BNK에 힘이 됩니다!</p>
 
-            <div id="review-input-modal-tags" class="flex flex-col items-center gap-2 mb-4">
-                <!-- Tags for selection will be rendered here -->
-            </div>
+            <div id="review-input-modal-tags" class="tag-scroll-container-modal"></div>
 
             <div class="flex justify-center items-center space-x-4 mb-4">
                 <span class="text-gray-700">평점:</span>
-                <div id="review-input-modal-star-rating" class="star-rating">
-                    <!-- Stars for selection will be rendered here -->
-                </div>
+                <div id="review-input-modal-star-rating" class="star-rating"></div>
             </div>
 
             <textarea id="review-input-modal-content" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-y" placeholder="솔직한 후기를 남겨주세요.&#10;(후기 수정 및 삭제는 불가능합니다.)"></textarea>
@@ -531,16 +658,55 @@
         </div>
     </div>
 
+    <!-- Create Child Account Modal -->
+    <div id="create-account-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="create-account-modal-close-button" class="modal-close-button" aria-label="닫기">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">환전 계좌 추가</h3>
+            <p class="font-semibold text-gray-700 mb-4">새로운 통화를 추가할 수 있어요.</p>
+
+            <div class="w-full mb-4">
+                <label for="currency-select" class="block text-left text-sm font-medium text-gray-700 mb-1">통화 선택</label>
+                <select id="currency-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <option value="USD">USD (미국 달러)</option>
+                    <option value="JPY">JPY (일본 엔)</option>
+                    <option value="EUR">EUR (유럽 유로)</option>
+                </select>
+            </div>
+
+            <div class="w-full mb-4">
+                <label class="block text-left text-sm font-medium text-gray-700 mb-1">입금</label>
+            </div>
+
+            <div class="w-full mb-6">
+                <label for="amount-input" class="block text-left text-sm font-medium text-gray-700 mb-1">금액 (외화)</label>
+                <input type="number" id="amount-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="금액을 입력하세요">
+                <p id="krw-equivalent-display" class="text-right text-sm text-gray-600 mt-1"></p>
+            </div>
+
+            <button id="create-child-account-submit" class="primary-button">계좌 생성하기</button>
+        </div>
+    </div>
+
+    <!-- AI Summary Modal -->
+    <div id="summary-modal-overlay" class="modal-overlay">
+        <div class="modal-content min-h-[300px] h-auto p-6 flex flex-col items-center justify-center">
+            <button id="summary-modal-close-button" class="modal-close-button" aria-label="닫기">&times;</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">AI 후기 요약</h3>
+            <div id="summary-loader" class="loader hidden"></div>
+            <textarea id="summary-text-area" rows="10" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none resize-none text-sm text-gray-800 bg-gray-50 leading-relaxed" readonly placeholder="AI가 후기를 요약해 드립니다. 잠시만 기다려 주세요..."></textarea>
+            <button id="summary-modal-confirm-button" class="primary-button mt-4">확인</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        // Simulate fetching user status and account/product data from a backend API
+        // --- SIMULATED BACKEND STATUS ---
         async function fetchUserStatus() {
-            // For demonstration, we simulate the backend response with a delay.
-            // Toggle these values to test different scenarios:
-            const simulatedIsLoggedIn = true;  // true: 로그인 상태, false: 비로그인 상태
-            const simulatedHasProducts = true; // true: 상품 가입 상태, false: 상품 미가입 상태
-
-            // Simulate account data if logged in and has products
+            const simulatedIsLoggedIn = true;
+            const simulatedHasProducts = true;
             let accountData = null;
             if (simulatedIsLoggedIn && simulatedHasProducts) {
                 accountData = {
@@ -558,7 +724,6 @@
                     ]
                 };
             }
-
             return new Promise(resolve => {
                 setTimeout(() => {
                     resolve({
@@ -566,11 +731,11 @@
                         hasProducts: simulatedHasProducts,
                         accountData: accountData
                     });
-                }, 500); // Simulate network delay
+                }, 300);
             });
         }
 
-        // Mock data for reviews (now includes tags)
+        // --- MOCK REVIEWS ---
         let mockReviews = [
             { id: 1, uidMasked: "익명1", date: "2025-08-15", rating: 5, content: "아주 유용하고 편리한 통장입니다!", tags: ["사용하기 편해요", "다양한 통화 지원"] },
             { id: 2, uidMasked: "익명2", date: "2025-08-14", rating: 4, content: "해외 직구할 때 환전 수수료 아끼니 좋아요.", tags: ["환전 수수료 저렴", "해외직구 필수"] },
@@ -581,10 +746,25 @@
             { id: 7, uidMasked: "익명7", date: "2025-08-09", rating: 2, content: "조금 아쉬운 부분이 있습니다.", tags: [] }
         ];
 
-        // Global list to store notifications
-        let notificationList = [];
+        // --- 통합 알림 저장소 (상단 종에서 모두 처리) ---
+        // 각 항목: { type: 'system' | 'review' | 'warning', message: string, at: number }
+        const inboxNotifications = [];
 
-        // Available review tags (no counts here, as counts are calculated dynamically)
+        // --- BADGE & ELEMENTS ---
+        const notificationBadge = document.getElementById('notification-badge');
+
+        function updateInboxBadge() {
+            const count = inboxNotifications.length;
+            if (count > 0) {
+                notificationBadge.textContent = count;
+                notificationBadge.classList.remove('hidden');
+            } else {
+                notificationBadge.textContent = '';
+                notificationBadge.classList.add('hidden');
+            }
+        }
+
+        // --- TAGS/EMOJIS/COLORS ---
         let allAvailableTags = [
             "사용하기 편해요",
             "다양한 통화 지원",
@@ -594,197 +774,236 @@
             "빠른 처리",
             "고객 서비스 우수"
         ];
-        // Define a color palette for tags
-        const tagColors = [
-            '#007bff', // Blue
-            '#28a745', // Green
-            '#dc3545', // Red
-            '#ffc107', // Yellow
-            '#6f42c1', // Purple
-            '#fd7e14', // Orange
-            '#20c997', // Teal
-            '#6c757d', // Gray - fallback
-        ];
-
-        // Define emojis for tags
+        const tagColors = ['#007bff','#28a745','#dc3545','#ffc107','#6f42c1','#fd7e14','#20c997','#6c757d'];
         const tagEmojis = {
             "사용하기 편해요": "👍",
-            "다양한 통화 지원": "�",
+            "다양한 통화 지원": "🌍",
             "환전 수수료 저렴": "💰",
             "해외직구 필수": "🛒",
             "계좌 관리 편리": "💼",
             "빠른 처리": "⚡",
             "고객 서비스 우수": "✨"
         };
-
-
         function getColorForTag(tagName) {
             const index = allAvailableTags.indexOf(tagName);
-            if (index !== -1) {
-                return tagColors[index % tagColors.length];
-            }
-            return '#000000'; // Default black if tag not found
+            return index !== -1 ? tagColors[index % tagColors.length] : '#000000';
         }
-
-        // Helper to generate tag styles (background and text color) for consistency
-        function getTagStyle(tagName) {
-            const color = getColorForTag(tagName);
-            // For a light background, use a slightly desaturated color with transparency
-            // For text, use the primary color
-            const rgb = hexToRgb(color);
-            const backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`; // Light background with transparency
-            const textColor = color; // The main color for the text
-            return { backgroundColor, color: textColor };
-        }
-
-        // Helper to convert hex to rgb for rgba conversion
         function hexToRgb(hex) {
             const bigint = parseInt(hex.slice(1), 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            return { r, g, b };
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        }
+        function getTagStyle(tagName) {
+            const color = getColorForTag(tagName);
+            const rgb = hexToRgb(color);
+            return { backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`, color };
         }
 
+        // --- FORBIDDEN WORDS (고급 필터 with regex) ---
+        const forbiddenPatterns = [
+            { label: '씨발', re: /(?:ㅅ\s*ㅂ|시+\s*발|씨+\s*발)/gi },
+            { label: '개새끼', re: /개\s*새+끼/gi },
+            { label: '병신', re: /병\s*신/gi },
+            { label: '지랄', re: /지\s*랄/gi },
+            { label: '염병', re: /염\s*병/gi },
+            { label: '욕설(영문 f)', re: /f\s*u\s*c\s*k/gi },
+            { label: '욕설(영문 s)', re: /s\s*h\s*i\s*t/gi },
+            { label: 'bitch', re: /b\s*i\s*t\s*c\s*h/gi },
+            { label: 'asshole', re: /a\s*s\s*s\s*h\s*o\s*l\s*e/gi }
+        ];
+        function findForbiddenWords(text) {
+            const found = new Set();
+            const normalized = text.normalize('NFKC');
+            forbiddenPatterns.forEach(({label, re}) => {
+                if (re.test(normalized)) found.add(label);
+                re.lastIndex = 0; // reset
+            });
+            return Array.from(found);
+        }
 
+        // --- HELPERS ---
+        function escapeHtml(s) {
+            return s.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&#39;' }[m]));
+        }
+        function renderStarIcons(rating, isAverage=false) {
+            let starsHtml = '';
+            const starClass = isAverage ? 'star-icon-large' : 'star-icon';
+            for (let i=1; i<=5; i++) {
+                starsHtml += `
+                    <svg class="${starClass} ${i <= rating ? 'filled' : ''}" data-star="${i}" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.691h4.178c.969 0 1.371 1.24.588 1.81l-3.388 2.464a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.683-1.539 1.118l-3.388-2.464a1 1 0 00-1.176 0l-3.388 2.464c-.784.565-1.839-.197-1.539-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.583 9.385c-.783-.57-.381-1.81.588-1.81h4.178a1 1 0 00.95-.691l1.286-3.957z"></path>
+                    </svg>`;
+            }
+            return starsHtml;
+        }
+        function showToast(message) {
+            const el = document.getElementById('toast');
+            el.textContent = message;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2200);
+        }
+
+        // --- GLOBAL STATE ---
         let selectedTagsForModal = new Set();
-        let currentRatingForModal = 0; // Rating for the review input modal
-
-        // Pagination variables for reviews
-        const reviewsPerPage = 1; // Changed to 1 review per page
+        let currentRatingForModal = 0;
+        const reviewsPerPage = 1;
         let currentReviewPage = 1;
         let totalReviewPages = 1;
-
-        // State for tag statistics visibility
         let showAllTagStats = false;
-        // State for child accounts visibility
         let showAllChildAccounts = false;
+        let reviewSliderInterval;
+        let globalAccountData = null;
 
-        let reviewSliderInterval; // Variable to hold the interval for auto-sliding reviews
+        const mockExchangeRates = { 'USD': 1350, 'JPY': 9.20, 'EUR': 1480 };
 
-
-        // Simulate fetching reviews
-        async function fetchReviews() {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    // Sort reviews: highest rating first, then by ID descending (most recent within same rating)
-                    const sortedReviews = [...mockReviews].sort((a, b) => {
-                        if (b.rating !== a.rating) {
-                            return b.rating - a.rating; // Sort by rating descending
-                        }
-                        return b.id - a.id; // Then by ID descending
-                    });
-                    resolve({
-                        items: sortedReviews
-                    });
-                }, 300); // Simulate network delay
-            });
-        }
-
-        // Simulate submitting a review
-        async function submitReview(content, rating, tags) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    // Generate a unique anonymous ID for new reviews
-                    const newId = mockReviews.length > 0 ? Math.max(...mockReviews.map(r => r.id)) + 1 : 1;
-                    const newAnonymousNum = mockReviews.length + 1; // Simple incrementing number for anonymous users
-                    const newReview = {
-                        id: newId,
-                        uidMasked: `익명${newAnonymousNum}`, // Use "익명+번호" format
-                        date: new Date().toISOString().slice(0, 10), // Current date
-                        rating: parseInt(rating, 10),
-                        content: content,
-                        tags: tags // Store selected tags
-                    };
-                    mockReviews.push(newReview);
-                    resolve({ ok: true, newReviewContent: content }); // Simulate success, return content for notification
-                }, 300);
-            });
-        }
-
+        // --- ELEMENTS ---
         const contentArea = document.getElementById('content-area');
         const reviewList = document.getElementById('reviewList');
         const reviewInputSection = document.getElementById('review-input-section');
         const reviewLoginPrompt = document.getElementById('review-login-prompt');
-        const tagStatisticsDiv = document.getElementById('tag-statistics');
         const tagStatsList = document.getElementById('tag-stats-list');
         const toggleTagStatsButton = document.getElementById('toggle-tag-stats');
-        const totalReviewsCountSpan = document.getElementById('total-reviews-count'); // New element
-
-
-        // Review Pagination Elements
-        const reviewPaginationDiv = document.getElementById('review-pagination');
+        const tagReviewsCountSpan = document.getElementById('tag-reviews-count');
         const prevReviewPageButton = document.getElementById('prev-review-page');
         const nextReviewPageButton = document.getElementById('next-review-page');
         const reviewPageInfoSpan = document.getElementById('review-page-info');
 
-        // Notification Badge element
-        const notificationBadge = document.getElementById('notification-badge');
-
-
-        // Modals
         const paymentModalOverlay = document.getElementById('payment-modal-overlay');
-        const notificationModalOverlay = document.getElementById('notification-modal-overlay');
-        const reviewInputModalOverlay = document.getElementById('review-input-modal-overlay');
-
-        // Modal content elements (for general alerts)
+        const paymentModalCloseButton = document.getElementById('modal-close-button');
+        const paymentModalConfirmButton = document.getElementById('modal-confirm-button');
         const modalTitle = paymentModalOverlay.querySelector('h3');
         const modalMessage = paymentModalOverlay.querySelector('p');
 
-        function escapeHtml(s) {
-            return s.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&#39;' }[m])); // Escaping single quote for HTML attribute safety
+        const inboxModalOverlay = document.getElementById('inbox-modal-overlay');
+        const inboxModalCloseButton = document.getElementById('inbox-modal-close-button');
+        const inboxModalConfirmButton = document.getElementById('inbox-modal-confirm-button');
+        const inboxClearButton = document.getElementById('inbox-clear-button');
+        const inboxListEl = document.getElementById('inbox-list');
+
+        const reviewInputModalOverlay = document.getElementById('review-input-modal-overlay');
+        const reviewModalCloseButton = document.getElementById('review-modal-close-button');
+        const reviewInputModalSubmitButton = document.getElementById('review-input-modal-submit');
+        const reviewInputModalContent = document.getElementById('review-input-modal-content');
+
+        const notificationBellButton = document.getElementById('notification-bell-button');
+
+        const createAccountModalOverlay = document.getElementById('create-account-modal-overlay');
+        const createAccountModalCloseButton = document.getElementById('create-account-modal-close-button');
+        const createChildAccountSubmitButton = document.getElementById('create-child-account-submit');
+        const currencySelect = document.getElementById('currency-select');
+        const amountInput = document.getElementById('amount-input');
+        const krwEquivalentDisplay = document.getElementById('krw-equivalent-display');
+
+        const benefitsSliderContent = document.getElementById('benefits-slider-content');
+
+        const summarizeReviewsButton = document.getElementById('summarize-reviews-button');
+        const summaryLoader = document.getElementById('summary-loader');
+        const summaryTextArea = document.getElementById('summary-text-area');
+        const summaryModalOverlay = document.getElementById('summary-modal-overlay');
+        const summaryModalCloseButton = document.getElementById('summary-modal-close-button');
+        const summaryModalConfirmButton = document.getElementById('summary-modal-confirm-button');
+
+        // --- PAYMENT/ALERT MODAL HELPERS ---
+        function showPaymentModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message; // '\n' honored by CSS pre-line
+            paymentModalOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function hidePaymentModal() {
+            paymentModalOverlay.classList.remove('show');
+            document.body.style.overflow = '';
         }
 
-        // Function to render star icons (reused for review display and input modal)
-        function renderStarIcons(rating) {
-            let starsHtml = '';
-            for (let i = 1; i <= 5; i++) {
-                starsHtml += `
-                    <svg class="star-icon ${i <= rating ? 'filled' : ''}" data-star="${i}" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.691h4.178c.969 0 1.371 1.24.588 1.81l-3.388 2.464a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.683-1.539 1.118l-3.388-2.464a1 1 0 00-1.176 0l-3.388 2.464c-.784.565-1.839-.197-1.539-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.583 9.385c-.783-.57-.381-1.81.588-1.81h4.178a1 1 0 00.95-.691l1.286-3.957z"></path>
-                    </svg>
-                `;
+        // --- INBOX MODAL (상단 종에서 통합 표시) ---
+        function renderInboxList() {
+            if (inboxNotifications.length === 0) {
+                inboxListEl.innerHTML = '<p class="text-gray-700">새 알림이 없습니다.</p>';
+                return;
             }
-            return starsHtml;
+            inboxListEl.innerHTML = inboxNotifications.map(n => {
+                // 타입별 스타일
+                let cls = 'border-gray-200 bg-gray-50';
+                if (n.type === 'review') cls = 'border-emerald-200 bg-emerald-50';
+                if (n.type === 'warning') cls = 'border-red-200 bg-red-50';
+                return `
+                    <div class="p-3 rounded-lg border ${cls} text-sm text-gray-800">
+                        ${escapeHtml(n.message)}
+                    </div>`;
+            }).join('');
+        }
+        function showInboxModal() {
+            renderInboxList();
+            inboxModalOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function hideInboxModal() {
+            inboxModalOverlay.classList.remove('show');
+            document.body.style.overflow = '';
         }
 
+        // --- REVIEWS FETCH/SUBMIT ---
+        async function fetchReviews() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const sorted = [...mockReviews].sort((a,b) => b.rating !== a.rating ? b.rating - a.rating : b.id - a.id);
+                    resolve({ items: sorted });
+                }, 200);
+            });
+        }
+        async function submitReview(content, rating, tags) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const newId = mockReviews.length > 0 ? Math.max(...mockReviews.map(r => r.id)) + 1 : 1;
+                    const newAnonymousNum = mockReviews.length + 1;
+                    const newReview = {
+                        id: newId,
+                        uidMasked: `익명${newAnonymousNum}`,
+                        date: new Date().toISOString().slice(0,10),
+                        rating: parseInt(rating, 10),
+                        content,
+                        tags
+                    };
+                    mockReviews.push(newReview);
+                    resolve({ ok: true, newReview });
+                }, 250);
+            });
+        }
+
+        // --- RENDERING REVIEWS ---
         async function loadReviews() {
-            stopReviewSlider(); // Stop slider during manual navigation or initial load
-            const { items: allReviews } = await fetchReviews(); // Fetch sorted reviews
-            totalReviewPages = Math.ceil(allReviews.length / reviewsPerPage);
+            stopReviewSlider();
+            const { items: allReviews } = await fetchReviews();
+            const filteredReviews = allReviews;
+            totalReviewPages = Math.ceil(filteredReviews.length / reviewsPerPage);
 
-            reviewList.innerHTML = ''; // Clear existing reviews
-            if (allReviews && allReviews.length > 0) { // Update total reviews count
-                totalReviewsCountSpan.textContent = `(총 ${allReviews.length}개)`;
-            } else {
-                totalReviewsCountSpan.textContent = `(총 0개)`;
-            }
+            reviewList.innerHTML = '';
+            tagReviewsCountSpan.textContent = `(총 ${filteredReviews.length.toLocaleString('ko-KR')}개)`;
 
             const startIndex = (currentReviewPage - 1) * reviewsPerPage;
             const endIndex = startIndex + reviewsPerPage;
-            const reviewsToDisplay = allReviews.slice(startIndex, endIndex);
+            const reviewsToDisplay = filteredReviews.slice(startIndex, endIndex);
 
-            if (reviewsToDisplay && reviewsToDisplay.length > 0) {
+            if (reviewsToDisplay.length > 0) {
                 reviewsToDisplay.forEach(it => {
                     const div = document.createElement('div');
                     div.className = 'p-3 bg-gray-50 rounded-lg shadow-sm text-gray-700 border border-gray-100';
-                    const tagsHtml = it.tags && it.tags.length > 0 ?
-                        `<div class="flex flex-wrap gap-1 mt-2">${it.tags.map(tag => {
-                            const tagStyle = getTagStyle(tag);
-                            return `<span class="px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: ${tagStyle.backgroundColor}; color: ${tagStyle.color};">${escapeHtml(tag)}</span>`;
-                        }).join('')}</div>` : '';
-
+                    const tagsHtml = it.tags && it.tags.length > 0 ? `
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            ${it.tags.map(tag => {
+                                const st = getTagStyle(tag);
+                                const emoji = tagEmojis[tag] || '';
+                                return `<span class="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1" style="background-color:${st.backgroundColor};color:${st.color};">${emoji} ${escapeHtml(tag)}</span>`;
+                            }).join('')}
+                        </div>` : '';
                     div.innerHTML = `
                         <div class="flex justify-between items-center mb-1">
                             <b>${it.uidMasked || ''}</b>
                             <span class="muted">${it.date || ''}</span>
                         </div>
                         <div class="flex items-center mb-2">
-                            <div class="star-rating">
-                                ${renderStarIcons(it.rating)}
-                            </div>
+                            <div class="star-rating">${renderStarIcons(it.rating)}</div>
                         </div>
-                        <p class="text-sm">${escapeHtml(it.content || '')}</p>
+                        <p class="text-base">${escapeHtml(it.content || '')}</p>
                         ${tagsHtml}
                     `;
                     reviewList.appendChild(div);
@@ -793,8 +1012,8 @@
                 reviewList.innerHTML = '<div class="text-center text-gray-500 p-4">등록된 후기가 없습니다.</div>';
             }
             updatePaginationControls();
-            updateTagStatistics(); // Update tag stats after loading reviews
-            startReviewSlider(); // Restart slider after loading reviews
+            updateTagStatistics();
+            startReviewSlider(); // 2초 자동 슬라이드
         }
 
         function updatePaginationControls() {
@@ -804,53 +1023,35 @@
         }
 
         function updateTagStatistics() {
-            // Calculate tag counts
-            const tagCounts = {};
-            mockReviews.forEach(review => {
-                if (review.tags) {
-                    review.tags.forEach(tag => {
-                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-                    });
-                }
-            });
+            const counts = {};
+            mockReviews.forEach(r => (r.tags||[]).forEach(t => counts[t] = (counts[t]||0)+1));
+            const display = allAvailableTags.map(name => ({ name, count: counts[name] || 0 }));
+            const topTags = display.filter(t => t.count > 0).sort((a,b)=>b.count - a.count);
+            const maxCount = topTags.length > 0 ? topTags[0].count : 1;
 
-            // Prepare tags for display, including those with zero count
-            let displayTags = allAvailableTags.map(tagName => ({
-                name: tagName,
-                count: tagCounts[tagName] || 0
-            }));
-
-            // Filter tags with count > 0 and sort by count descending for the "어떤 점이 좋았나요?" section
-            const topTags = displayTags.filter(tag => tag.count > 0).sort((a, b) => b.count - a.count);
-            const maxCount = topTags.length > 0 ? topTags[0].count : 1; // Avoid division by zero
-
-            let statsHtml = '';
-            // Show only top 2 tags by default
+            let html = '';
             const tagsToShow = showAllTagStats ? topTags : topTags.slice(0, 2);
-
             if (tagsToShow.length > 0) {
                 tagsToShow.forEach(tag => {
-                    const percentage = (tag.count / maxCount) * 100;
-                    const tagColor = getColorForTag(tag.name); // Get color for the tag
-                    const tagEmoji = tagEmojis[tag.name] || ''; // Get emoji for the tag
-                    statsHtml += `
+                    const pct = (tag.count / maxCount) * 100;
+                    const color = getColorForTag(tag.name);
+                    const emoji = tagEmojis[tag.name] || '';
+                    html += `
                         <div class="tag-stats-item flex-col items-start">
                             <div class="flex justify-between w-full mb-1">
-                                <span class="tag-stats-name" style="color: ${tagColor};">${escapeHtml(tag.name)}</span>
+                                <span class="tag-stats-name" style="color:${color};">${emoji} ${escapeHtml(tag.name)}</span>
                                 <span class="tag-stats-count">${tag.count}회</span>
                             </div>
                             <div class="tag-bar-container w-full">
-                                <div class="tag-bar" style="width: ${percentage}%;"></div>
+                                <div class="tag-bar" style="width:${pct}%;"></div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             } else {
-                statsHtml = '<p class="text-center text-gray-500 text-sm">아직 태그 후기가 없습니다.</p>';
+                html = '<p class="text-center text-gray-500 text-sm">아직 태그 후기가 없습니다.</p>';
             }
-            tagStatsList.innerHTML = statsHtml;
+            tagStatsList.innerHTML = html;
 
-            // Update toggle button text - show toggle if more than 2 tags
             if (topTags.length > 2) {
                 toggleTagStatsButton.style.display = 'block';
                 toggleTagStatsButton.textContent = showAllTagStats ? '접기 <' : '펼치기 >';
@@ -861,195 +1062,115 @@
 
         function renderReviewInputSection(isLoggedIn) {
             if (isLoggedIn) {
-                // The '후기 등록' button is now in the header, so this section can be empty
                 reviewInputSection.innerHTML = '';
                 reviewLoginPrompt.style.display = 'none';
             } else {
-                reviewInputSection.innerHTML = ''; // Ensure it's empty
+                reviewInputSection.innerHTML = '';
                 reviewLoginPrompt.style.display = 'block';
             }
         }
 
         function renderTagsForModal() {
-            const tagsSelectionDiv = document.getElementById('review-input-modal-tags');
-            tagsSelectionDiv.innerHTML = '';
+            const div = document.getElementById('review-input-modal-tags');
+            div.innerHTML = '';
             allAvailableTags.forEach(tag => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                const tagEmoji = tagEmojis[tag] || '';
-                const tagStyle = getTagStyle(tag);
-                button.innerHTML = `${tagEmoji} ${escapeHtml(tag)}`;
-                button.className = 'review-tag-button';
-                button.style.setProperty('--tag-bg-color', tagStyle.backgroundColor);
-                button.style.setProperty('--tag-color', tagStyle.color);
-
-                if (selectedTagsForModal.has(tag)) {
-                    button.classList.add('selected');
-                }
-                button.dataset.tag = tag;
-
-                button.addEventListener('click', () => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                const emoji = tagEmojis[tag] || '';
+                const st = getTagStyle(tag);
+                btn.innerHTML = `${emoji} ${escapeHtml(tag)}`;
+                btn.className = 'review-tag-button';
+                btn.style.setProperty('--tag-bg-color', st.backgroundColor);
+                btn.style.setProperty('--tag-color', st.color);
+                if (selectedTagsForModal.has(tag)) btn.classList.add('selected');
+                btn.dataset.tag = tag;
+                btn.addEventListener('click', () => {
                     if (selectedTagsForModal.has(tag)) {
                         selectedTagsForModal.delete(tag);
-                        button.classList.remove('selected');
-                        button.style.backgroundColor = tagStyle.backgroundColor;
-                        button.style.color = tagStyle.color;
-                        button.style.borderColor = tagStyle.color;
+                        btn.classList.remove('selected');
+                        btn.style.backgroundColor = st.backgroundColor;
+                        btn.style.color = st.color;
+                        btn.style.borderColor = st.color;
                     } else {
                         selectedTagsForModal.add(tag);
-                        button.classList.add('selected');
+                        btn.classList.add('selected');
                     }
                 });
-                tagsSelectionDiv.appendChild(button);
+                div.appendChild(btn);
             });
         }
 
         function setupStarRatingForModal() {
-            const starRatingDiv = document.getElementById('review-input-modal-star-rating');
-            if (!starRatingDiv) return;
-
-            starRatingDiv.innerHTML = renderStarIcons(currentRatingForModal);
-
-            const stars = starRatingDiv.querySelectorAll('.star-icon');
-
+            const div = document.getElementById('review-input-modal-star-rating');
+            if (!div) return;
+            div.innerHTML = renderStarIcons(currentRatingForModal);
+            const stars = div.querySelectorAll('.star-icon');
             stars.forEach(star => {
                 star.addEventListener('mouseover', () => {
-                    const value = parseInt(star.dataset.star, 10);
-                    stars.forEach((s, index) => {
-                        if (index < value) {
-                            s.classList.add('hovered');
-                        } else {
-                            s.classList.remove('hovered');
-                        }
-                    });
+                    const v = parseInt(star.dataset.star, 10);
+                    stars.forEach((s, idx) => (idx < v ? s.classList.add('hovered') : s.classList.remove('hovered')));
                 });
-
-                star.addEventListener('mouseout', () => {
-                    stars.forEach(s => s.classList.remove('hovered'));
-                });
-
+                star.addEventListener('mouseout', () => { stars.forEach(s => s.classList.remove('hovered')); });
                 star.addEventListener('click', () => {
-                    const value = parseInt(star.dataset.star, 10);
-                    currentRatingForModal = value;
-                    stars.forEach((s, index) => {
-                        if (index < value) {
-                            s.classList.add('filled');
-                            s.classList.remove('hovered');
-                        } else {
-                            s.classList.remove('filled');
-                        }
-                    });
+                    const v = parseInt(star.dataset.star, 10);
+                    currentRatingForModal = v;
+                    stars.forEach((s, idx) => (idx < v ? s.classList.add('filled') : s.classList.remove('filled')));
                 });
             });
-            stars.forEach((s, index) => {
-                if (index < currentRatingForModal) {
-                    s.classList.add('filled');
-                } else {
-                    s.classList.remove('filled');
-                }
-            });
+            stars.forEach((s, idx) => (idx < currentRatingForModal ? s.classList.add('filled') : s.classList.remove('filled')));
         }
 
-        // Function to get card design style based on ID
-        function getCardDesignStyle(cardId) {
-            const defaultStyle = {
-                backgroundImage: 'none',
-                textColor: '#111827' // Default dark text
-            };
+        function getCardDesignStyle() { return { backgroundImage: 'none', textColor: '#111827' }; }
 
-            switch (cardId) {
-                case 'card-a': // Red Pig / Ghibli
-                    return {
-                        backgroundImage: `url('http://googleusercontent.com/file_content/1')`,
-                        textColor: '#ffffff' // White text for darker background
-                    };
-                case 'card-b': // One Piece
-                    return {
-                        backgroundImage: `url('http://googleusercontent.com/file_content/2')`,
-                        textColor: '#ffffff'
-                    };
-                case 'card-c': // Gundam
-                    return {
-                        backgroundImage: `url('http://googleusercontent.com/file_content/3')`,
-                        textColor: '#ffffff'
-                    };
-                default:
-                    return defaultStyle;
-            }
-        }
-
-
-        function renderContent(isLoggedIn, hasProducts, accountData, selectedCardId) {
+        function renderContent(isLoggedIn, hasProducts, accountData) {
+            globalAccountData = accountData;
             if (!isLoggedIn) {
                 contentArea.innerHTML = `
-                    <div class="content-box text-center">
+                    <div class="content-box text-center mt-4">
                         <h2 class="text-xl font-semibold text-gray-700 mb-4">내 통장 정보</h2>
                         <p class="text-lg font-medium text-gray-800 mb-6">로그인이 필요합니다!</p>
-                        <button id="login-button" class="primary-button">
-                            로그인 페이지로 이동
-                        </button>
-                    </div>
-                `;
-                document.getElementById('login-button').addEventListener('click', () => {
-                    window.location.href = '/user/login';
-                });
+                        <button id="login-button" class="primary-button">로그인 페이지로 이동</button>
+                    </div>`;
+                document.getElementById('login-button').addEventListener('click', () => { window.location.href = '/user/login'; });
                 renderReviewInputSection(false);
-
             } else if (!hasProducts) {
                 contentArea.innerHTML = `
-                    <div class="content-box text-center">
+                    <div class="content-box text-center mt-4">
                         <h2 class="text-xl font-semibold text-gray-700 mb-4">내 통장 정보</h2>
                         <p class="text-lg font-medium text-gray-800 mb-6">상품을 가입해 주세요!</p>
-                        <button id="signup-button" class="primary-button">
-                            상품 가입하기
-                        </button>
-                    </div>
-                `;
-                document.getElementById('signup-button').addEventListener('click', () => {
-                    window.location.href = '/foreign1';
-                });
+                        <button id="signup-button" class="primary-button">상품 가입하기</button>
+                    </div>`;
+                document.getElementById('signup-button').addEventListener('click', () => { window.location.href = '/foreign1'; });
                 renderReviewInputSection(false);
-
             } else {
                 const allChildAccounts = accountData.childAccounts;
                 const maxDisplayChildren = 3;
                 const childrenToDisplay = showAllChildAccounts ? allChildAccounts : allChildAccounts.slice(0, maxDisplayChildren);
                 const hasMoreChildren = allChildAccounts.length > maxDisplayChildren;
-
-                const cardDesign = getCardDesignStyle(selectedCardId);
-                const dynamicBgStyle = cardDesign.backgroundImage ?
-                    `background-image: ${cardDesign.backgroundImage}; background-size: cover; background-position: center;` :
-                    '';
-                const dynamicTextColor = cardDesign.textColor;
-
+                const cardDesign = getCardDesignStyle();
+                const dynamicBgStyle = cardDesign.backgroundImage ? `background-image:${cardDesign.backgroundImage};background-size:cover;background-position:center;` : '';
+                const accountNumberColor = '#4a5568';
                 let childAccountsHtml = '';
 
                 if (allChildAccounts.length > 0) {
-                     childAccountsHtml = `
+                    childAccountsHtml = `
                         <div class="mt-4">
-                            <div class="grid grid-cols-3 gap-3">
-                    `;
+                            <div class="grid grid-cols-3 gap-3">`;
                     childrenToDisplay.forEach(c => {
                         childAccountsHtml += `
-                                <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200 text-center">
-                                    <div class="flex justify-center items-center mb-1">
-                                        <b class="text-gray-800">${c.currencyCode}</b>
-                                    </div>
-                                    <div class="mono text-gray-800 mt-1 text-base font-bold">${c.balance}</div>
-                                </div>
-                        `;
+                            <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200 text-center">
+                                <div class="flex justify-center items-center mb-1"><b class="text-gray-800">${c.currencyCode}</b></div>
+                                <div class="text-gray-800 mt-1 text-base font-bold">${c.balance}</div>
+                            </div>`;
                     });
-                    childAccountsHtml += `
-                            </div>
-                    `;
+                    childAccountsHtml += `</div>`;
                     if (hasMoreChildren) {
                         childAccountsHtml += `
                             <div class="mt-4 text-center flex justify-center">
                                 <button id="toggle-child-accounts" class="text-blue-600 text-sm font-medium hover:underline focus:outline-none flex items-center w-auto">
                                     ${showAllChildAccounts ? '접기 <' : '더보기 >'}
                                 </button>
-                            </div>
-                        `;
+                            </div>`;
                     }
                     childAccountsHtml += `</div>`;
                 } else {
@@ -1057,279 +1178,270 @@
                 }
 
                 contentArea.innerHTML = `
-                    <div class="content-box relative overflow-hidden" style="${dynamicBgStyle}; background-color: ${cardDesign.backgroundImage === 'none' ? '#ffffff' : 'transparent'};">
-                        <h2 class="text-xl font-semibold mb-4 z-10 relative" style="color: ${dynamicTextColor};">BNK 쇼핑환전통장</h2>
-                        <div class="mb-4">
-                            <div class="flex items-center z-10 relative" style="color: ${dynamicTextColor};">
-                                <span id="parent-account-number" class="mono text-lg font-bold">${accountData.parentAccountNo || '000-00-00000'}</span>
-                                <button id="copy-account-number" class="p-1 rounded-full hover:bg-gray-100 transition-colors ml-1">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: ${dynamicTextColor};">
-                                        <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
+                    <div class="gradient-border-wrapper mt-4">
+                        <div class="content-box relative overflow-hidden" style="${dynamicBgStyle}">
+                            <div class="flex justify-between items-start mb-4 z-10 relative">
+                                <h2 class="text-xl font-semibold text-gray-800">BNK 쇼핑환전통장</h2>
+                                <button id="add-child-account-button" class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors focus:outline-none">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
                                 </button>
                             </div>
+                            <div class="mb-4">
+                                <div class="flex items-center z-10 relative" style="color:${accountNumberColor};">
+                                    <span id="parent-account-number" class="text-lg font-bold">${accountData.parentAccountNo || '000-00-00000'}</span>
+                                    <button id="copy-account-number" class="p-1 rounded-full hover:bg-gray-100 transition-colors ml-1" aria-label="계좌번호 복사">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" style="color:${accountNumberColor};">
+                                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            ${childAccountsHtml}
                         </div>
-                        ${childAccountsHtml}
-                    </div>
-                `;
+                    </div>`;
 
+                document.getElementById('add-child-account-button').addEventListener('click', showCreateAccountModal);
                 document.getElementById('copy-account-number').addEventListener('click', () => {
-                    const accountNumberElement = document.getElementById('parent-account-number');
-                    const accountNumber = accountNumberElement ? accountNumberElement.textContent.trim() : '';
-
-                    if (accountNumber) {
+                    const el = document.getElementById('parent-account-number');
+                    const num = el ? el.textContent.trim() : '';
+                    if (num) {
                         try {
-                            const tempInput = document.createElement('textarea');
-                            tempInput.value = accountNumber;
-                            document.body.appendChild(tempInput);
-                            tempInput.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(tempInput);
+                            const ta = document.createElement('textarea');
+                            ta.value = num; document.body.appendChild(ta); ta.select();
+                            document.execCommand('copy'); document.body.removeChild(ta);
                             showPaymentModal('알림', '계좌번호가 복사되었습니다!');
                         } catch (err) {
                             showPaymentModal('알림', '계좌번호 복사에 실패했습니다.');
-                            console.error('Failed to copy account number: ', err);
                         }
                     } else {
                         showPaymentModal('알림', '복사할 계좌번호가 없습니다.');
                     }
                 });
-
-                const toggleChildAccountsButton = document.getElementById('toggle-child-accounts');
-                if (toggleChildAccountsButton) {
-                    toggleChildAccountsButton.addEventListener('click', () => {
-                        showAllChildAccounts = !showAllChildAccounts;
-                        renderContent(isLoggedIn, hasProducts, accountData, selectedCardId);
-                    });
-                }
+                const toggleBtn = document.getElementById('toggle-child-accounts');
+                if (toggleBtn) toggleBtn.addEventListener('click', () => { showAllChildAccounts = !showAllChildAccounts; renderContent(isLoggedIn, hasProducts, globalAccountData); });
                 renderReviewInputSection(true);
             }
         }
 
-        // Benefits slider logic
-        const benefitsSliderContent = document.getElementById('benefits-slider-content');
+        // --- BENEFITS SLIDER ---
         let currentBenefitIndex = 0;
         let benefitsInterval;
-
         const benefitItems = [
-            { type: 'savings', label: '환전 수수료', value: 0, max: 50000, increment: 1000, unit: '원 아꼈어요!', emoji: '💰' },
-            { type: 'interest', label: '이자 혜택', value: 0, max: 12000, increment: 200, unit: '원 받았어요!', emoji: '📈' },
-            { type: 'theft', label: '카드 활성화 여부로 도난을', value: 0, max: 10, increment: 1, unit: '번 방지했어요!', emoji: '🔒' }
+            { type: 'savings', emoji: '💰', firstLine: '환전 수수료를<br>', value: 0, max: 75000000, minIncrement: 500000, maxIncrement: 1500000, valueSuffix: '원', verb: '아끼셨어요!' },
+            { type: 'interest', emoji: '📈', firstLine: '이자 혜택을<br>', value: 0, max: 5000000, minIncrement: 50000, maxIncrement: 150000, valueSuffix: '원', verb: '받으셨어요!' },
+            { type: 'theft', emoji: '🔒', firstLine: '결제 비활성화 기능으로<br>도난을 ', value: 0, max: 2000, minIncrement: 50, maxIncrement: 150, valueSuffix: '번', verb: '방지했어요!' }
         ];
-
         function showNextBenefit() {
-            const currentBenefit = benefitItems[currentBenefitIndex];
+            const cur = benefitItems[currentBenefitIndex];
+            const rand = Math.floor(Math.random() * (cur.maxIncrement - cur.minIncrement + 1)) + cur.minIncrement;
+            if (cur.value < cur.max) cur.value = Math.min(cur.value + rand, cur.max); else cur.value = 0;
 
-            // Update value for demo purposes
-            if (currentBenefit.value < currentBenefit.max) {
-                currentBenefit.value += currentBenefit.increment;
-                if (currentBenefit.value > currentBenefit.max) {
-                    currentBenefit.value = currentBenefit.max; // Cap at max
-                }
-            } else {
-                currentBenefit.value = 0; // Reset to 0 for continuous growth demo
-            }
-
-            // Prepare for transition: move out and hide
-            benefitsSliderContent.style.transition = 'none'; // Disable transition temporarily
+            benefitsSliderContent.style.transition = 'none';
             benefitsSliderContent.style.opacity = '0';
-            benefitsSliderContent.style.transform = 'translateY(100%)'; // Move off-screen below
-
-            // After a tiny delay, update content and slide in
+            benefitsSliderContent.style.transform = 'translateY(100%)';
             setTimeout(() => {
-                benefitsSliderContent.innerHTML = `<p class="text-xl font-bold text-blue-700">${currentBenefit.emoji} ${currentBenefit.label} ${currentBenefit.value.toLocaleString('ko-KR')}${currentBenefit.unit}</p>`;
-                benefitsSliderContent.style.transition = 'all 0.7s ease-in-out'; // Enable transition
+                const val = cur.value.toLocaleString('ko-KR');
+                benefitsSliderContent.innerHTML = `
+                    <p class="text-xl font-bold benefit-text">
+                        ${cur.emoji}${cur.firstLine}<span class="benefit-value">${val}${cur.valueSuffix}</span> ${cur.verb}
+                    </p>`;
+                benefitsSliderContent.style.transition = 'all 0.7s ease-in-out';
                 benefitsSliderContent.style.opacity = '1';
-                benefitsSliderContent.style.transform = 'translateY(0)'; // Slide to center
-
+                benefitsSliderContent.style.transform = 'translateY(0)';
                 currentBenefitIndex = (currentBenefitIndex + 1) % benefitItems.length;
-            }, 50); // Small delay to allow CSS properties to reset
+            }, 50);
         }
-
         function startBenefitsSlider() {
-            showNextBenefit(); // Show the first benefit immediately
-            benefitsInterval = setInterval(showNextBenefit, 3000); // Change every 3 seconds
+            showNextBenefit();
+            benefitsInterval = setInterval(showNextBenefit, 3000);
         }
 
-        // --- MODAL CONTROL FUNCTIONS ---
-
-        // General Alert Modal
-        const paymentModalOverlayElem = document.getElementById('payment-modal-overlay');
-        const paymentModalCloseButton = document.getElementById('modal-close-button');
-        const paymentModalConfirmButton = document.getElementById('modal-confirm-button');
-
-        function showPaymentModal(title, message) {
-            modalTitle.textContent = title;
-            modalMessage.textContent = message;
-            paymentModalOverlayElem.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function hidePaymentModal() {
-            paymentModalOverlayElem.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        // Notification Modal
-        const notificationModalOverlayElem = document.getElementById('notification-modal-overlay');
-        const notificationModalCloseButton = document.getElementById('notification-modal-close-button');
-        const notificationModalConfirmButton = document.getElementById('notification-modal-confirm-button');
-        const notificationListContainer = document.getElementById('notification-list');
-
-        function updateNotificationBadgeDisplay() {
-            if (notificationList.length > 0) {
-                notificationBadge.textContent = notificationList.length;
-                notificationBadge.classList.remove('hidden');
+        // --- CREATE CHILD ACCOUNT ---
+        function updateKrwEquivalent() {
+            const c = currencySelect.value;
+            const amt = parseFloat(amountInput.value);
+            if (!isNaN(amt) && amt > 0 && mockExchangeRates[c]) {
+                const krw = amt * mockExchangeRates[c];
+                krwEquivalentDisplay.textContent = `(약 ${krw.toLocaleString('ko-KR')}원)`;
             } else {
-                notificationBadge.textContent = '';
-                notificationBadge.classList.add('hidden');
+                krwEquivalentDisplay.textContent = '';
             }
         }
-
-        function showNotificationModal(title = "새로운 알림", messages = []) {
-            notificationModalOverlayElem.querySelector('h3').textContent = title;
-            notificationListContainer.innerHTML = '';
-
-            if (messages.length === 0) {
-                notificationListContainer.innerHTML = '<p class="text-gray-700">현재 새로운 푸쉬 알림이 없습니다.</p>';
-            } else {
-                messages.forEach(msg => {
-                    const p = document.createElement('p');
-                    p.className = 'notification-list-item';
-                    p.textContent = msg;
-                    notificationListContainer.appendChild(p);
-                });
-            }
-
-            notificationModalOverlayElem.classList.add('show');
+        function showCreateAccountModal() {
+            createAccountModalOverlay.classList.add('show');
             document.body.style.overflow = 'hidden';
+            currencySelect.value = 'USD';
+            amountInput.value = '';
+            krwEquivalentDisplay.textContent = '';
         }
-
-        function hideNotificationModal() {
-            notificationModalOverlayElem.classList.remove('show');
+        function hideCreateAccountModal() {
+            createAccountModalOverlay.classList.remove('show');
             document.body.style.overflow = '';
         }
-
-        // Review Input Modal
-        const reviewInputModalOverlayElem = document.getElementById('review-input-modal-overlay');
-        const reviewModalCloseButton = document.getElementById('review-modal-close-button');
-        const reviewInputModalSubmitButton = document.getElementById('review-input-modal-submit');
-        const reviewInputModalContent = document.getElementById('review-input-modal-content');
-
-        function showReviewInputModal() {
-            // Reset modal state
-            selectedTagsForModal.clear();
-            currentRatingForModal = 0;
-            reviewInputModalContent.value = '';
-
-            renderTagsForModal();
-            setupStarRatingForModal();
-
-            reviewInputModalOverlayElem.classList.add('show');
-            document.body.style.overflow = 'hidden';
+        async function createChildAccount(currencyCode, amount) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    if (globalAccountData && globalAccountData.childAccounts) {
+                        const idx = globalAccountData.childAccounts.findIndex(acc => acc.currencyCode === currencyCode);
+                        if (idx > -1) {
+                            let cur = parseFloat(globalAccountData.childAccounts[idx].balance.replace(/,/g,''));
+                            cur += parseFloat(amount);
+                            globalAccountData.childAccounts[idx].balance = cur.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        } else {
+                            globalAccountData.childAccounts.push({
+                                currencyCode,
+                                currencyFullName: `${currencyCode} (${currencyCode === 'USD' ? '미국 달러' : currencyCode === 'JPY' ? '일본 엔' : '유럽 유로'})`,
+                                balance: `${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            });
+                        }
+                        resolve({ success: true, newAccount: { currencyCode, amount } });
+                    } else {
+                        resolve({ success: false, message: "계좌 생성 실패: 사용자 계좌 정보 없음" });
+                    }
+                }, 400);
+            });
         }
 
-        function hideReviewInputModal() {
-            reviewInputModalOverlayElem.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        // Function to start the automatic review slider
+        // --- AUTO REVIEW SLIDER ---
         function startReviewSlider() {
-            // Clear any existing interval to prevent multiple sliders
-            if (reviewSliderInterval) {
-                clearInterval(reviewSliderInterval);
-            }
+            if (reviewSliderInterval) clearInterval(reviewSliderInterval);
             reviewSliderInterval = setInterval(() => {
                 currentReviewPage++;
-                if (currentReviewPage > totalReviewPages || totalReviewPages === 0) {
-                    currentReviewPage = 1;
-                }
+                if (currentReviewPage > totalReviewPages || totalReviewPages === 0) currentReviewPage = 1;
                 loadReviews();
-            }, 3000);
+            }, 2000); // 2초
+        }
+        function stopReviewSlider() {
+            if (reviewSliderInterval) { clearInterval(reviewSliderInterval); reviewSliderInterval = null; }
         }
 
-        // Function to stop the automatic review slider
-        function stopReviewSlider() {
-            if (reviewSliderInterval) {
-                clearInterval(reviewSliderInterval);
-                reviewSliderInterval = null;
+        // --- CLIENT-SIDE "AI" SUMMARY (동작 보장) ---
+        function summarizeReviewsLocally(reviews) {
+            if (!reviews || reviews.length === 0) return '아직 등록된 후기가 없어 요약할 내용이 없습니다.';
+            const total = reviews.length;
+            const avg = (reviews.reduce((s,r)=>s+r.rating,0)/total).toFixed(1);
+            const positives = reviews.filter(r => r.rating >= 4);
+            const negatives = reviews.filter(r => r.rating <= 2);
+            const neutrals  = reviews.filter(r => r.rating === 3);
+
+            // Top tags
+            const tagCount = {};
+            reviews.forEach(r => (r.tags||[]).forEach(t => tagCount[t] = (tagCount[t]||0)+1));
+            const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`${k} (${v})`);
+
+            // Sample improvements (from neutral/negative contents)
+            const improvSamples = negatives.concat(neutrals).slice(0,3).map(r => `- ${r.content}`);
+
+            return [
+                `총 ${total}개 후기, 평균 ★${avg}`,
+                ``,
+                `👍 긍정 요약: ${positives.length}건`,
+                topTags.length ? `• 많이 언급된 태그: ${topTags.join(', ')}` : `• 많이 언급된 태그가 아직 없습니다.`,
+                ``,
+                `🤔 보통/부정 요약: ${neutrals.length + negatives.length}건`,
+                improvSamples.length ? improvSamples.join('\n') : '• 크게 드러난 개선 의견이 적습니다.',
+                ``,
+                `한 줄 정리: 별점 분포와 태그 기준으로 사용성(편의성/수수료)이 강점으로 나타납니다.`
+            ].join('\n');
+        }
+
+        async function generateReviewSummary() {
+            summaryTextArea.value = '';
+            summaryLoader.classList.remove('hidden');
+            summaryTextArea.classList.add('hidden');
+            summaryModalOverlay.classList.add('show');
+
+            try {
+                const { items } = await fetchReviews();
+                const summary = summarizeReviewsLocally(items);
+                summaryTextArea.value = summary;
+            } catch (e) {
+                summaryTextArea.value = '후기 요약에 실패했습니다. 다시 시도해 주세요.';
+            } finally {
+                summaryLoader.classList.add('hidden');
+                summaryTextArea.classList.remove('hidden');
             }
         }
 
+        // --- Helper: close review modal so warnings appear on top ---
+        function closeReviewModal() {
+            reviewInputModalOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
 
-        // --- INITIALIZATION ---
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
             const { isLoggedIn, hasProducts, accountData } = await fetchUserStatus();
-
-            // Retrieve selected card ID from session storage
-            const cardIssueDataRaw = sessionStorage.getItem('bnkCardIssueData');
-            let selectedCardId = null;
-            if (cardIssueDataRaw) {
-                try {
-                    const cardIssueData = JSON.parse(cardIssueDataRaw);
-                    if (cardIssueData.selectedCard && cardIssueData.selectedCard.id) {
-                        selectedCardId = cardIssueData.selectedCard.id;
-                    }
-                } catch (e) {
-                    console.error('Failed to parse bnkCardIssueData from sessionStorage', e);
-                }
-            }
-
-            renderContent(isLoggedIn, hasProducts, accountData, selectedCardId);
+            renderContent(isLoggedIn, hasProducts, accountData);
             loadReviews();
-            startBenefitsSlider(); // Start the benefits slider
+            startBenefitsSlider();
 
-            // Event listener for Notification Bell
-            document.getElementById('notification-bell-button').addEventListener('click', () => {
-                showNotificationModal('새로운 알림', notificationList);
-            });
-
-            // General Alert Modal close listeners
+            // Payment modal
             paymentModalCloseButton.addEventListener('click', hidePaymentModal);
             paymentModalConfirmButton.addEventListener('click', hidePaymentModal);
-            paymentModalOverlayElem.addEventListener('click', (event) => {
-                if (event.target === paymentModalOverlayElem) {
-                    hidePaymentModal();
-                }
+            paymentModalOverlay.addEventListener('click', (e) => { if (e.target === paymentModalOverlay) hidePaymentModal(); });
+
+            // Inbox modal (통합)
+            notificationBellButton.addEventListener('click', showInboxModal);
+            inboxModalCloseButton.addEventListener('click', hideInboxModal);
+            inboxModalConfirmButton.addEventListener('click', hideInboxModal);
+            inboxModalOverlay.addEventListener('click', (e)=>{ if (e.target === inboxModalOverlay) hideInboxModal(); });
+            inboxClearButton.addEventListener('click', () => {
+                inboxNotifications.length = 0;
+                renderInboxList();
+                updateInboxBadge();
+                showToast('알림함이 비워졌습니다.');
             });
 
-            // Notification Modal close listeners
-            notificationModalCloseButton.addEventListener('click', hideNotificationModal);
-            notificationModalConfirmButton.addEventListener('click', hideNotificationModal);
-            notificationModalOverlayElem.addEventListener('click', (event) => {
-                if (event.target === notificationModalOverlayElem) {
-                    hideNotificationModal();
-                }
-            });
-
-            // Review Input Modal listeners
-            reviewModalCloseButton.addEventListener('click', hideReviewInputModal);
+            // Review input modal
+            reviewModalCloseButton.addEventListener('click', closeReviewModal);
             document.getElementById('trigger-review-modal-button-header').addEventListener('click', () => {
-                showReviewInputModal();
+                selectedTagsForModal.clear();
+                currentRatingForModal = 0;
+                reviewInputModalContent.value = '';
+                renderTagsForModal();
+                setupStarRatingForModal();
+                reviewInputModalOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
             });
+            reviewInputModalOverlay.addEventListener('click', (e)=>{ if (e.target === reviewInputModalOverlay) closeReviewModal(); });
 
+            // Submit review with profanity block + 통합 알림으로 기록
             reviewInputModalSubmitButton.addEventListener('click', async () => {
                 const content = reviewInputModalContent.value.trim();
                 const rating = currentRatingForModal;
                 const tags = Array.from(selectedTagsForModal);
 
-                if (!content) {
-                    showPaymentModal('알림', '내용을 입력하세요.');
-                    return;
-                }
-                if (rating === 0) {
-                    showPaymentModal('알림', '평점을 선택해 주세요.');
+                if (!content) { showPaymentModal('알림', '내용을 입력하세요.'); return; }
+                if (rating === 0) { showPaymentModal('알림', '평점을 선택해 주세요.'); return; }
+
+                const badWords = findForbiddenWords(content);
+                if (badWords.length > 0) {
+                    // 먼저 리뷰 모달 닫기 -> 경고 모달이 즉시 보이도록
+                    closeReviewModal();
+
+                    // 통합 알림함에 경고 기록
+                    inboxNotifications.unshift({ type: 'warning', message: `후기 등록 거절: 금지 표현(${badWords.join(', ')})이 포함되어 있습니다.`, at: Date.now() });
+                    updateInboxBadge();
+                    renderInboxList();
+
+                    // 줄바꿈 포함한 경고 메시지
+                    showPaymentModal('경고', '욕설/모욕적인 표현이 포함되어\n후기를 등록할 수 없습니다.');
                     return;
                 }
 
                 const result = await submitReview(content, rating, tags);
                 if (result.ok) {
-                    hideReviewInputModal();
-                    
-                    notificationList.unshift("새로운 후기 등록이 완료되었습니다!");
-                    updateNotificationBadgeDisplay();
-                    showNotificationModal('새로운 알림', notificationList);
+                    closeReviewModal();
+
+                    // 통합 알림함에 '후기 등록 완료' 기록 (리뷰 타입)
+                    inboxNotifications.unshift({ type: 'review', message: '후기 등록이 완료되었습니다!', at: Date.now() });
+                    updateInboxBadge();
+
+                    // 토스트로 즉시 피드백
+                    showToast('후기가 등록되었습니다.');
 
                     currentReviewPage = 1;
                     loadReviews();
@@ -1337,36 +1449,47 @@
                     showPaymentModal('알림', '후기 등록에 실패했습니다.');
                 }
             });
-            reviewInputModalOverlayElem.addEventListener('click', (event) => {
-                if (event.target === reviewInputModalOverlayElem) {
-                    hideReviewInputModal();
+
+            // Create account modal
+            createAccountModalCloseButton.addEventListener('click', hideCreateAccountModal);
+            createChildAccountSubmitButton.addEventListener('click', async () => {
+                const c = currencySelect.value;
+                const amt = amountInput.value;
+                if (!amt || parseFloat(amt) <= 0) { showPaymentModal('알림', '유효한 금액을 입력해 주세요.'); return; }
+                const res = await createChildAccount(c, amt);
+                if (res.success) {
+                    hideCreateAccountModal();
+
+                    // 계좌 생성은 시스템 알림
+                    inboxNotifications.unshift({ type: 'system', message: `새로운 ${res.newAccount.currencyCode} 계좌가 생성되었습니다!`, at: Date.now() });
+                    updateInboxBadge();
+                    renderInboxList();
+                    // 필요시 자동으로 열어줌
+                    showInboxModal();
+                    renderContent(true, true, globalAccountData);
+                } else {
+                    showPaymentModal('알림', res.message || '계좌 생성에 실패했습니다.');
                 }
             });
+            createAccountModalOverlay.addEventListener('click', (e)=>{ if (e.target === createAccountModalOverlay) hideCreateAccountModal(); });
+            currencySelect.addEventListener('change', updateKrwEquivalent);
+            amountInput.addEventListener('input', updateKrwEquivalent);
 
-            // Tag statistics toggle listener
-            toggleTagStatsButton.addEventListener('click', () => {
-                showAllTagStats = !showAllTagStats;
-                updateTagStatistics();
-            });
+            // Tag statistics toggle
+            toggleTagStatsButton.addEventListener('click', () => { showAllTagStats = !showAllTagStats; updateTagStatistics(); });
 
-            // Review Pagination Listeners (manual navigation)
-            prevReviewPageButton.addEventListener('click', () => {
-                stopReviewSlider();
-                if (currentReviewPage > 1) {
-                    currentReviewPage--;
-                    loadReviews();
-                }
-            });
-            nextReviewPageButton.addEventListener('click', () => {
-                stopReviewSlider();
-                if (currentReviewPage < totalReviewPages) {
-                    currentReviewPage++;
-                    loadReviews();
-                }
-            });
+            // Review pagination (manual navigation)
+            prevReviewPageButton.addEventListener('click', () => { stopReviewSlider(); if (currentReviewPage > 1) { currentReviewPage--; loadReviews(); } });
+            nextReviewPageButton.addEventListener('click', () => { stopReviewSlider(); if (currentReviewPage < totalReviewPages) { currentReviewPage++; loadReviews(); } });
 
-            // Initial update of notification badge on page load
-            updateNotificationBadgeDisplay();
+            // AI Summary modal
+            summarizeReviewsButton.addEventListener('click', generateReviewSummary);
+            summaryModalCloseButton.addEventListener('click', () => summaryModalOverlay.classList.remove('show'));
+            summaryModalConfirmButton.addEventListener('click', () => summaryModalOverlay.classList.remove('show'));
+            summaryModalOverlay.addEventListener('click', (e)=>{ if (e.target === summaryModalOverlay) summaryModalOverlay.classList.remove('show'); });
+
+            // Initial badge
+            updateInboxBadge();
         });
     </script>
 </body>
