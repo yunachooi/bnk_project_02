@@ -4,16 +4,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
-/**
- * HMAC-SHA256 유틸.
- * - CryptoConfig에서 생성한 byte[] 키로 초기화합니다.
- * - hmacHex(String) → hex(소문자) 문자열 반환.
- */
 public class HmacUtil {
-
     private final SecretKeySpec keySpec;
 
-    /** ✅ 권장 생성자: raw 바이트 키 */
+    /** ✅ 신규 권장: raw 바이트 키 */
     public HmacUtil(byte[] rawKeyBytes) {
         if (rawKeyBytes == null || rawKeyBytes.length == 0) {
             throw new IllegalArgumentException("HMAC key must not be empty");
@@ -21,47 +15,51 @@ public class HmacUtil {
         this.keySpec = new SecretKeySpec(rawKeyBytes, "HmacSHA256");
     }
 
-    /** (옵션) 문자열 키도 지원하고 싶다면 유지/사용 */
-    public HmacUtil(String hexOrTextKey) {
-        if (hexOrTextKey == null || hexOrTextKey.isEmpty()) {
+    /** ✅ 구버전 호환 유지: 문자열 키 생성자 (있던 곳 그대로 동작) */
+    public HmacUtil(String keyText) {
+        if (keyText == null || keyText.isEmpty()) {
             throw new IllegalArgumentException("HMAC key must not be empty");
         }
-        byte[] keyBytes;
-        if (hexOrTextKey.matches("^[0-9a-fA-F]+$") && hexOrTextKey.length() % 2 == 0) {
-            keyBytes = hexStringToBytes(hexOrTextKey);
-        } else {
-            keyBytes = hexOrTextKey.getBytes(StandardCharsets.UTF_8);
-        }
-        this.keySpec = new SecretKeySpec(keyBytes, "HmacSHA256");
+        this.keySpec = new SecretKeySpec(keyText.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     }
 
-    /** 입력 문자열에 대해 HMAC-SHA256 → hex(소문자) */
-    public String hmacHex(String src) {
+    /** ✅ 신규 내부 표준: 소문자 hex */
+    public String hmacHexLower(String data) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(keySpec);
-            byte[] out = mac.doFinal(src.getBytes(StandardCharsets.UTF_8));
-            return bytesToHex(out);
+            byte[] out = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            return toHexLower(out);
         } catch (Exception e) {
-            throw new IllegalStateException("HMAC 계산 실패", e);
+            throw new IllegalStateException("HMAC compute failed", e);
         }
     }
 
-    /* ===== helpers ===== */
-
-    private static String bytesToHex(byte[] b) {
-        StringBuilder sb = new StringBuilder(b.length * 2);
-        for (byte x : b) sb.append(String.format("%02x", x));
-        return sb.toString();
+    /** ✅ 구버전 호환 alias: 예전에 쓰던 이름 유지 */
+    public String hmacHex(String data) {
+        return hmacHexLower(data);
     }
 
-    private static byte[] hexStringToBytes(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
+    // (구버전에서 쓰던 경우 대비) hextobytes 같은 유틸이 필요하면 아래 유지
+    public static byte[] hexToBytes(String hex) {
+        if (hex == null) return new byte[0];
+        String s = hex.trim();
+        if ((s.length() & 1) == 1) throw new IllegalArgumentException("odd length");
+        byte[] out = new byte[s.length() / 2];
+        for (int i = 0; i < s.length(); i += 2) {
+            out[i / 2] = (byte) Integer.parseInt(s.substring(i, i + 2), 16);
         }
-        return data;
+        return out;
+    }
+
+    private static String toHexLower(byte[] bytes) {
+        char[] hex = new char[bytes.length * 2];
+        final char[] d = "0123456789abcdef".toCharArray();
+        for (int i = 0, j = 0; i < bytes.length; i++) {
+            int b = bytes[i] & 0xff;
+            hex[j++] = d[b >>> 4];
+            hex[j++] = d[b & 0x0f];
+        }
+        return new String(hex);
     }
 }

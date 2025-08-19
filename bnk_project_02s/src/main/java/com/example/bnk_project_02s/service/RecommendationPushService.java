@@ -44,8 +44,8 @@ public class RecommendationPushService {
 			BnkPush row = new BnkPush();
 			row.setUid(u.getUid());
 			row.setKind("PRODUCT_RECO");
-			row.setTitle("맞춤 환전 상품 추천");
-			row.setBody((u.getUname() == null ? "고객" : u.getUname()) + "님, " + currency + " 우대 혜택을 확인해보세요!");
+			row.setTitle("(광고) 직구는 뜨겁게, 수수료는 차갑게");
+			row.setBody((u.getUname() == null ? "고객" : u.getUname()) + "님, 해외결제는 가볍게! 환전 우대 혜택 + 예금자보호까지 받을 수 있는 상품을 지금 바로 확인해보세요!");
 			row.setDataJson("{\"deeplink\":\"app://products/recommend\"}");
 			
 			pushRepository.save(row);
