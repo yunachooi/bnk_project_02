@@ -17,15 +17,25 @@ public class CryptoConfig {
     @Bean
     public AesGcmUtil aes(
             @Value("${aes.key.256.base64:}") String aesB64,
-            @Value("${aes.key.256.hex:}")     String aesHex,
-            @Value("${aes.key.256:}")         String aesRaw
+            @Value("${aes.key.256.hex:}") String aesHex,
+            @Value("${aes.key.256:}") String aesRaw
     ) {
         byte[] key = firstNonEmptyBytes(aesB64, aesHex, aesRaw, "AES");
         requireLen(key, AES_KEY_LEN, "AES");
         return new AesGcmUtil(key);
     }
 
+<<<<<<< Updated upstream
     /* ========= HMAC: 'hmac' 와 'urlHmac' 둘 다 이름으로 등록 ========= */
+=======
+    /* ========= HMAC: 기존과 동일하게 'hmac' 빈을 제공합니다 ========= */
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     @Bean(name = {"hmac", "urlHmac"})
     public HmacUtil hmac(
             @Value("${hmac.secret.base64:}") String hmacB64,

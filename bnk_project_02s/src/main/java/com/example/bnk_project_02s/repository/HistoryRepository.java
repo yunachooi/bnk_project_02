@@ -1,6 +1,7 @@
 package com.example.bnk_project_02s.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -19,4 +20,9 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
 
     // user.uid(문자열)로 조회
     List<History> findTop20ByUser_UidOrderByHdateDesc(String uid);
+    
+    // 🔹 잔액 계산용: 동일 (pano, cuname) 중 가장 최근 1건
+    Optional<History> findTopByParentAccount_PanoAndCurrency_CunameOrderByHnoDesc(
+            String pano, String cuname
+    );
 }
