@@ -5,12 +5,15 @@ import com.example.bnk_project_02s.entity.ParentAccount;
 import com.example.bnk_project_02s.entity.User;
 import com.example.bnk_project_02s.repository.ParentAccountRepository;
 import com.example.bnk_project_02s.service.EximRateService;
+import com.example.bnk_project_02s.service.ExchangeHistoryService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class ExchangeController {
 
     private final EximRateService eximRateService;
     private final ParentAccountRepository parentRepo;
+    private final ExchangeHistoryService exchangeHistoryService;
 
     /** 1단계: 구매 실행 화면 */
     @GetMapping("/buy/{code}")
@@ -52,23 +56,21 @@ public class ExchangeController {
             @RequestParam(value = "rateDate",  required = false) String rateDate,
             @RequestParam(value = "rateRound", required = false) String rateRound,
             @RequestParam(value = "savedFee",  required = false) String savedFee,
-            @RequestParam(value = "account",   required = false) String ignoredAccountMasked,
             Model model
     ) {
-        // ✅ 로그인 유저 세션에서 가져오기 (UserController와 동일 키 사용)
+        // 로그인 체크
         User loginUser = (User) session.getAttribute(LOGIN_USER);
         if (loginUser == null) {
-            // 로그인 안 되어 있으면 로그인 페이지로
             return "redirect:/user/login";
         }
         String uid = loginUser.getUid();
 
-     // ✅ 부모계좌 조회 → 마스킹/지점명
-        var paOpt = parentRepo.findFirstByUser_Uid(uid);
+        // 부모계좌 조회
+        Optional<ParentAccount> paOpt = parentRepo.findFirstByUser_Uid(uid);
         String panoRaw    = paOpt.map(ParentAccount::getPano).orElse("미지정");
         String branchName = paOpt.map(ParentAccount::getPabank).orElse(null);
 
-        // ✅ 모델 바인딩 (뷰에서 그대로 출력)
+        // 모델 바인딩
         model.addAttribute("rateCode",  code);
         model.addAttribute("fxAmount",  fxAmount);
         model.addAttribute("krwAmount", krwAmount);
@@ -77,35 +79,62 @@ public class ExchangeController {
         model.addAttribute("rateRound", rateRound);
         model.addAttribute("savedFee",  savedFee);
 
-        // 핵심: 서버 조회값 사용
+        // 서버 조회값
         model.addAttribute("pano", panoRaw);
         model.addAttribute("branchName", branchName);
 
         return "forexExchange2"; // 확인 페이지
     }
 
-
-    /** 3단계: 구매 완료 화면 (임시 - DB 저장 없음) */
+    /** 3단계: 구매 완료 (DB 저장 수행 → 완료 화면으로 리다이렉트) */
     @PostMapping("/submit")
-    public String doneTemp(
+    public String submit(
+            HttpSession session,
             @RequestParam("code") String code,
             @RequestParam("fxAmount") String fxAmount,
             @RequestParam("krwAmount") String krwAmount,
             @RequestParam("finalRate") String finalRate,
-            @RequestParam(value = "rateDate", required = false) String rateDate,
+            @RequestParam(value = "rateDate",  required = false) String rateDate,
             @RequestParam(value = "rateRound", required = false) String rateRound,
-            @RequestParam(value = "account", required = false) String accountMasked,
-            @RequestParam(value = "savedFee", required = false) String savedFee,
-            Model model
+            @RequestParam(value = "savedFee",  required = false) String savedFee,
+            RedirectAttributes ra
     ) {
-        model.addAttribute("rateCode", code);
-        model.addAttribute("fxAmount", fxAmount);
-        model.addAttribute("krwAmount", krwAmount);
-        model.addAttribute("finalRate", finalRate);
-        model.addAttribute("rateDate", rateDate);
-        model.addAttribute("rateRound", rateRound);
-        model.addAttribute("accountMasked", accountMasked); // 2단계 hidden으로 전달됨
-        model.addAttribute("savedFee", savedFee);
-        return "forexExchange3"; // 임시 완료 페이지
+        User loginUser = (User) session.getAttribute(LOGIN_USER);
+        if (loginUser == null) {
+            return "redirect:/user/login";
+        }
+        String uid = loginUser.getUid();
+
+        // 부모계좌 조회 (저장에 사용)
+        ParentAccount parent = parentRepo.findFirstByUser_Uid(uid)
+                .orElseThrow(() -> new IllegalStateException("부모계좌가 없습니다."));
+
+        // === DB 저장 ===
+        var saved = exchangeHistoryService.savePurchaseHistory(
+                parent.getPano(),   // 출금 계좌(부모계좌 번호)
+                code,               // 통화 코드 (예: USD)
+                fxAmount,           // 외화 금액 (예: 600.00)
+                krwAmount,          // 원화 금액 (예: 835,335 원)
+                uid                 // 사용자 ID
+        );
+
+        // 완료 화면에 보여줄 값들 Flash로 전달
+        ra.addFlashAttribute("rateCode", code);
+        ra.addFlashAttribute("fxAmount", fxAmount);
+        ra.addFlashAttribute("krwAmount", krwAmount);
+        ra.addFlashAttribute("finalRate", finalRate);
+        ra.addFlashAttribute("rateDate", rateDate);
+        ra.addFlashAttribute("rateRound", rateRound);
+        ra.addFlashAttribute("savedFee", savedFee);
+        ra.addFlashAttribute("pano", parent.getPano());
+        ra.addFlashAttribute("savedHno", saved.getHno()); // 저장 성공 확인용
+
+        return "redirect:/exchange/complete";
+    }
+
+    /** 완료 화면 (PRG 패턴의 GET 렌더) */
+    @GetMapping("/complete")
+    public String completeView() {
+        return "forexExchange3"; // 완료 페이지 템플릿
     }
 }
