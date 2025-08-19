@@ -19,4 +19,6 @@ public interface ChildAccountRepository extends JpaRepository<ChildAccount, Stri
 
     /** 특정 유저(uid)의 모든 자식계좌 */
     List<ChildAccount> findByParentAccount_User_Uid(String uid);
+    
+    Optional<ChildAccount> findByParentAccount_PanoAndCurrency_Cuno(String pano, String cuno);
 }

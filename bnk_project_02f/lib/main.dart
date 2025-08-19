@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:bnk_project_02f/login/signin.dart';      // ✅ 로그인 화면
 // (AccountMainPage는 로그인 후에 이동)
+import 'package:bnk_project_02f/notify.dart'; // ⬅️ 추가
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initLocalNotifications();
   runApp(const MyApp());
 }
 
