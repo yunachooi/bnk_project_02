@@ -13,8 +13,8 @@ import 'package:flutter/services.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   KakaoSdk.init(
-    nativeAppKey: '',
-    javaScriptAppKey: '',
+    nativeAppKey: 'ad3df586546d0632ceae00d209f12e73',
+    javaScriptAppKey: '6914327cf58895b55e5bea1e52588d53',
   );
   runApp(const ShoppingApp());
 }
@@ -102,8 +102,27 @@ class Product {
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8093';
+  // static const String sharePage = 'http://10.0.2.2:8093/user/shopping/product';
 
-  // 공유 링크(HMAC URL)
+  // 페이지 공유(HMAC) 링크 발급
+  static Future<String?> getSharePageUrl(String path) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/share/page')
+          .replace(queryParameters: {'path': path});
+      final res = await http
+          .get(uri, headers: {'Accept': 'text/plain'})
+          .timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        return res.body;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // (옵션) 상품용 공유 링크 – 페이지 공유만 쓰면 이건 안 써도 됩니다
   static Future<String?> getShareUrl(String spno) async {
     try {
       final response = await http
@@ -199,31 +218,23 @@ class ProductDetailPage extends StatelessWidget {
     }
   }
 
-  // 상세화면에서 현재 상품 공유
   Future<void> _shareProduct(BuildContext context) async {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        duration: Duration(milliseconds: 700),
-        content: Text('공유 준비중...'),
-      ),
+      const SnackBar(duration: Duration(milliseconds: 700), content: Text('공유 준비중...')),
     );
 
-    String shareUrlForClipboard = product.spurl;
+    const pagePath = '/user/shopping/product';
+    final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
+    final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
+    String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
+
     try {
-      // 1) 서버 서명 URL (타임아웃 시 폴백)
-      final raw = await ApiService.getShareUrl(product.spno)
+      // 1) 서버 서명 링크(실제 클릭용)
+      final raw = await ApiService.getSharePageUrl(pagePath)
           .timeout(const Duration(seconds: 2), onTimeout: () => null);
+      final shareUrl = (raw != null && raw.isNotEmpty) ? raw : fallback;
 
-      String shareUrl = (raw != null && raw.isNotEmpty) ? raw : product.spurl;
-      shareUrlForClipboard = shareUrl;
-
-      // 2) https 강제
-      final u = Uri.tryParse(shareUrl);
-      if (u == null || u.scheme != 'https') {
-        shareUrl = 'https://www.busanbank.co.kr'; // 안전 https 폴백
-      }
-
-      // 3) 이미지 https 보장
+      // 2) 이미지 URL 보정
       final img = product.spimgurl.startsWith('http')
           ? product.spimgurl
           : 'https://via.placeholder.com/600x400.png?text=BNK+SHOP';
@@ -233,82 +244,69 @@ class ProductDetailPage extends StatelessWidget {
           title: product.displayName,
           description: product.displayDescription,
           imageUrl: Uri.parse(img),
-          link: Link(
-            webUrl: Uri.parse(shareUrl),
-            mobileWebUrl: Uri.parse(shareUrl),
-          ),
+          link: Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
         ),
         buttons: [
           Button(
             title: '자세히 보기',
-            link: Link(
-              webUrl: Uri.parse(shareUrl),
-              mobileWebUrl: Uri.parse(shareUrl),
-            ),
+            link: Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
           ),
         ],
       );
 
-      // 4) 카톡 설치 여부
-      final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
-      if (installed) {
-        final uri = await ShareClient.instance.shareDefault(template: template);
-        await ShareClient.instance.launchKakaoTalk(uri);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('카카오톡 공유창을 열었어요 ✅')),
-          );
-        }
-        return;
-      }
+      bool opened = false;
 
-      // 5) 미설치 시 웹 공유 (3단 폴백)
-      final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
-
+      // 3-a) 카카오톡 공유 시도
       try {
-        await launchBrowserTab(sharerUrl, popupOpen: true);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(브라우저 탭) ✅')),
-          );
+        final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
+        if (installed) {
+          final uri = await ShareClient.instance.shareDefault(template: template);
+          await ShareClient.instance.launchKakaoTalk(uri);
+          opened = true;
         }
-        return;
-      } catch (_) {}
+      } catch (_) {/* 카카오톡 관련 오류는 무시하고 다음 단계로 */}
 
-      final okExternal =
-      await launchUrl(sharerUrl, mode: LaunchMode.externalApplication);
-      if (okExternal) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(외부 브라우저) ✅')),
-          );
-        }
-        return;
+      // 3-b) 웹 공유 시도
+      if (!opened) {
+        try {
+          final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
+
+          try {
+            await launchBrowserTab(sharerUrl, popupOpen: true);
+            opened = true;
+          } catch (_) {}
+
+          if (!opened && await launchUrl(sharerUrl, mode: LaunchMode.externalApplication)) {
+            opened = true;
+          }
+          if (!opened && await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView)) {
+            opened = true;
+          }
+        } catch (_) {/* WebSharer URL 생성 실패시 무시하고 복사 폴백 */}
       }
 
-      final okInApp = await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView);
-      if (okInApp) {
+      // 4) 결과 토스트
+      if (opened) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(인앱 웹뷰) ✅')),
+            const SnackBar(content: Text('공유창을 열었어요 ✅')),
           );
         }
-        return;
-      }
-
-      // 6) 모두 실패 시 링크 복사
-      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('브라우저가 없어 링크 복사함 📋: $shareUrlForClipboard')),
-        );
+      } else {
+        await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('링크를 복사했어요 📋: $shareUrlForClipboard')),
+          );
+        }
       }
     } catch (e, st) {
+      // 예상 못한 예외도 사용자에겐 성공 톤으로 안내(요구사항: 겁주는 문구 금지)
       debugPrint('[share][detail][error] $e\n$st');
       await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('공유 실패. 링크 복사함 📋: $shareUrlForClipboard')),
+          SnackBar(content: Text('링크를 복사했어요 📋: $shareUrlForClipboard')),
         );
       }
     }
@@ -524,23 +522,19 @@ class ProductDetailPage extends StatelessWidget {
               GestureDetector(
                 onTap: () async {
                   try {
-                    final Uri url =
-                    Uri.parse('https://www.busanbank.co.kr');
+                    final Uri url = Uri.parse('https://www.busanbank.co.kr');
                     if (!await launchUrl(url,
                         mode: LaunchMode.externalApplication)) {
                       throw Exception('Could not launch $url');
                     }
                   } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                          Text('링크를 열 수 없습니다: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                   }
                 },
                 child: SizedBox(
@@ -643,16 +637,13 @@ class ProductDetailPage extends StatelessWidget {
                     try {
                       await _launchURL();
                     } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                            Text('링크를 열 수 없습니다: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('링크를 열 수 없습니다: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -664,8 +655,7 @@ class ProductDetailPage extends StatelessWidget {
                   ),
                   child: const Text(
                     '판매 사이트에서 구매하기',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -821,34 +811,27 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
 
   // ✅ 홈 화면에서 첫 상품 공유 (공유 버튼용)
   Future<void> _shareFromHome(BuildContext context) async {
+    const pagePath = '/user/shopping/product';
+    final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
+    final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
+    String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
+
     if (filteredProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('공유할 상품이 없습니다. 먼저 상품을 불러오세요.')),
       );
       return;
     }
-
     final p = filteredProducts.first;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        duration: Duration(milliseconds: 700),
-        content: Text('공유 준비중...'),
-      ),
+      const SnackBar(duration: Duration(milliseconds: 700), content: Text('공유 준비중...')),
     );
 
-    String shareUrlForClipboard = p.spurl;
     try {
-      final raw = await ApiService.getShareUrl(p.spno)
+      final raw = await ApiService.getSharePageUrl(pagePath)
           .timeout(const Duration(seconds: 2), onTimeout: () => null);
-
-      String shareUrl = (raw != null && raw.isNotEmpty) ? raw : p.spurl;
-      shareUrlForClipboard = shareUrl;
-
-      final u = Uri.tryParse(shareUrl);
-      if (u == null || u.scheme != 'https') {
-        shareUrl = 'https://www.busanbank.co.kr';
-      }
+      final shareUrl = (raw != null && raw.isNotEmpty) ? raw : fallback;
 
       final img = p.spimgurl.startsWith('http')
           ? p.spimgurl
@@ -859,77 +842,68 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
           title: p.displayName,
           description: p.displayDescription,
           imageUrl: Uri.parse(img),
-          link: Link(
-            webUrl: Uri.parse(shareUrl),
-            mobileWebUrl: Uri.parse(shareUrl),
-          ),
+          link: Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
         ),
         buttons: [
           Button(
             title: '자세히 보기',
-            link:
-            Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
+            link: Link(webUrl: Uri.parse(shareUrl), mobileWebUrl: Uri.parse(shareUrl)),
           ),
         ],
       );
 
-      final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
-      if (installed) {
-        final uri = await ShareClient.instance.shareDefault(template: template);
-        await ShareClient.instance.launchKakaoTalk(uri);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('카카오톡 공유창을 열었어요 ✅')),
-          );
-        }
-        return;
-      }
+      bool opened = false;
 
-      final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
-
+      // 1) 카카오톡 공유
       try {
-        await launchBrowserTab(sharerUrl, popupOpen: true);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(브라우저 탭) ✅')),
-          );
+        final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
+        if (installed) {
+          final uri = await ShareClient.instance.shareDefault(template: template);
+          await ShareClient.instance.launchKakaoTalk(uri);
+          opened = true;
         }
-        return;
       } catch (_) {}
 
-      final okExternal =
-      await launchUrl(sharerUrl, mode: LaunchMode.externalApplication);
-      if (okExternal) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(외부 브라우저) ✅')),
-          );
-        }
-        return;
+      // 2) 웹 공유
+      if (!opened) {
+        try {
+          final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
+
+          try {
+            await launchBrowserTab(sharerUrl, popupOpen: true);
+            opened = true;
+          } catch (_) {}
+
+          if (!opened && await launchUrl(sharerUrl, mode: LaunchMode.externalApplication)) {
+            opened = true;
+          }
+          if (!opened && await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView)) {
+            opened = true;
+          }
+        } catch (_) {}
       }
 
-      final okInApp = await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView);
-      if (okInApp) {
+      // 3) 결과 토스트
+      if (opened) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('웹 공유창 열렸어요(인앱 웹뷰) ✅')),
+            const SnackBar(content: Text('공유창을 열었어요 ✅')),
           );
         }
-        return;
-      }
-
-      await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('브라우저가 없어 링크 복사함 📋: $shareUrlForClipboard')),
-        );
+      } else {
+        await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('링크를 복사했어요 📋: $shareUrlForClipboard')),
+          );
+        }
       }
     } catch (e, st) {
       debugPrint('[share][home][error] $e\n$st');
       await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('공유 실패. 링크 복사함 📋: $shareUrlForClipboard')),
+          SnackBar(content: Text('링크를 복사했어요 📋: $shareUrlForClipboard')),
         );
       }
     }
@@ -1046,8 +1020,8 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                 ),
                 const SizedBox(height: 20),
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
                       Icon(Icons.search, color: Colors.grey[600], size: 20),
@@ -1256,8 +1230,8 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
                             ),
                           );
                         },
-                        child: ProductCard(
-                            product: filteredProducts[index]),
+                        child:
+                        ProductCard(product: filteredProducts[index]),
                       );
                     },
                   ),
@@ -1335,8 +1309,8 @@ class ProductCard extends StatelessWidget {
                 ),
               )
                   : ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(8)),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(8)),
                 child: Image.network(
                   product.spimgurl,
                   fit: BoxFit.cover,

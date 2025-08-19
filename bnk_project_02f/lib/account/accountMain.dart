@@ -1,31 +1,17 @@
+// lib/account/accountMain.dart
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// ✅ 쇼핑 네이티브 화면 (product.dart 안의 전체 앱)을 푸시해서 열어요.
 import 'package:bnk_project_02f/shopping/product.dart';
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BNK WebView',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const AccountMainPage(),
-    );
-  }
-}
+import 'package:bnk_project_02f/notify.dart';
+import 'package:bnk_project_02f/polling_manager.dart';
 
 class AccountMainPage extends StatefulWidget {
-  const AccountMainPage({super.key});
+  final String? uid; // ← SignIn에서 전달 (없으면 null)
+  const AccountMainPage({super.key, this.uid});
 
   @override
   State<AccountMainPage> createState() => _AccountMainPageState();
@@ -42,12 +28,12 @@ class _AccountMainPageState extends State<AccountMainPage> {
   @override
   void initState() {
     super.initState();
-    final startUrl = '${_baseUrl()}/foreign0';
+    _startPollingBackup(); // ← 로그인 감지 실패해도 보장
 
+    final startUrl = '${_baseUrl()}/foreign';
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
-    // ✅ JS 채널 추가: 페이지에서 BNK.postMessage('goShopping') 호출 시 네이티브로 전환
       ..addJavaScriptChannel(
         'BNK',
         onMessageReceived: (JavaScriptMessage msg) {
@@ -61,7 +47,7 @@ class _AccountMainPageState extends State<AccountMainPage> {
           onNavigationRequest: (req) async {
             final uri = Uri.parse(req.url);
 
-            // 1) 커스텀 스킴 fallback(bnk://shopping)도 지원
+            // 1) 커스텀 스킴 fallback(bnk://shopping)
             if (uri.scheme.toLowerCase() == 'bnk' &&
                 uri.host.toLowerCase() == 'shopping') {
               _goNativeShopping();
@@ -92,28 +78,44 @@ class _AccountMainPageState extends State<AccountMainPage> {
           },
           onPageStarted: (_) => setState(() => _isLoading = true),
           onPageFinished: (_) async {
+            if (!mounted) return;
             setState(() => _isLoading = false);
-            // ✅ “해외직구” 버튼 클릭 가로채서 BNK.postMessage('goShopping') 호출하도록 주입
-            await _injectHookScript();
+            await _injectHookScript(); // “해외직구” 버튼 가로채기
           },
         ),
       )
       ..loadRequest(Uri.parse(startUrl));
   }
 
-  /// 네이티브 쇼핑 화면으로 전환
+  /// 로그인 감지 실패해도 UID 기반 폴링을 보장하는 백업
+  Future<void> _startPollingBackup() async {
+    String? uid = widget.uid;
+
+    if (uid == null || uid.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      uid = prefs.getString('uid');
+    }
+    if (uid == null || uid.isEmpty) {
+      debugPrint('[polling] uid 없음 → 폴링 생략');
+      return;
+    }
+
+    await ensureNotificationPermission();
+
+    if (!PollingManager.isRunning) {
+      PollingManager.start(uid);
+    }
+    await fetchAndNotify(uid); // 진입 즉시 한 번
+  }
+
   void _goNativeShopping() {
     if (_pushedShopping || !mounted) return;
     _pushedShopping = true;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ShoppingApp()),
-    ).then((_) {
-      // 돌아오면 다시 전환 가능하도록 플래그 해제
-      _pushedShopping = false;
-    });
+    ).then((_) => _pushedShopping = false);
   }
 
-  /// “해외직구” 버튼 클릭을 감지/가로채는 스크립트 주입
   Future<void> _injectHookScript() async {
     const js = r'''
 (function() {
@@ -123,17 +125,11 @@ class _AccountMainPageState extends State<AccountMainPage> {
   function tryAttach(el) {
     if (!el || el.__bnkHooked) return;
     const text = (el.innerText || '').replace(/\s+/g,'').trim();
-    // 버튼 텍스트에 "해외직구" 포함되면 가로채기
     if (text.includes('해외직구')) {
       el.__bnkHooked = true;
       el.addEventListener('click', function(e) {
-        try {
-          e.preventDefault();
-          e.stopPropagation();
-        } catch (_) {}
-        // 1) JS 채널로 네이티브 호출
+        try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
         try { BNK.postMessage('goShopping'); } catch (err) {
-          // 2) 채널이 막힌 경우 커스텀 스킴으로 fallback
           try { window.location.href = 'bnk://shopping'; } catch (_) {}
         }
         return false;
@@ -148,10 +144,7 @@ class _AccountMainPageState extends State<AccountMainPage> {
     } catch (_) {}
   }
 
-  // 초기 스캔
   scan();
-
-  // 동적 변경 대응
   try {
     var obs = new MutationObserver(scan);
     obs.observe(document.documentElement, {childList:true, subtree:true});
@@ -160,9 +153,7 @@ class _AccountMainPageState extends State<AccountMainPage> {
 ''';
     try {
       await _controller.runJavaScript(js);
-    } catch (_) {
-      // 주입 실패는 무시(일부 페이지 CSP 등)
-    }
+    } catch (_) {}
   }
 
   Future<void> _reload() async => _controller.reload();
@@ -182,9 +173,7 @@ class _AccountMainPageState extends State<AccountMainPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('BNK 쇼핑환전'),
-          actions: [
-            IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
-          ],
+          actions: [IconButton(onPressed: _reload, icon: const Icon(Icons.refresh))],
         ),
         body: Stack(
           children: [

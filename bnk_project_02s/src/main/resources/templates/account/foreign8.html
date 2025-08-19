@@ -10,89 +10,42 @@
   <style>
     :root{ --bottom-bar-h:72px; --vh:1vh; }
     *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    html,body{ height:100%; overflow:hidden; } /* 스크롤 제거 */
-
-    body{
-      font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; padding:0; color:#111827;
-      font-size:16px; line-height:1.5;
-    }
-    .container{
-      width:100%; background:#fff;
-      min-height:100svh; height:calc(var(--vh,1vh)*100);
-      display:flex; flex-direction:column; overflow:hidden;
-    }
-
-    /* Header */
+    html,body{ height:100%; overflow:hidden; }
+    body{ font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; padding:0; color:#111827; font-size:16px; line-height:1.5; }
+    .container{ width:100%; background:#fff; min-height:100svh; height:calc(var(--vh,1vh)*100); display:flex; flex-direction:column; overflow:hidden; }
     header{ flex:none; background:#fff; border-bottom:1px solid #e5e7eb; }
     .header-bar{ display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; }
     .header-back{ display:flex; align-items:center; gap:.25rem; color:#ef4444; font-weight:800; text-decoration:none; padding:.25rem .375rem; border-radius:.5rem; }
     .header-back svg{ width:20px; height:20px; }
     .header-title{ font-size:1.15rem; font-weight:800; }
-
-    /* Sticky progress + encouragement */
     .sticky-top-wrap{ flex:none; background:#fff; padding:.5rem 1rem .5rem; border-bottom:1px solid #eef2f7; }
     .step-indicator{ display:flex; width:100%; height:4px; background:#e5e7eb; margin:0 0 .5rem; }
-    .step-indicator-progress{ width:100%; height:100%; background:#ef4444; } /* 2/2 완료 */
-
-    /* Main – 콘텐츠 크기만 차지 */
-    .main-content{
-      flex:0 0 auto;
-      padding:.9rem 1rem 1rem;
-      display:flex; flex-direction:column; gap:.9rem;
-      overflow:hidden;
-      max-width:40rem; margin:0 auto; width:100%;
-    }
+    .step-indicator-progress{ width:100%; height:100%; background:#ef4444; }
+    .main-content{ flex:0 0 auto; padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.9rem; overflow:hidden; max-width:40rem; margin:0 auto; width:100%; }
     .card{ background:#fff; border:1px solid #eef2f7; border-radius:.75rem; box-shadow:0 4px 12px rgba(0,0,0,.05); }
     .card-body{ padding:1rem; width:100%; }
-
     .review-title{ font-weight:900; font-size:1.1rem; text-align:center; margin-top:.15rem; margin-bottom:.35rem; }
     .review-title .break{ display:block; }
-
-    /* 카드 미리보기 */
-    .summary-box{
-      display:flex; align-items:center; justify-content:center;
-      padding:.8rem; background:#f9fafb; border-radius:.75rem; border:1px solid #eef2f7;
-    }
-    .summary-box img{
-      width:360px; height:224px; object-fit:cover; border-radius:.6rem; box-shadow:0 2px 10px rgba(0,0,0,.1);
-    }
-
+    .summary-box{ display:flex; align-items:center; justify-content:center; padding:.8rem; background:#f9fafb; border-radius:.75rem; border:1px solid #eef2f7; }
+    .summary-box img{ width:360px; height:224px; object-fit:cover; border-radius:.6rem; box-shadow:0 2px 10px rgba(0,0,0,.1); }
     .kv{ display:grid; grid-template-columns: 120px 1fr; row-gap:.5rem; column-gap:.75rem; margin-top:.6rem; }
     .kv .k{ color:#6b7280; font-weight:700; }
     .kv .v{ color:#111827; font-weight:800; word-break:break-word; }
-
     .confirm-area{ margin-top:1.1rem; padding:.8rem; background:#fff7f7; border:1px solid #fecaca; border-radius:.75rem; }
     .confirm-area label{ display:flex; align-items:flex-start; gap:.6rem; cursor:pointer; }
     .confirm-area input{ transform:scale(1.2); accent-color:#ef4444; margin-top:.18rem; }
-
-    /* Bottom bar: 하단 고정 */
-    .bottom-bar{
-      margin-top:auto;
-      position:sticky; bottom:0; left:0; right:0;
-      flex:none; width:100%; background:#fff; border-top:1px solid #e2e8f0;
-      padding:.5rem 1rem; padding-bottom:calc(.5rem + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -4px 12px rgba(0,0,0,.03); display:flex; justify-content:space-around; gap:.5rem; z-index:60;
-    }
-    .bottom-bar button{
-      flex:1; padding:.9rem 1rem; border-radius:.9rem; font-weight:800; font-size:1rem;
-      transition:background-color .2s, transform .15s; box-shadow:0 2px 6px rgba(0,0,0,.08); border:none; user-select:none;
-    }
+    .bottom-bar{ margin-top:auto; position:sticky; bottom:0; left:0; right:0; flex:none; width:100%; background:#fff; border-top:1px solid #e2e8f0; padding:.5rem 1rem; padding-bottom:calc(.5rem + env(safe-area-inset-bottom,0px)); box-shadow:0 -4px 12px rgba(0,0,0,.03); display:flex; justify-content:space-around; gap:.5rem; z-index:60; }
+    .bottom-bar button{ flex:1; padding:.9rem 1rem; border-radius:.9rem; font-weight:800; font-size:1rem; transition:background-color .2s, transform .15s; box-shadow:0 2px 6px rgba(0,0,0,.08); border:none; user-select:none; }
     .bottom-bar button:active{ transform:scale(.98); }
-
-    @media (max-width:420px){
-      .summary-box img{ width:340px; height:212px; }
-    }
+    @media (max-width:420px){ .summary-box img{ width:340px; height:212px; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <header>
       <div class="header-bar">
         <a href="/foreign" class="header-back">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
           홈으로
         </a>
         <h1 class="header-title">카드 최종 확인</h1>
@@ -100,7 +53,6 @@
       </div>
     </header>
 
-    <!-- Top -->
     <div class="sticky-top-wrap">
       <div class="step-indicator"><div class="step-indicator-progress"></div></div>
       <div id="encouragementMessage" class="text-center text-base font-semibold text-gray-700 p-3 rounded-lg bg-yellow-100 mx-0 mt-2 shadow-sm">
@@ -108,16 +60,11 @@
       </div>
     </div>
 
-    <!-- Main -->
     <main class="main-content">
       <div class="card">
         <div class="card-body">
-          <div class="review-title">
-            BNK쇼핑환전체크카드를<span class="break"></span>발급하시겠습니까?
-          </div>
-
+          <div class="review-title">BNK쇼핑환전체크카드를<span class="break"></span>발급하시겠습니까?</div>
           <div class="summary-box"><img id="cardPreviewImg" alt="선택한 카드"></div>
-
           <div class="kv">
             <div class="k">영문 이름</div><div class="v" id="vEnglishName">-</div>
             <div class="k">카드 종류</div><div class="v">체크카드</div>
@@ -126,43 +73,37 @@
             <div class="k">카드 수령지</div><div class="v" id="vAddress">-</div>
             <div class="k">본인 자금 여부</div><div class="v" id="vOwnFunds">-</div>
           </div>
-
           <div class="confirm-area">
             <label>
               <input type="checkbox" id="finalConfirmCheckbox">
-              <span class="text-[0.95rem] leading-[1.4]">
-                상기 내용을 모두 확인하였으며, BNK쇼핑환전체크카드 발급에 최종 동의합니다. (필수)
-              </span>
+              <span class="text-[0.95rem] leading-[1.4]">상기 내용을 모두 확인하였으며, BNK쇼핑환전체크카드 발급에 최종 동의합니다. (필수)</span>
             </label>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- Bottom -->
     <footer class="bottom-bar">
       <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
       <button id="issueButton" class="bg-gray-400 text-white cursor-not-allowed" disabled>카드 최종 발급</button>
     </footer>
   </div>
 
-  <!-- 안내 모달 (공유) -->
+  <!-- 안내 모달 -->
   <div id="infoModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[3000] p-4 min-h-[100svh]">
     <div class="bg-white rounded-xl w-[96vw] max-w-[420px] shadow-2xl">
       <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div class="font-extrabold">안내</div>
         <button id="infoClose" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
       </div>
-      <div class="p-4">
-        <p id="infoText" class="text-center text-gray-700 whitespace-pre-line"></p>
-      </div>
+      <div class="p-4"><p id="infoText" class="text-center text-gray-700 whitespace-pre-line"></p></div>
       <div class="px-4 pb-4">
         <button id="infoOk" class="w-full bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-lg py-2.5">확인</button>
       </div>
     </div>
   </div>
 
-  <!-- 완료 모달 (확인 시 홈으로 이동 + 세션 정리) -->
+  <!-- 완료 모달 -->
   <div id="completeModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[3100] p-4 min-h-[100svh]">
     <div class="bg-white rounded-xl w-[96vw] max-w-[420px] shadow-2xl">
       <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -170,14 +111,10 @@
         <button id="completeClose" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
       </div>
       <div class="p-5">
-        <p class="text-center text-gray-800 font-bold leading-relaxed">
-          😊 가입이 모두 완료되었어요 😊<br>이용해 주셔서 감사합니다!
-        </p>
+        <p class="text-center text-gray-800 font-bold leading-relaxed">😊 가입이 모두 완료되었어요 😊<br>이용해 주셔서 감사합니다!</p>
       </div>
       <div class="px-4 pb-4">
-        <button id="completeOk" class="w-full bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-lg py-2.5">
-          확인
-        </button>
+        <button id="completeOk" class="w-full bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-lg py-2.5">확인</button>
       </div>
     </div>
   </div>
@@ -185,48 +122,26 @@
   <script>
     /* ===== 공통 ===== */
     const STORAGE_KEY='bnkCardIssueData';
+    const KEYS_TO_CLEAR = ['bnkEnrollmentData','bnkConfirmedStatus','bnkEnrollmentComplete','bnkPassword','bnkCardIssueData'];
 
-    // 통장 + 카드 관련 세션 키 목록 (로그인 관련 제외)
-    const KEYS_TO_CLEAR = [
-      // 통장 플로우
-      'bnkEnrollmentData',
-      'bnkConfirmedStatus',
-      'bnkEnrollmentComplete',
-      'bnkPassword',
-      // 카드 플로우
-      'bnkCardIssueData'
-    ];
-
-    function clearAllRelatedSessions(){
-      try {
-        KEYS_TO_CLEAR.forEach(k => sessionStorage.removeItem(k));
-      } catch(e) {
-        console.warn('세션 정리 중 오류:', e);
-      }
-    }
-
+    function clearAllRelatedSessions(){ try{ KEYS_TO_CLEAR.forEach(k => sessionStorage.removeItem(k)); }catch(e){ console.warn(e); } }
     function setVHUnit(){ const vh=window.innerHeight*0.01; document.documentElement.style.setProperty('--vh', `${vh}px`); }
     setVHUnit(); window.addEventListener('resize', setVHUnit);
 
-    // 모달 공통 show/hide (정중앙 정렬)
     function showModal(el){ el.classList.remove('hidden'); el.classList.add('flex'); }
     function hideModal(el){ el.classList.add('hidden'); el.classList.remove('flex'); }
-
-    // 안내 모달
     const infoModal=document.getElementById('infoModal');
     const infoText=document.getElementById('infoText');
     document.getElementById('infoOk').onclick=()=> hideModal(infoModal);
     document.getElementById('infoClose').onclick=()=> hideModal(infoModal);
     function info(msg){ infoText.textContent=msg; showModal(infoModal); }
 
-    // 완료 모달
     const completeModal=document.getElementById('completeModal');
     const completeOk=document.getElementById('completeOk');
     const completeClose=document.getElementById('completeClose');
     function showComplete(){ showModal(completeModal); }
     function closeComplete(){ hideModal(completeModal); }
 
-    // 요소
     const prevButton=document.getElementById('prevButton');
     const issueButton=document.getElementById('issueButton');
     const finalConfirmCheckbox=document.getElementById('finalConfirmCheckbox');
@@ -272,28 +187,101 @@
     }
     finalConfirmCheckbox.addEventListener('change', updateIssueButton);
     updateIssueButton();
-
     prevButton.addEventListener('click', ()=> history.back());
 
-    // 발급 버튼: 완료 모달 표시 (저장은 즉시)
-    issueButton.addEventListener('click', ()=>{
-      if(issueButton.disabled) return;
-      try{
-        const raw=sessionStorage.getItem(STORAGE_KEY);
-        const data=raw?JSON.parse(raw):{};
-        data.final={ issued:true, issuedAt:new Date().toISOString() };
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      }catch(e){}
-      showComplete();
+    // ✅ 선택한 통화만 뽑아오는 함수 (중복 제거 + 대문자 정규화)
+    function getSelectedCurrencies(enroll, cardData){
+      let list = [];
+      if (Array.isArray(enroll?.currencies)) list = enroll.currencies;
+      else if (Array.isArray(cardData?.currencies)) list = cardData.currencies;
+      else if (Array.isArray(cardData?.selectedCurrencies)) list = cardData.selectedCurrencies;
+
+      list = list.filter(Boolean).map(s => String(s).trim().toUpperCase());
+      return [...new Set(list)];
+    }
+
+    async function postFinalIssue(payload) {
+      const res = await fetch('/api/foreign/final-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> '');
+        throw new Error(`발급 API 오류(${res.status}): ${txt || 'no body'}`);
+      }
+      return res.json();
+    }
+
+    // ----- 발급 버튼: 서버에 최종 발급 요청 → 완료 모달 -----
+    issueButton.addEventListener('click', async () => {
+      if (issueButton.disabled) return;
+
+      issueButton.disabled = true;
+      issueButton.classList.add('cursor-wait');
+      const prevLabel = issueButton.textContent;
+      issueButton.textContent = '발급 처리 중...';
+
+      try {
+        const rawEnroll = sessionStorage.getItem('bnkEnrollmentData');
+        const rawCard   = sessionStorage.getItem(STORAGE_KEY);
+        const enroll    = rawEnroll ? JSON.parse(rawEnroll) : {};
+        const cardData  = rawCard   ? JSON.parse(rawCard)   : {};
+
+        // 🔴 기본값 없음! 선택한 통화가 없으면 발급 중단
+        const currencies = getSelectedCurrencies(enroll, cardData);
+        if (currencies.length === 0) {
+          info('선택한 통화가 없습니다.\n이전 화면에서 결제 통화를 선택해 주세요.');
+          return;
+        }
+
+        const cardName = cardData?.selectedCard?.name || 'BNK 글로벌 체크';
+        const fno      = enroll.fno ?? 1;
+        const pabank   = enroll.pabank || '부산본점';
+
+        const payload = { fno, pabank, currencies, cardName };
+        console.log('[final-issue] payload:', payload);
+
+        const data = await postFinalIssue(payload);
+        console.log('발급 결과:', data);
+
+        // 세션 기록
+        try {
+          const raw = sessionStorage.getItem(STORAGE_KEY);
+          const cur = raw ? JSON.parse(raw) : {};
+          cur.final = { issued: true, issuedAt: new Date().toISOString(), result: data };
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(cur));
+        } catch (e) {}
+
+        // 안내 → 완료
+        info(
+          `발급이 완료되었어요!\n\n` +
+          `부모계좌: ${data.pano}\n` +
+          `통화계좌: ${(data.canos||[]).join(', ')}\n` +
+          `카드번호: ${data.cardNoMasked} (${data.cardStatus === 'Y' ? '활성' : '비활성'})`
+        );
+        const okBtn = document.getElementById('infoOk');
+        const closeBtn = document.getElementById('infoClose');
+        const showCompleteThenHome = () => { hideModal(infoModal); showComplete(); };
+        okBtn.addEventListener('click', showCompleteThenHome, { once:true });
+        closeBtn.addEventListener('click', showCompleteThenHome, { once:true });
+
+      } catch (err) {
+        console.error(err);
+        info(`처리 중 오류가 발생했습니다.\n\n${err.message || err}`);
+      } finally {
+        issueButton.textContent = prevLabel;
+        issueButton.classList.remove('cursor-wait');
+        updateIssueButton();
+      }
     });
 
-    // 완료 모달: 확인 → 세션 정리 → 홈 이동
-    completeOk.addEventListener('click', ()=>{
-      clearAllRelatedSessions();           // ★ 통장 + 카드 세션값 전부 제거(로그인 제외)
-      location.href='/foreign';
+    // 완료 모달: 확인 → 관련 세션 정리 → 홈 이동
+    completeOk.addEventListener('click', () => {
+      clearAllRelatedSessions();
+      location.href = '/foreign';
     });
-
-    // X 눌러도 그냥 닫기(세션 유지)
     completeClose.addEventListener('click', ()=> hideModal(completeModal));
   </script>
 </body>
