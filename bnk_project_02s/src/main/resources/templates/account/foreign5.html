@@ -43,7 +43,7 @@
     .section-title .checkmark { color:#10b981; font-size:1.1rem; margin-left:.5rem; display:none; }
     .section-title .title-text { display:flex; align-items:center; flex:1; min-width:0; }
 
-    .form-group { margin-bottom:.7rem; }                    /* 여백 살짝 줄임 */
+    .form-group { margin-bottom:.7rem; }
     .form-group label { display:block; font-size:.85rem; font-weight:600; color:#4b5563; margin-bottom:.45rem; }
     .form-group input, .form-group select {
       width:100%; padding:.65rem .9rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem; color:#374151; background:#f9fafb;
@@ -143,7 +143,7 @@
 
     /* 입력 그룹 */
     .input-group-container {
-      display:flex; flex-direction:column; gap:.4rem;        /* 내부 간격 축소 → ‘빈 공간’ 제거 */
+      display:flex; flex-direction:column; gap:.4rem;
       margin-bottom:1rem; padding:1rem;
       border:1px solid #e5e7eb; border-radius:.75rem; background:#f9fafb;
     }
@@ -151,7 +151,7 @@
     /* 환산 영역 */
     .currency-conversion-display {
       display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap;
-      margin-top:.1rem;                                                  /* 위 여백 최소화 */
+      margin-top:.1rem;
     }
     .currency-conversion-display > * { min-width:0; }
 
@@ -161,7 +161,7 @@
     .krw-display { flex:2 1 280px; display:flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; background:#e5e7eb; color:#374151; font-size:.95rem; font-weight:700; cursor:not-allowed; }
     .krw-display img { width:22px; height:22px; }
 
-    .benefit-badge { font-size:.85rem; font-weight:800; color:#dc2626; margin-top:.25rem; }  /* 빨간 안내 */
+    .benefit-badge { font-size:.85rem; font-weight:800; color:#dc2626; margin-top:.25rem; }
 
     @media (max-width: 480px) {
       .currency-conversion-display { gap:.5rem; }
@@ -179,20 +179,61 @@
       .bottom-bar { padding:.6rem .75rem; gap:.5rem; }
       .bottom-bar button { font-size:.88rem; padding:.65rem .8rem; min-height:48px; }
     }
+
+    /* ===== 음성 안내 패널 ===== */
+    .voice-panel{
+      position:absolute;right:.25rem;top:2.9rem;width:300px;background:#fff;
+      border:1px solid #e5e7eb;border-radius:.75rem;box-shadow:0 10px 20px rgba(0,0,0,.08);
+      padding:.75rem;z-index:50;display:none
+    }
+    .voice-panel.open{display:block}
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
   <div class="container">
-    <!-- Header -->
-    <header class="flex items-center justify-between p-4 bg-white border-b border-gray-200">
-      <a href="/foreign" class="flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
+    <!-- Header (제목 가운데 정렬 + 우측 음성 안내) -->
+    <header class="grid grid-cols-3 items-center p-4 bg-white border-b border-gray-200">
+      <a href="/foreign" class="justify-self-start flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
         홈으로
       </a>
-      <h1 class="text-xl font-bold text-gray-800">상품 가입</h1>
-      <span class="w-5 h-5 opacity-0"></span>
+
+      <h1 class="justify-self-center text-xl font-bold text-gray-800 text-center">상품 가입</h1>
+
+      <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+      <div class="relative justify-self-end">
+        <button id="voiceGuideBtn"
+                class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
+                aria-pressed="false"
+                aria-label="음성 안내 켜기"
+                title="음성 안내 켜기">
+          <!-- Play -->
+          <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
+          </svg>
+          <!-- Stop -->
+          <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M6 6h12v12H6z"/>
+          </svg>
+          <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
+        </button>
+
+        <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-sm font-semibold text-gray-800">음성 안내</p>
+            <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
+          </div>
+          <div class="mb-3 text-xs text-gray-700 leading-5">
+            <p class="mb-1">시작/정지: 우측 상단 ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요.</p>
+            <p class="mb-1">진행: <span class="font-semibold">① 약관 및 설명서 동의</span> → <span class="font-semibold">② 고객 확인 사항 확인</span> 후 <span class="font-semibold">전자서명</span>을 완료하세요. 마지막으로 <span class="font-semibold">가입할 통화와 금액</span>을 입력하고 <span class="font-semibold">조회하기</span>를 누르면 <span class="font-semibold">다음으로</span> 버튼이 활성화됩니다.</p>
+          </div>
+          <div class="flex">
+            <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <!-- Step -->
@@ -539,6 +580,15 @@
     const signatureConsentCheckbox = document.getElementById('signatureConsentCheckbox');
     const completeElectronicSignatureBtn = document.getElementById('completeElectronicSignatureBtn');
 
+    /* ===== 음성 안내 요소 ===== */
+    const voiceBtn = document.getElementById('voiceGuideBtn');
+    const voiceIconPlay = document.getElementById('voiceIconPlay');
+    const voiceIconStop = document.getElementById('voiceIconStop');
+    const voiceLabel = document.getElementById('voiceLabel');
+    const voicePanel = document.getElementById('voicePanel');
+    const voiceCloseBtn = document.getElementById('voiceCloseBtn');
+    const voiceReplayBtn = document.getElementById('voiceReplayBtn');
+
     let isTermsAndExplanationsAgreed = false;
     let isCustomerCheckConfirmed = false;
     let isElectronicSignatureCompleted = false;
@@ -850,11 +900,10 @@
       }
     });
 
-    homeButton.addEventListener('click', (e)=>{ e.preventDefault(); window.location.href='/foreign'; });
-    prevButton.addEventListener('click', ()=>{ window.location.href='/foreign4'; });
+    homeButton.addEventListener('click', (e)=>{ e.preventDefault(); Voice.cancel(); window.location.href='/foreign'; });
+    prevButton.addEventListener('click', ()=>{ Voice.cancel(); window.location.href='/foreign4'; });
 
     // ===== 환율 계산 =====
-    // USD만 실시간, 우대율 50% 적용(기본 스프레드 2.4% 가정 → 1.2% 적용)
     const BASE_SPREAD = 0.024;     // 고시 스프레드(가정)
     const DISCOUNT_RATE = 0.5;     // 우대율 50%
     const EFFECTIVE_SPREAD = BASE_SPREAD * (1 - DISCOUNT_RATE); // 0.012
@@ -906,7 +955,7 @@
         return;
       }
 
-      // 그 외 통화는 목록만 – 간단 안내 및 대략치(고정) 표시(선택에 따른 숫자 감만 제공)
+      // 그 외 통화는 목록만 – 간단 안내 및 대략치(고정) 표시
       const unit = unitFactorByOption[optionValue] || 1;
       const perUnit = (fallbackRatesToKRW[code] || 0) * unit;
       const approx = Math.round(amount * perUnit);
@@ -964,7 +1013,7 @@
         try { signatureDataUrl = signatureCanvas.toDataURL('image/png'); } catch(e) {}
 
         const payload = {
-          currencyDisplay: currencySelect.value,                     // 예: USD, JPY100
+          currencyDisplay: currencySelect.value,
           amount: parseInt(enrollmentAmountInput.value),
           krwEstimate: parseInt((krwDisplayAmount.textContent || '0').replace(/[^\d]/g,'')),
           benefitApplied: 50,
@@ -972,6 +1021,7 @@
           signatureDataUrl
         };
         sessionStorage.setItem('bnkEnrollmentData', JSON.stringify(payload));
+        Voice.cancel();
         window.location.href='/foreign6';
       } else {
         let msg = '상품 가입을 완료하려면 다음 사항을 확인해야 합니다:\n';
@@ -983,6 +1033,105 @@
         showInfoModal(msg);
       }
     });
+
+    /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
+    const Voice = (function(){
+      let speaking = false;
+      let queue = [];
+      let current = null;
+
+      const hasWebSpeech = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
+      const hasAndroid = !!window.AndroidTTS?.speak;
+      const hasIOS = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tts);
+
+      function useNativeSpeak(text){
+        const r = 1.0;
+        if(hasAndroid){
+          try{ window.AndroidTTS.speak(String(text), r); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'speak', text:String(text), rate:r}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+      function useNativeStop(){
+        if(hasAndroid){
+          try{ window.AndroidTTS.stop(); return true; }catch(e){ console.warn(e); }
+        }
+        if(hasIOS){
+          try{ window.webkit.messageHandlers.tts.postMessage({action:'stop'}); return true; }catch(e){ console.warn(e); }
+        }
+        return false;
+      }
+
+      function speakWeb(text, onend){
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.lang = 'ko-KR';
+        u.rate = 1.0;
+        u.onend = onend || null;
+        u.onerror = function(){ onend && onend(); };
+        window.speechSynthesis.speak(u);
+      }
+
+      function nextInQueue(){
+        if(queue.length === 0){ current = null; speaking = false; setUI(false); return; }
+        current = queue.shift();
+        if(useNativeSpeak(current)){
+          speaking = true; setUI(true);
+          const approx = Math.max(1500, current.length * 60);
+          setTimeout(()=>{ nextInQueue(); }, approx);
+        }else if(hasWebSpeech){
+          speaking = true; setUI(true);
+          speakWeb(current, ()=> nextInQueue());
+        }else{
+          speaking = false; setUI(false);
+        }
+      }
+
+      function setUI(isOn){
+        voiceBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        voiceIconPlay.classList.toggle('hidden', isOn);
+        voiceIconStop.classList.toggle('hidden', !isOn);
+        voiceLabel.textContent = isOn ? '음성 안내 끄기' : '음성 안내 켜기';
+        voiceBtn.setAttribute('aria-label', voiceLabel.textContent);
+        voiceBtn.setAttribute('title', voiceLabel.textContent);
+      }
+
+      function start(lines){
+        if(speaking) cancel();
+        queue = Array.isArray(lines) ? lines.slice() : [String(lines||'')];
+        nextInQueue();
+      }
+      function cancel(){
+        queue = [];
+        current = null;
+        speaking = false;
+        useNativeStop();
+        if(('speechSynthesis' in window)){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+        setUI(false);
+      }
+      function toggle(lines){
+        if(speaking){ cancel(); } else { start(lines); }
+      }
+      return { start, cancel, toggle, isSpeaking:()=>speaking };
+    })();
+
+    function buildVoiceScript(){
+      const l1 = '상품 가입을 도와드릴게요. 먼저 가입 관련 동의에서 약관 및 설명서를 확인하고 동의해 주세요.';
+      const l2 = '다음으로 고객 확인 사항을 읽고 전자서명을 완료합니다.';
+      const l3 = '마지막으로 가입할 통화와 금액을 입력한 뒤 조회하기를 누르세요. 모든 항목이 완료되면 아래의 다음으로 버튼이 켜집니다.';
+      return [l1,l2,l3];
+    }
+
+    voiceBtn.addEventListener('click', function(){
+      voicePanel.classList.toggle('open');
+      Voice.toggle(buildVoiceScript());
+    });
+    voiceCloseBtn.addEventListener('click', function(){ voicePanel.classList.remove('open'); });
+    voiceReplayBtn.addEventListener('click', function(){ Voice.start(buildVoiceScript()); });
+
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
+    window.addEventListener('pagehide', ()=> Voice.cancel());
   </script>
 </body>
 </html>
