@@ -1,5 +1,6 @@
 package com.example.bnk_project_02s.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import lombok.Builder;
@@ -12,6 +13,6 @@ public class ChildAccountDto {
     private String pano;
     private String cuno;
     private LocalDate cajoin;
-    private String cabalance;
+    private BigDecimal cabalance;
     private String pabank;
 }
