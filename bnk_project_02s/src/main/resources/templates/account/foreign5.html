@@ -43,7 +43,7 @@
     .section-title .checkmark { color:#10b981; font-size:1.1rem; margin-left:.5rem; display:none; }
     .section-title .title-text { display:flex; align-items:center; flex:1; min-width:0; }
 
-    .form-group { margin-bottom:.7rem; }                    /* 여백 살짝 줄임 */
+    .form-group { margin-bottom:.7rem; }
     .form-group label { display:block; font-size:.85rem; font-weight:600; color:#4b5563; margin-bottom:.45rem; }
     .form-group input, .form-group select {
       width:100%; padding:.65rem .9rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.95rem; color:#374151; background:#f9fafb;
@@ -143,7 +143,7 @@
 
     /* 입력 그룹 */
     .input-group-container {
-      display:flex; flex-direction:column; gap:.4rem;        /* 내부 간격 축소 → ‘빈 공간’ 제거 */
+      display:flex; flex-direction:column; gap:.4rem;
       margin-bottom:1rem; padding:1rem;
       border:1px solid #e5e7eb; border-radius:.75rem; background:#f9fafb;
     }
@@ -151,7 +151,7 @@
     /* 환산 영역 */
     .currency-conversion-display {
       display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-wrap:wrap;
-      margin-top:.1rem;                                                  /* 위 여백 최소화 */
+      margin-top:.1rem;
     }
     .currency-conversion-display > * { min-width:0; }
 
@@ -161,7 +161,7 @@
     .krw-display { flex:2 1 280px; display:flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border:1px solid #d1d5db; border-radius:.5rem; background:#e5e7eb; color:#374151; font-size:.95rem; font-weight:700; cursor:not-allowed; }
     .krw-display img { width:22px; height:22px; }
 
-    .benefit-badge { font-size:.85rem; font-weight:800; color:#dc2626; margin-top:.25rem; }  /* 빨간 안내 */
+    .benefit-badge { font-size:.85rem; font-weight:800; color:#dc2626; margin-top:.25rem; }
 
     @media (max-width: 480px) {
       .currency-conversion-display { gap:.5rem; }
@@ -230,7 +230,7 @@
                 <label for="currencySelect">가입할 통화</label>
                 <select id="currencySelect" class="currency-select w-full">
                   <option value="">통화를 선택하세요</option>
-                  <!-- 환전 가능 통화(목록) -->
+                  <!-- 환전 가능 통화(초기 마크업은 유지되지만 아래 스크립트가 7종으로 재구성) -->
                   <option value="USD">USD(미국)</option>
                   <option value="JPY">JPY100(일본)</option>
                   <option value="TWD">TWD(대만)</option>
@@ -490,6 +490,33 @@
 
   <script>
     /* ===== 스크립트 ===== */
+    (function limitAndNormalizeCurrencies() {
+      const ALLOWED = [
+        { value: 'USD', label: 'USD(미국)' },
+        { value: 'JPY', label: 'JPY(일본)' },
+        { value: 'EUR', label: 'EUR(유럽연합)' },
+        { value: 'CNH', label: 'CNH(중국 오프쇼어)' },
+        { value: 'GBP', label: 'GBP(영국)' },
+        { value: 'CHF', label: 'CHF(스위스)' },
+        { value: 'KRW', label: 'KRW(대한민국)' },
+      ];
+
+      const sel = document.getElementById('currencySelect');
+      if (!sel) return;
+
+      // 첫 번째 “통화를 선택하세요” 옵션은 유지
+      const first = sel.querySelector('option');
+      sel.innerHTML = '';
+      if (first) sel.appendChild(first);
+
+      // 허용 목록만 다시 채움 (원래 마크업은 손대지 않고 런타임에서 재구성)
+      for (const { value, label } of ALLOWED) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    })();
 
     const homeButton = document.querySelector('header a');
     const prevButton = document.getElementById('prevButton');
@@ -568,7 +595,7 @@
       "https://drive.google.com/file/d/1GClaAcMVQeXwKBSUZDZD-CrrCMWC2PJd/view?usp=sharing",
       "https://drive.google.com/file/d/15wwn9df-I70sL1TSLHv5m9KHFWOS1yuZ/view?usp=sharing",
       "https://drive.google.com/file/d/1iI2juipDYmW_Ok9c_VGhaHtXi8OEpGIC/view?usp=sharing",
-      "https://drive.google.com/file/d/10RBKoscPB6Zz93y476Hg12GNZ44Le6tT/ view?usp=sharing"
+      "https://drive.google.com/file/d/10RBKoscPB6Zz93y476Hg12GNZ44Le6tT/view?usp=sharing"
     ];
 
     function initializeUI() {
@@ -855,14 +882,14 @@
 
     // ===== 환율 계산 =====
     // USD만 실시간, 우대율 50% 적용(기본 스프레드 2.4% 가정 → 1.2% 적용)
-    const BASE_SPREAD = 0.024;     // 고시 스프레드(가정)
-    const DISCOUNT_RATE = 0.5;     // 우대율 50%
+    const BASE_SPREAD = 0.024;
+    const DISCOUNT_RATE = 0.5;
     const EFFECTIVE_SPREAD = BASE_SPREAD * (1 - DISCOUNT_RATE); // 0.012
 
     const unitFactorByOption = { 'JPY100': 100, 'IDR100': 100 }; // 100단위 표기
     const codeFromOption = (opt) => opt.replace('100','');
 
-    const fallbackRatesToKRW = { // 비-USD는 임시 고정치(대략값)
+    const fallbackRatesToKRW = {
       'USD': 1350, 'JPY': 13.5, 'TWD': 45, 'SGD': 1000, 'IDR': 0.09, 'CNY': 180,
       'THB': 38, 'PHP': 25, 'HKD': 170, 'MYR': 290, 'NZD': 850, 'AUD': 900,
       'CAD': 980, 'CHF': 1500, 'GBP': 1600, 'EUR': 1450
@@ -906,12 +933,12 @@
         return;
       }
 
-      // 그 외 통화는 목록만 – 간단 안내 및 대략치(고정) 표시(선택에 따른 숫자 감만 제공)
+      // 그 외 통화는 대략치 표시(선택 감만 제공)
       const unit = unitFactorByOption[optionValue] || 1;
       const perUnit = (fallbackRatesToKRW[code] || 0) * unit;
       const approx = Math.round(amount * perUnit);
       krwDisplayAmount.textContent = `${approx.toLocaleString()} 원`;
-      isWithdrawalEstimateLookedUp = false; // 정확 계산 아님 → 다음으로 진행 막음
+      isWithdrawalEstimateLookedUp = false; // 정확 계산 아님 → 다음 진행 막음
       updateEnrollmentContentStatus();
       showInfoModal('현재 USD만 실시간/정확 계산을 지원합니다.\n다른 통화는 목록 선택만 가능합니다.');
     }
@@ -960,11 +987,20 @@
       if(isTermsAndExplanationsAgreed && isElectronicSignatureCompleted &&
          isEnrollmentAmountFilled && isCurrencySelected && isWithdrawalEstimateLookedUp && isWithdrawalAccountFilled){
 
+        // ✅ 선택 통화 검증 + 배열화
+        const selAlpha = (currencySelect.value || '').toUpperCase();
+        const ALLOWED_SET = new Set(['USD','JPY','EUR','CNH','GBP','CHF','KRW']);
+        if (!ALLOWED_SET.has(selAlpha)) {
+          showInfoModal('지원하지 않는 통화입니다.');
+          return;
+        }
+
         let signatureDataUrl = '';
         try { signatureDataUrl = signatureCanvas.toDataURL('image/png'); } catch(e) {}
 
         const payload = {
-          currencyDisplay: currencySelect.value,                     // 예: USD, JPY100
+          currencyDisplay: selAlpha,              // 화면 표시용
+          currencies: [selAlpha],                 // ★ 서버 전송용(배열)
           amount: parseInt(enrollmentAmountInput.value),
           krwEstimate: parseInt((krwDisplayAmount.textContent || '0').replace(/[^\d]/g,'')),
           benefitApplied: 50,
@@ -983,7 +1019,9 @@
         showInfoModal(msg);
       }
     });
-    
+
+    // 초기화
+    document.addEventListener('DOMContentLoaded', initializeUI);
   </script>
 </body>
 </html>
