@@ -77,25 +77,35 @@ public class ForeignIssueService {
 
         List<ChildAccount> createdOrExisting = new ArrayList<>();
 
-        for (String alpha : wantCurrencies) {           // alpha 코드: "USD", "JPY"...
-            // 통화 엔티티 조회 (예: findByCuname("USD"))
-            Currency cur = currencyRepo.findByCuname(alpha)
-                    .orElseThrow(() -> new IllegalArgumentException("통화가 없습니다: " + alpha));
+     // ❶ 8페이지에서 온 초기가입 외화금액(없으면 0)
+     BigDecimal amt = Optional.ofNullable(req.getAmountForeign()).orElse(BigDecimal.ZERO);
 
-            // 부모 PANO + 통화(alpha) 조합으로 자식계좌 존재 확인
-            ChildAccount child = childRepo
-                    .findByParentAccount_PanoAndCurrency_Cuname(parent.getPano(), alpha)
-                    .orElseGet(() -> childRepo.save(
-                            ChildAccount.builder()
-                                    .parentAccount(parent)
-                                    .currency(cur)
-                                    .cabalance(BigDecimal.ZERO)
-                                    .pabank(req.getPabank())   // getter 사용
-                                    .build()
-                    ));
+     // ❷ 통화별 자식계좌 생성/재사용 + 첫 번째 통화에만 초기금액 반영
+     int idx = 0;
+     for (String alpha : wantCurrencies) {
+         Currency cur = currencyRepo.findByCuname(alpha)
+             .orElseThrow(() -> new IllegalArgumentException("통화가 없습니다: " + alpha));
 
-            createdOrExisting.add(child);
-        }
+         ChildAccount child = childRepo
+             .findByParentAccount_PanoAndCurrency_Cuname(parent.getPano(), alpha)
+             .orElseGet(() -> childRepo.save(
+                 ChildAccount.builder()
+                     .parentAccount(parent)
+                     .currency(cur)
+                     .cabalance(BigDecimal.ZERO)  // 기본 0
+                     .pabank(req.getPabank())
+                     .build()
+             ));
+
+         // 첫 번째 통화를 대표로 보고 초기금액 더함
+         if (idx == 0 && amt.signum() > 0) {
+             child.setCabalance(child.getCabalance().add(amt));
+             childRepo.save(child);
+         }
+
+         createdOrExisting.add(child);
+         idx++;
+     }
 
         // 대표 cano (첫 번째)
         String primaryCano = createdOrExisting.get(0).getCano();
