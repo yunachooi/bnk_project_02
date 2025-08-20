@@ -196,4 +196,4 @@ app.*.symbols
 .gclient_previous_sync_commits
 
 
-bnk-push-notification-firebase-adminsdk-fbsvc-e89e21535e.json
+*.json
