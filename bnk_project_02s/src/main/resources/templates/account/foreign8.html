@@ -120,169 +120,170 @@
   </div>
 
   <script>
-    /* ===== 공통 ===== */
-    const STORAGE_KEY='bnkCardIssueData';
-    const KEYS_TO_CLEAR = ['bnkEnrollmentData','bnkConfirmedStatus','bnkEnrollmentComplete','bnkPassword','bnkCardIssueData'];
+  /* ===== 공통 ===== */
+  const STORAGE_KEY='bnkCardIssueData';
+  const KEYS_TO_CLEAR=['bnkEnrollmentData','bnkConfirmedStatus','bnkEnrollmentComplete','bnkPassword','bnkCardIssueData'];
 
-    function clearAllRelatedSessions(){ try{ KEYS_TO_CLEAR.forEach(k => sessionStorage.removeItem(k)); }catch(e){ console.warn(e); } }
-    function setVHUnit(){ const vh=window.innerHeight*0.01; document.documentElement.style.setProperty('--vh', `${vh}px`); }
-    setVHUnit(); window.addEventListener('resize', setVHUnit);
+  function clearAllRelatedSessions(){ try{ KEYS_TO_CLEAR.forEach(k=>sessionStorage.removeItem(k)); }catch(e){ console.warn(e); } }
+  function setVHUnit(){ const vh=window.innerHeight*0.01; document.documentElement.style.setProperty('--vh', `${vh}px`); }
+  setVHUnit(); window.addEventListener('resize', setVHUnit);
 
-    function showModal(el){ el.classList.remove('hidden'); el.classList.add('flex'); }
-    function hideModal(el){ el.classList.add('hidden'); el.classList.remove('flex'); }
-    const infoModal=document.getElementById('infoModal');
-    const infoText=document.getElementById('infoText');
-    document.getElementById('infoOk').onclick=()=> hideModal(infoModal);
-    document.getElementById('infoClose').onclick=()=> hideModal(infoModal);
-    function info(msg){ infoText.textContent=msg; showModal(infoModal); }
+  function showModal(el){ el.classList.remove('hidden'); el.classList.add('flex'); }
+  function hideModal(el){ el.classList.add('hidden'); el.classList.remove('flex'); }
 
-    const completeModal=document.getElementById('completeModal');
-    const completeOk=document.getElementById('completeOk');
-    const completeClose=document.getElementById('completeClose');
-    function showComplete(){ showModal(completeModal); }
-    function closeComplete(){ hideModal(completeModal); }
+  const infoModal=document.getElementById('infoModal');
+  const infoText=document.getElementById('infoText');
+  document.getElementById('infoOk').onclick=()=> hideModal(infoModal);
+  document.getElementById('infoClose').onclick=()=> hideModal(infoModal);
+  function info(msg){ infoText.textContent=msg; showModal(infoModal); }
 
-    const prevButton=document.getElementById('prevButton');
-    const issueButton=document.getElementById('issueButton');
-    const finalConfirmCheckbox=document.getElementById('finalConfirmCheckbox');
+  const completeModal=document.getElementById('completeModal');
+  const completeOk=document.getElementById('completeOk');
+  const completeClose=document.getElementById('completeClose');
+  function showComplete(){ showModal(completeModal); }
+  function closeComplete(){ hideModal(completeModal); }
 
-    const cardPreviewImg=document.getElementById('cardPreviewImg');
-    const vEnglishName=document.getElementById('vEnglishName');
-    const vAddress=document.getElementById('vAddress');
-    const vOwnFunds=document.getElementById('vOwnFunds');
+  const prevButton=document.getElementById('prevButton');
+  const issueButton=document.getElementById('issueButton');
+  const finalConfirmCheckbox=document.getElementById('finalConfirmCheckbox');
 
-    function mapCardImageById(id){
-      if(id==='card-a') return 'images/option1.png';
-      if(id==='card-b') return 'images/option2.png';
-      if(id==='card-c') return 'images/option3.png';
-      return '';
+  const cardPreviewImg=document.getElementById('cardPreviewImg');
+  const vEnglishName=document.getElementById('vEnglishName');
+  const vAddress=document.getElementById('vAddress');
+  const vOwnFunds=document.getElementById('vOwnFunds');
+
+  function mapCardImageById(id){
+    if(id==='card-a') return 'images/option1.png';
+    if(id==='card-b') return 'images/option2.png';
+    if(id==='card-c') return 'images/option3.png';
+    return '';
+  }
+
+  // ====== 데이터 복원 ======
+  (function restore(){
+    try{
+      const raw=sessionStorage.getItem(STORAGE_KEY);
+      if(!raw){ info('이전 단계의 정보가 없습니다.\n처음 화면으로 이동합니다.'); setTimeout(()=>location.href='/foreign',1200); return; }
+      const data=JSON.parse(raw);
+      const card=data.selectedCard;
+      if(card?.id){ cardPreviewImg.src=mapCardImageById(card.id); cardPreviewImg.alt='선택한 카드'; }
+      vEnglishName.textContent=(data.customer?.englishName||'').toUpperCase()||'-';
+      const addr=data.customer?.address||{};
+      const addrText=[addr.postalCode?`[${addr.postalCode}]`:'', addr.baseAddress||'', addr.detailAddress||''].filter(Boolean).join(' ');
+      vAddress.textContent=addrText||'-';
+      vOwnFunds.textContent=data.customer?.ownFunds==='yes'?'예':(data.customer?.ownFunds==='no'?'아니오':'-');
+    }catch(e){
+      info('정보 복원 중 오류가 발생했습니다.\n처음 화면으로 이동합니다.');
+      setTimeout(()=>location.href='/foreign',1300);
     }
+  })();
 
-    // 데이터 복원
-    (function restore(){
+  // ====== 버튼 enable/disable ======
+  function updateIssueButton(){
+    const enabled = !!finalConfirmCheckbox?.checked;
+    issueButton.disabled = !enabled;
+    issueButton.classList.toggle('bg-gray-400',!enabled);
+    issueButton.classList.toggle('cursor-not-allowed',!enabled);
+    issueButton.classList.toggle('bg-red-500',enabled);
+    issueButton.classList.toggle('hover:bg-red-600',enabled);
+  }
+  if (finalConfirmCheckbox) {
+    finalConfirmCheckbox.addEventListener('change', updateIssueButton, {passive:true});
+  }
+  updateIssueButton();
+  prevButton.addEventListener('click', ()=> history.back());
+
+  // ====== 선택 통화만 회수(중복 제거 + 대문자 정규화 + 100단위 정리) ======
+  function getSelectedCurrencies(enroll, cardData){
+    let list = [];
+    if (Array.isArray(enroll?.currencies) && enroll.currencies.length) {
+      list = enroll.currencies;
+    } else if (enroll?.currencyDisplay) {            // 구버전 호환
+      list = [enroll.currencyDisplay];
+    } else if (Array.isArray(cardData?.currencies)) {
+      list = cardData.currencies;
+    } else if (Array.isArray(cardData?.selectedCurrencies)) {
+      list = cardData.selectedCurrencies;
+    }
+    list = list
+      .filter(Boolean)
+      .map(s => String(s).trim().toUpperCase().replace(/100$/,''));
+    return [...new Set(list)]; // ✅ 오타 주의 (...new Set)
+  }
+
+  async function postFinalIssue(payload){
+    const res = await fetch('/api/foreign/final-issue', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify(payload),
+    });
+    if(!res.ok){
+      const txt = await res.text().catch(()=> '');
+      throw new Error(`발급 API 오류(${res.status}): ${txt || 'no body'}`);
+    }
+    return res.json();
+  }
+
+  // ====== 발급 처리 ======
+  issueButton.addEventListener('click', async () => {
+    if (issueButton.disabled) return;
+
+    issueButton.disabled = true;
+    issueButton.classList.add('cursor-wait');
+    const prevLabel = issueButton.textContent;
+    issueButton.textContent = '발급 처리 중...';
+
+    try{
+      const rawEnroll = sessionStorage.getItem('bnkEnrollmentData');
+      const rawCard   = sessionStorage.getItem(STORAGE_KEY);
+      const enroll    = rawEnroll ? JSON.parse(rawEnroll) : {};
+      const cardData  = rawCard   ? JSON.parse(rawCard)   : {};
+
+      // ✅ 오직 선택한 통화만
+      const currencies = getSelectedCurrencies(enroll, cardData);
+      if (currencies.length === 0) {
+        info('선택한 통화가 없습니다.\n이전 화면에서 결제 통화를 선택해 주세요.');
+        return;
+      }
+
+      // 가입금액(외화)도 함께 전달 → 서버(DB) 저장용
+      const amountForeign = Number(enroll?.amountForeign ?? enroll?.amount) || undefined;
+
+      const cardName = cardData?.selectedCard?.name || 'BNK 글로벌 체크';
+      const fno      = enroll.fno ?? 1;
+      const pabank   = enroll.pabank || '부산본점';
+
+      const payload = { fno, pabank, currencies, amountForeign, cardName };
+      console.log('[final-issue] payload:', payload);
+
+      const data = await postFinalIssue(payload);
+      console.log('발급 결과:', data);
+
+      // 결과는 세션에만 기록(화면에 번호 미노출)
       try{
-        const raw=sessionStorage.getItem(STORAGE_KEY);
-        if(!raw){ info('이전 단계의 정보가 없습니다.\n처음 화면으로 이동합니다.'); setTimeout(()=>location.href='/foreign',1200); return; }
-        const data=JSON.parse(raw);
-        const card=data.selectedCard;
-        if(card?.id){ cardPreviewImg.src=mapCardImageById(card.id); cardPreviewImg.alt='선택한 카드'; }
-        vEnglishName.textContent=(data.customer?.englishName||'').toUpperCase()||'-';
-        const addr=data.customer?.address||{};
-        const addrText=[addr.postalCode?`[${addr.postalCode}]`:'', addr.baseAddress||'', addr.detailAddress||''].filter(Boolean).join(' ');
-        vAddress.textContent=addrText||'-';
-        vOwnFunds.textContent=data.customer?.ownFunds==='yes'?'예':(data.customer?.ownFunds==='no'?'아니오':'-');
-      }catch(e){
-        info('정보 복원 중 오류가 발생했습니다.\n처음 화면으로 이동합니다.');
-        setTimeout(()=>location.href='/foreign',1300);
-      }
-    })();
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        const cur = raw ? JSON.parse(raw) : {};
+        cur.final = { issued:true, issuedAt:new Date().toISOString(), result:data };
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(cur));
+      }catch(e){}
 
-    function updateIssueButton(){
-      const enabled=finalConfirmCheckbox.checked;
-      issueButton.disabled=!enabled;
-      issueButton.classList.toggle('bg-gray-400',!enabled);
-      issueButton.classList.toggle('cursor-not-allowed',!enabled);
-      issueButton.classList.toggle('bg-red-500',enabled);
-      issueButton.classList.toggle('hover:bg-red-600',enabled);
+      // ✅ 곧바로 완료 모달(계좌/카드번호는 화면 노출 X)
+      showComplete();
+
+    }catch(err){
+      console.error(err);
+      info(`처리 중 오류가 발생했습니다.\n\n${err.message || err}`);
+    }finally{
+      issueButton.textContent = prevLabel;
+      issueButton.classList.remove('cursor-wait');
+      updateIssueButton();
     }
-    finalConfirmCheckbox.addEventListener('change', updateIssueButton);
-    updateIssueButton();
-    prevButton.addEventListener('click', ()=> history.back());
+  });
 
-    // ✅ 선택한 통화만 뽑아오는 함수 (중복 제거 + 대문자 정규화)
-    function getSelectedCurrencies(enroll, cardData){
-      let list = [];
-      if (Array.isArray(enroll?.currencies)) list = enroll.currencies;
-      else if (Array.isArray(cardData?.currencies)) list = cardData.currencies;
-      else if (Array.isArray(cardData?.selectedCurrencies)) list = cardData.selectedCurrencies;
+  completeOk.addEventListener('click', () => { clearAllRelatedSessions(); location.href='/foreign'; });
+  completeClose.addEventListener('click', ()=> hideModal(completeModal));
 
-      list = list.filter(Boolean).map(s => String(s).trim().toUpperCase());
-      return [...new Set(list)];
-    }
-
-    async function postFinalIssue(payload) {
-      const res = await fetch('/api/foreign/final-issue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(()=> '');
-        throw new Error(`발급 API 오류(${res.status}): ${txt || 'no body'}`);
-      }
-      return res.json();
-    }
-
-    // ----- 발급 버튼: 서버에 최종 발급 요청 → 완료 모달 -----
-    issueButton.addEventListener('click', async () => {
-      if (issueButton.disabled) return;
-
-      issueButton.disabled = true;
-      issueButton.classList.add('cursor-wait');
-      const prevLabel = issueButton.textContent;
-      issueButton.textContent = '발급 처리 중...';
-
-      try {
-        const rawEnroll = sessionStorage.getItem('bnkEnrollmentData');
-        const rawCard   = sessionStorage.getItem(STORAGE_KEY);
-        const enroll    = rawEnroll ? JSON.parse(rawEnroll) : {};
-        const cardData  = rawCard   ? JSON.parse(rawCard)   : {};
-
-        // 🔴 기본값 없음! 선택한 통화가 없으면 발급 중단
-        const currencies = getSelectedCurrencies(enroll, cardData);
-        if (currencies.length === 0) {
-          info('선택한 통화가 없습니다.\n이전 화면에서 결제 통화를 선택해 주세요.');
-          return;
-        }
-
-        const cardName = cardData?.selectedCard?.name || 'BNK 글로벌 체크';
-        const fno      = enroll.fno ?? 1;
-        const pabank   = enroll.pabank || '부산본점';
-
-        const payload = { fno, pabank, currencies, cardName };
-        console.log('[final-issue] payload:', payload);
-
-        const data = await postFinalIssue(payload);
-        console.log('발급 결과:', data);
-
-        // 세션 기록
-        try {
-          const raw = sessionStorage.getItem(STORAGE_KEY);
-          const cur = raw ? JSON.parse(raw) : {};
-          cur.final = { issued: true, issuedAt: new Date().toISOString(), result: data };
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(cur));
-        } catch (e) {}
-
-        // 안내 → 완료
-        info(
-          `발급이 완료되었어요!\n\n` +
-          `부모계좌: ${data.pano}\n` +
-          `통화계좌: ${(data.canos||[]).join(', ')}\n` +
-          `카드번호: ${data.cardNoMasked} (${data.cardStatus === 'Y' ? '활성' : '비활성'})`
-        );
-        const okBtn = document.getElementById('infoOk');
-        const closeBtn = document.getElementById('infoClose');
-        const showCompleteThenHome = () => { hideModal(infoModal); showComplete(); };
-        okBtn.addEventListener('click', showCompleteThenHome, { once:true });
-        closeBtn.addEventListener('click', showCompleteThenHome, { once:true });
-
-      } catch (err) {
-        console.error(err);
-        info(`처리 중 오류가 발생했습니다.\n\n${err.message || err}`);
-      } finally {
-        issueButton.textContent = prevLabel;
-        issueButton.classList.remove('cursor-wait');
-        updateIssueButton();
-      }
-    });
-
-    // 완료 모달: 확인 → 관련 세션 정리 → 홈 이동
-    completeOk.addEventListener('click', () => {
-      clearAllRelatedSessions();
-      location.href = '/foreign';
-    });
-    completeClose.addEventListener('click', ()=> hideModal(completeModal));
   </script>
 </body>
 </html>
