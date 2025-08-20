@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccountController {
 
-	@GetMapping("/foreign0") public String foreign0() { return "account/foreign0"; }
     @GetMapping("/foreign1") public String foreign1() { return "account/foreign1"; }
     @GetMapping("/foreign2") public String foreign2() { return "account/foreign2"; }
     @GetMapping("/foreign3") public String foreign3() { return "account/foreign3"; }
