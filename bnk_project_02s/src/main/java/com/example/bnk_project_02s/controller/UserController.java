@@ -235,7 +235,7 @@ public class UserController {
             if ("ROLE_ADMIN".equals(user.getUrole())) {
                 dest = "/admin/adminMain";   // 기존 프로젝트 흐름에 맞춤
             } else {
-                dest = "/user/userhome";
+                dest = "/foreign";
             }
         }
 

@@ -223,7 +223,7 @@ class ProductDetailPage extends StatelessWidget {
       const SnackBar(duration: Duration(milliseconds: 700), content: Text('공유 준비중...')),
     );
 
-    const pagePath = '/user/shopping/product';
+    const pagePath = '/user/shopping/products';
     final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
     final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
     String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
@@ -811,7 +811,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
 
   // ✅ 홈 화면에서 첫 상품 공유 (공유 버튼용)
   Future<void> _shareFromHome(BuildContext context) async {
-    const pagePath = '/user/shopping/product';
+    const pagePath = '/user/shopping/products';
     final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
     final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
     String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
