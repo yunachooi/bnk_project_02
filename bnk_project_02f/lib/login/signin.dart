@@ -7,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bnk_project_02f/account/accountMain.dart';
 import 'package:bnk_project_02f/notify.dart';
 import 'package:bnk_project_02f/polling_manager.dart';
+// FCM 관련 import 추가
+import 'package:bnk_project_02f/services/push_notification_service.dart';
+import 'package:bnk_project_02f/services/fcm_api_service.dart';
 
 class SignInWebViewPage extends StatefulWidget {
   const SignInWebViewPage({super.key});
@@ -120,7 +123,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
         uri.pathSegments.any((s) => s.toLowerCase() == 'foreign');
   }
 
-  // ✅ 서버가 보낼 수 있는 보조 경로들 (강제 리다이렉트 대상)
   bool _isUserHomeStyle(Uri uri) {
     final p = uri.path.toLowerCase();
     return p == '/userhome' ||
@@ -131,7 +133,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
         s.toLowerCase() == 'userhome' || s.toLowerCase() == 'usermain');
   }
 
-  /// foreign 감지 → (가능하면 URL의 uid 사용) 권한/폴링/즉시 fetch → AccountMain(uid) 전환
   bool _maybeGoToAccount(Uri uri) {
     if (_navigatedToNative) return true;
     if (!_isForeign(uri)) return false;
@@ -141,20 +142,16 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
-      // 1) URL 쿼리에 uid가 있다면 우선 사용(대부분은 없음)
       String? uid = uri.queryParameters['uid']?.trim();
       if (uid != null && uid.isEmpty) uid = null;
 
-      // 2) 있으면 저장
       if (uid != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('uid', uid);
       }
 
-      // 3) 권한 확인
       await ensureNotificationPermission();
 
-      // 4) uid가 확정된 경우 즉시 폴링/알림
       if (uid != null && !PollingManager.isRunning) {
         PollingManager.start(uid);
       }
@@ -162,7 +159,10 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
         await fetchAndNotify(uid);
       }
 
-      // 5) 네이티브 전환(UID 전달; null이어도 AccountMain의 백업 로직이 처리)
+      if (uid != null) {
+        await _registerFCMToken(uid);
+      }
+
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => AccountMainPage(uid: uid)),
@@ -172,7 +172,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     return true;
   }
 
-  // foreign 로드 후, WebView(쿠키 공유)에서 UID를 찾아 Flutter로 보내기
   Future<void> _injectUidBridge() async {
     const js = r"""
 (async function() {
@@ -183,7 +182,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     try { BNKUID.postMessage(String(uid)); window.__BNK_UID_SENT__ = true; } catch(e) {}
   }
 
-  // 1) 세션 API
   try {
     const r = await fetch('/api/app/me', { credentials: 'include' });
     if (r.ok) {
@@ -192,7 +190,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     }
   } catch(e) {}
 
-  // 2) DOM 힌트
   try {
     var el = document.querySelector('[data-uid], #uid, .uid, meta[name="uid"]');
     var v = '';
@@ -204,7 +201,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     }
   } catch(e) {}
 
-  // 3) 쿠키에서 uid= 찾기
   try {
     var m = document.cookie.match(/(?:^|;\s*)uid=([^;]+)/);
     if (m && m[1]) { send(decodeURIComponent(m[1])); return; }
@@ -214,7 +210,7 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     try { await _controller.runJavaScript(js); } catch (_) {}
   }
 
-  // UID 수신 → 저장 → 권한 → 폴링 → 즉시 fetch → 네이티브 전환
+  // UID 수신 → 저장 → 권한 → 폴링 → 즉시 fetch → FCM 토큰 등록 → 네이티브 전환
   Future<void> _handleUid(String uid) async {
     debugPrint('[signin] BNKUID=$uid');
     final prefs = await SharedPreferences.getInstance();
@@ -226,7 +222,29 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
     }
     await fetchAndNotify(uid);
 
+    await _registerFCMToken(uid);
+
     _navigateToAccount(uid);
+  }
+
+  Future<void> _registerFCMToken(String uid) async {
+    try {
+      debugPrint('[FCM] 토큰 등록 시작: $uid');
+
+      String? token = await PushNotificationService.getToken();
+      if (token != null) {
+        bool success = await FCMApiService.registerToken(uid, token);
+        if (success) {
+          debugPrint('[FCM] 토큰 등록 성공: $uid');
+        } else {
+          debugPrint('[FCM] 토큰 등록 실패: $uid');
+        }
+      } else {
+        debugPrint('[FCM] FCM 토큰을 가져올 수 없음');
+      }
+    } catch (e) {
+      debugPrint('[FCM] 토큰 등록 중 오류: $e');
+    }
   }
 
   void _navigateToAccount(String? uid) {

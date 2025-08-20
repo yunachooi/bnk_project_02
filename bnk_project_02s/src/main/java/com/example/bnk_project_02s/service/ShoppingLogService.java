@@ -46,6 +46,9 @@ public class ShoppingLogService {
     @Autowired
     private HistoryRepository historyRepository;
     
+    @Autowired
+    private FCMService fcmService;
+    
     public Map<String, Object> processPayment(String uid, String spno, String cardno, String slamount, String slcurrency) {
         Map<String, Object> result = new HashMap<>();
         
@@ -64,10 +67,15 @@ public class ShoppingLogService {
             return createErrorResponse("CARD_NOT_FOUND", "존재하지 않는 카드입니다.");
         }
         
+        User user = userOpt.get();
+        ShoppingProducts product = productOpt.get();
         Card card = cardOpt.get();
         
         if (!"Y".equals(card.getCardstatus())) {
-            ShoppingLog failedLog = saveFailedLog(userOpt.get(), productOpt.get(), card, slamount, slcurrency, "CC45");
+            ShoppingLog failedLog = saveFailedLog(user, product, card, slamount, slcurrency, "CC45");
+            
+            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, product.getSpname());
+            
             return createFailResponse("CC45", "카드가 정지 상태입니다.", failedLog, Map.of("cardstatus", card.getCardstatus()));
         }
         
@@ -82,19 +90,22 @@ public class ShoppingLogService {
         BigDecimal paymentAmount = new BigDecimal(slamount);
         
         if (currentBalance.compareTo(paymentAmount) < 0) {
-            ShoppingLog failedLog = saveFailedLog(userOpt.get(), productOpt.get(), card, slamount, slcurrency, "CC10");
+            ShoppingLog failedLog = saveFailedLog(user, product, card, slamount, slcurrency, "CC10");
+            
+            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, product.getSpname());
+            
             return createFailResponse("CC10", "잔액이 부족합니다.", failedLog, 
                 Map.of("currentBalance", currentBalance.toString(), "requiredAmount", paymentAmount.toString()));
         }
         
-        ShoppingLog successLog = saveSuccessLog(userOpt.get(), productOpt.get(), card, slamount, slcurrency);
+        ShoppingLog successLog = saveSuccessLog(user, product, card, slamount, slcurrency);
         
         BigDecimal newBalance = currentBalance.subtract(paymentAmount);
         childAccount.setCabalance(newBalance);
         childAccountRepository.save(childAccount);
         
         History history = History.builder()
-            .user(userOpt.get())
+            .user(user)
             .parentAccount(childAccount.getParentAccount()) 
             .currency(childAccount.getCurrency())
             .hwithdraw(slamount)
@@ -105,6 +116,8 @@ public class ShoppingLogService {
             .build();
         
         historyRepository.save(history);
+        
+        fcmService.sendPaymentNotificationToUser(user.getUid(), "Y", slamount, product.getSpname());
         
         result.put("success", true);
         result.put("message", "결제가 성공적으로 완료되었습니다.");
