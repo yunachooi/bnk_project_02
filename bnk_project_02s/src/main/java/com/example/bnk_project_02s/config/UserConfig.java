@@ -25,7 +25,11 @@ public class UserConfig implements WebMvcConfigurer {
               "/user/check-phone",
               "/user/push-consent",
               "/user/shopping/**",
+              "/user/fcm-token",
               
+              "/api/**",
+              "/api/app/**",
+              "/api/fcm/**",
               "/api/share/**",
               "/css/**", "/js/**", "/images/**",
               "/favicon.ico", "/error"

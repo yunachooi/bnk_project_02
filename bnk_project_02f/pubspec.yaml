@@ -43,6 +43,10 @@ dependencies:
   kakao_flutter_sdk_share: ^1.9.0
   kakao_flutter_sdk_template: ^1.9.0
   webview_cookie_manager_plus: ^2.0.16
+  # Firebase 의존성 추가
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
+  device_info_plus: ^9.1.0
 
 dev_dependencies:
   flutter_test:
