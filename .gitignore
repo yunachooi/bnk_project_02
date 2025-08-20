@@ -194,3 +194,6 @@ app.*.symbols
 .python-version
 .gclient_previous_custom_vars
 .gclient_previous_sync_commits
+
+
+bnk-push-notification-firebase-adminsdk-fbsvc-e89e21535e.json
