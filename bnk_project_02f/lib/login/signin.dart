@@ -264,10 +264,6 @@ class _SignInWebViewPageState extends State<SignInWebViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('로그인'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _reload, tooltip: '새로고침'),
-        ],
         bottom: _loading
             ? const PreferredSize(
           preferredSize: Size.fromHeight(2),

@@ -360,7 +360,7 @@ class ProductDetailPage extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1976D2)),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -368,7 +368,7 @@ class ProductDetailPage extends StatelessWidget {
         title: const Text(
           '뒤로가기',
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF1976D2),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -378,7 +378,14 @@ class ProductDetailPage extends StatelessWidget {
             icon: const Icon(Icons.shopping_cart, color: Colors.black),
             onPressed: () {},
           ),
-
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.black),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              _showQuickShareToast(context);
+              _shareProduct(context);
+            },
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -911,7 +918,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         elevation: 1,
         shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: const Icon(Icons.home, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -920,6 +927,14 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
               ),
             );
           },
+        ),
+        title: const Text(
+          '뒤로가기',
+          style: TextStyle(
+            color: Color(0xFF1976D2),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -944,8 +959,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ✅ AppBar 밖, 본문 맨 위에 뒤로가기 버튼 배치
-                const SizedBox(height: 8),
                 const Text(
                   '해외직구쇼핑몰',
                   style: TextStyle(

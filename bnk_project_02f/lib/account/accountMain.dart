@@ -112,7 +112,7 @@ class _AccountMainPageState extends State<AccountMainPage> {
     if (_pushedShopping || !mounted) return;
     _pushedShopping = true;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ShoppingApp()),
+      MaterialPageRoute(builder: (_) => const ShoppingApp()),
     ).then((_) => _pushedShopping = false);
   }
 
@@ -198,6 +198,51 @@ class _AccountMainPageState extends State<AccountMainPage> {
             WebViewWidget(controller: _controller),
             if (_isLoading) const LinearProgressIndicator(minHeight: 2),
           ],
+        ),
+
+        // ▼ 하단 네비게이터: 아이콘만, 가운데 정렬(기존 Account 스타일)
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: BottomAppBar(
+            color: Colors.white,
+            elevation: 8,
+            child: SizedBox(
+              height: 56,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  // ① 해외직구 (네이티브 쇼핑앱 진입)
+                  IconButton(
+                    tooltip: '해외직구',
+                    icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black),
+                    onPressed: _goNativeShopping,
+                  ),
+
+                  // ② accountMain (현재 페이지를 새로 띄워 루트로 복귀/리셋)
+                  IconButton(
+                    tooltip: 'accountMain',
+                    icon: const Icon(Icons.home_outlined, color: Colors.black),
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => AccountMainPage(uid: widget.uid),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // ③ 환전 메인 (웹뷰를 /foreign 으로 이동)
+                  IconButton(
+                    tooltip: '환전 메인',
+                    icon: const Icon(Icons.currency_exchange, color: Colors.black),
+                    onPressed: () {
+                      _controller.loadRequest(Uri.parse('${_baseUrl()}/forex'));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
