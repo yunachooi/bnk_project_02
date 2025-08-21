@@ -226,6 +226,31 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
+  /* ---------- Tag local store (front-only) ---------- */
+  function getTagStore(){
+    try { return JSON.parse(localStorage.getItem('bnk_review_tags') || '{}'); }
+    catch { return {}; }
+  }
+  function setTagStore(s){ localStorage.setItem('bnk_review_tags', JSON.stringify(s)); }
+
+  // 리뷰 식별 키: id가 있으면 id로, 없으면 (uidMasked | date | content 일부)로
+  function reviewKey(obj, fallbackContent){
+    const id = obj?.id ?? 0;
+    if (id) return `id:${id}`;
+    const u = (obj?.uidMasked || '').trim();
+    const d = (obj?.date || '').trim();
+    const c = (obj?.content || fallbackContent || '').slice(0, 80);
+    return `sig:${u}|${d}|${c}`;
+  }
+  function maskUid(uid){
+	  if(!uid) return '익명';
+	  return uid.length <= 2 ? uid + '***' : uid.slice(0, 2) + '***';
+	}
+	// 동일 내용 매칭용: 내용 앞 80자 기준 키
+	function contentKey(text){
+	  const c = (text || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+	  return `txt:${c}`;
+	}
     /* ---------------- core state ---------------- */
     let currentReviews = [];               // 최신 리뷰 캐시
     let isLoadingReviews = false;          // 동시 로드 방지
@@ -302,17 +327,50 @@
         content: x.content ?? x.rvcontent ?? '',
         tags: x.tags ?? []
       }));
+      const store = getTagStore();
+      currentReviews.forEach(it => {
+        const kId  = reviewKey(it);            // id가 있으면 id 기반
+        const kSig = reviewKey({ ...it, id:0 });// 혹시 id가 없을 경우 시그니처 기반
+        const saved = store[kId] || store[kSig] || store[contentKey(it.content)];
+        if (saved && (!it.tags || it.tags.length === 0)) it.tags = saved;
+      });
       return { items: currentReviews };
     }
 
-    async function submitReviewToApi(content, rating){
-      const body = new URLSearchParams({ content: content ?? '', rating: String(rating ?? 5) });
-      const res = await fetch('/api/reviews/create', {
-        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
-        credentials:'include', body
-      });
-      return await res.json().catch(()=>({ ok:false }));
-    }
+    async function submitReviewToApi(content, rating, tags){
+    	  const body = new URLSearchParams({
+    	    content: content ?? '',
+    	    rating: String(rating ?? 5),
+    	    // 백엔드가 무시해도 됨(추가 필드는 @RequestParam 미선언이면 자동 무시)
+    	    tags: JSON.stringify(tags || [])
+    	  });
+
+    	  const res  = await fetch('/api/reviews/create', {
+    	    method:'POST',
+    	    headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
+    	    credentials:'include',
+    	    body
+    	  });
+    	  const data = await res.json().catch(()=>({ ok:false }));
+
+    	  // OK면 로컬에도 태그 저장 (id가 오면 id키로, 그래도 안전하게 시그니처키도 같이 저장)
+    	  if (data.ok) {
+    		  const store = getTagStore();
+    		  const uidRaw = document.querySelector('meta[name="uid"]')?.content || '';
+    		  const uidMaskedGuess = maskUid(uidRaw);               // 목록에서 쓰는 포맷에 맞춤
+    		  const base = { id: data.id ?? 0, uidMasked: uidMaskedGuess, date: '', content };
+    		  const k1 = reviewKey(base, content);                  // id 있으면 id 기반
+    		  const k2 = reviewKey({ ...base, id: 0 }, content);    // id 없을 때 시그니처
+    		  const kTxt = contentKey(content);                     // 내용 기반(최후의 보루)
+    		  if (tags && tags.length){
+    		    store[k1] = tags;
+    		    store[k2] = tags;
+    		    store[kTxt] = tags;
+    		    setTagStore(store);
+    		  }
+    	  }
+    	  return data;
+    	}
 
     /* ---------------- reviews rendering ---------------- */
     const reviewList = document.getElementById('reviewList');
@@ -665,7 +723,7 @@
           return;
         }
 
-        const res = await submitReviewToApi(content, rating /*, tags - 서버 미저장*/);
+        const res = await submitReviewToApi(content, rating, tags);
         if(res.ok){
           closeReviewModal();
           inboxNotifications.unshift({type:'review', message:'후기가 등록되었습니다. 감사합니다!', at:Date.now()});
