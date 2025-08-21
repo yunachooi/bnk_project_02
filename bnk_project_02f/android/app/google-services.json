@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "906007401790",
-    "project_id": "bnk-push-notification",
-    "storage_bucket": "bnk-push-notification.firebasestorage.app"
+    "project_number": "984991486757",
+    "project_id": "bnk-push-notification-6a8fb",
+    "storage_bucket": "bnk-push-notification-6a8fb.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:906007401790:android:898ed27f5c282075c2486f",
+        "mobilesdk_app_id": "1:984991486757:android:1b3c50cc65d8d8d60040cc",
         "android_client_info": {
           "package_name": "com.example.bnk_project_02f"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB9qDA-g2ROfD3godqolTgQfHx_whz3Nn4"
+          "current_key": "AIzaSyB6EGlcUXhO7ZKnDpOzeNLU5kkGlv_2t1E"
         }
       ],
       "services": {
