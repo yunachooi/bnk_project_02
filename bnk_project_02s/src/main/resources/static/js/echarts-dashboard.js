@@ -28,6 +28,7 @@
   };
   echarts.registerTheme('blue', BLUE);
 })();
+const formatKrw = n => (Number(n||0)).toLocaleString('ko-KR');
 const G = echarts.graphic;
 const blueArea = (top='#93c5fd') => ({
   color:new G.LinearGradient(0,0,0,1,[{offset:0,color:top},{offset:1,color:'rgba(147,197,253,0.06)'}])
@@ -51,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const lastNQuarters=n=>Array.from({length:n},(_,i)=>{const d=new Date(today);d.setMonth(today.getMonth()-3*(n-1-i));const q=Math.floor(d.getMonth()/3)+1;return `${d.getFullYear()} Q${q}`;});
   const dailyLabels=lastNDays(7), quarterlyLabels=lastNQuarters(6);
 
-  // 가입자수
+  // 가입자수 (더미)
   getOrInitChart('chart-daily')?.setOption({
     xAxis:{type:'category',data:dailyLabels}, yAxis:{type:'value'},
     tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
@@ -75,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
       series:[{type:'bar',data:Object.values(data),itemStyle:blueBar(),emphasis:{itemStyle:{shadowBlur:12,shadowColor:'rgba(37,99,235,.28)'}}}]
     });
   }).catch(()=>{});
-  // 성별 비율 
   fetch('/api/genderStats')
     .then(r => r.json())
     .then(obj => {
@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const other = Number(obj['기타'] ?? obj.other ?? 0);
       if (other > 0) pieData.push({ name: '기타', value: other });
 
-      // (선택) 리포트 빌드 폴백용 전역 백업
       window.__genderPie = pieData;
 
       getOrInitChart('gender-pie')?.setOption({
@@ -97,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     })
     .catch(() => {
-      // 실패 시 빈 파이로 유지
       getOrInitChart('gender-pie')?.setOption({
         legend:{bottom:0}, series:[{ type:'pie', radius:'60%', data: [] }]
       });
@@ -119,47 +117,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }catch(e){console.warn('리뷰 월별 통계 로드 실패',e);}
   })();
 
-  // 누적 사용액
-  getOrInitChart('krw-area')?.setOption({
-    tooltip:{trigger:'axis'}, xAxis:{type:'category',data:quarterlyLabels},
-    yAxis:{type:'value',axisLabel:v=>(v/1e8)+'억'},
-    series:[{type:'line',data:[5e8,8e8,1.3e9,1.9e9,2.5e9,3.2e9],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
-  });
+  /* === 통화 코드/ISO → 한글 이름 매핑 === */
+  const CURRENCY_NAME = {
+    USD:'미국 달러', JPY:'일본 엔',
+    CNH:'중국 위안(CNH)', CNY:'중국 위안',
+    EUR:'유로', CHF:'스위스 프랑', VND:'베트남 동',
+    '840':'미국 달러(USD)', '392':'일본 엔(JPY)',
+    '156':'중국 위안(CNY/CNH)', '978':'유로(EUR)',
+    '756':'스위스 프랑(CHF)', '704':'베트남 동(VND)'
+  };
+  const toCurName = k => CURRENCY_NAME[String(k).trim()] || String(k);
 
-  // 고정 라벨(정렬 보장)
+  // ====== 1) 총 원화 사용액 텍스트 ======
+  (async function renderKrwTotal(){
+    try {
+      const res = await fetch('/api/usage/krw/total');
+      const { totalKrw } = await res.json();
+      const el = document.getElementById('krw-total');
+      if (el) el.textContent = `총 원화 사용액: ${formatKrw(totalKrw)}원`;
+    } catch(e) { console.warn('총 원화 사용액 로드 실패', e); }
+  })();
+
+  // ====== 2) 일자별 통화별 환전금액(외화) – 스택 막대 ======
+  (async function renderFxDaily(){
+    try{
+      const { labels, series } = await fetch('/api/usage/fx/daily?days=14').then(r=>r.json());
+      const inst = getOrInitChart('fx-daily-stacked');
+      if(!inst) return;
+
+      inst.setOption({
+        tooltip:{
+          trigger:'axis',
+          formatter: (items=[]) => {
+            const date = items[0]?.axisValue || '';
+            const lines = items.map(it => `${toCurName(it.seriesName)}: <b>${it.data}</b>`);
+            return `${date}<br/>` + lines.join('<br/>');
+          }
+        },
+        legend:{ top:0, formatter: (name)=>toCurName(name) },
+        grid:{left:40,right:20,top:30,bottom:28,containLabel:true},
+        xAxis:{type:'category',data:labels},
+        yAxis:{type:'value'},
+        series:(series||[]).map(s=>({
+          type:'bar',
+          name: toCurName(s.name),
+          stack:'fx',
+          data:s.data,
+          itemStyle: blueBar(),
+          emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(37,99,235,.28)'} }
+        }))
+      });
+    }catch(e){ console.warn('FX 일자별 합계 로드 실패', e); }
+  })();
+
+  // ====== 3) 일자별 환전금액(원화사용액) – 라인 ======
+  (async function renderKrwDaily(){
+    try{
+      const { labels, data } = await fetch('/api/usage/krw/daily?days=14').then(r=>r.json());
+      getOrInitChart('krw-daily-line')?.setOption({
+        tooltip:{trigger:'axis', formatter:(p)=>`${p[0].axisValue}<br/>원화사용액: <b>${formatKrw(p[0].data)}</b>원`},
+        xAxis:{type:'category',data:labels},
+        yAxis:{type:'value', axisLabel:{formatter:(v)=>formatKrw(v)}},
+        series:[{ type:'line', data, areaStyle: blueArea(), itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
+      });
+    }catch(e){ console.warn('KRW 일자별 합계 로드 실패', e); }
+  })();
+
+  // 관심 지표
   const CUR_ORDER   = ['USD','JPY','CNH','EUR','CHF','VND'];
   const TOPIC_ORDER = ['TRAVEL','STUDY','SHOPPING','FINANCE','ETC'];
 
-  // 관심 통화 (도넛 파이)
   fetch('/api/interests/currencies')
     .then(r => r.json())
     .then(data => {
       const seriesData = CUR_ORDER.map(k => ({ name: k, value: Number(data?.[k] || 0) }));
       getOrInitChart('currency-pie')?.setOption({
         tooltip: { trigger: 'item' },
-        legend: { orient: 'vertical', right: 0, top: 'middle' },  // 전설을 우측으로
+        legend: { orient: 'vertical', right: 0, top: 'middle' },
         series: [{
           type: 'pie',
-          radius: ['45%','70%'],
-          center: ['40%','50%'],          // 전설 공간 확보(도넛을 왼쪽으로)
-          top: 8, bottom: 8,               // 상하 여백
+          radius: ['55%','78%'],
+          center: ['40%','50%'],
+          top: 8, bottom: 8,
           avoidLabelOverlap: true,
-          minAngle: 6,                     // 작은 조각 라벨 겹침 방지
-          label: {
-            show: true,
-            formatter: '{b}: {c}',
-            fontSize: 12,
-            overflow: 'truncate',
-            ellipsis: '…'
-          },
-          labelLine: { length: 8, length2: 6 }, // 라벨선 짧게
+          minAngle: 6,
+          label: { show: true, formatter: '{b}: {c}', fontSize: 12, overflow: 'truncate', ellipsis: '…' },
+          labelLine: { length: 8, length2: 6 },
           data: seriesData
         }]
       });
-    })
-    .catch(()=>{});
+    }).catch(()=>{});
 
-  // 관심 분야 (가로 막대)
   fetch('/api/interests/topics')
     .then(r => r.json())
     .then(data => {
@@ -175,61 +223,34 @@ document.addEventListener('DOMContentLoaded', () => {
           emphasis: { itemStyle: { shadowBlur: 12, shadowColor:'rgba(37,99,235,.28)' } }
         }]
       });
-    })
-    .catch(()=>{});
+    }).catch(()=>{});
 
-  // ★ 워드클라우드 (좌/우 2개)
+  // ★ 워드클라우드
   (async function renderWordcloud(){
     const posChart = getOrInitChart('kw-pos');
     const negChart = getOrInitChart('kw-neg');
     if (!posChart && !negChart) return;
-
     try {
       const r = await fetch('/api/reviews/keywords?months=3');
       const { positive = [], negative = [] } = await r.json();
 
-      // === 정확히 15개만 사용 ===
-      const pickTop = (arr, n = 15) =>
-        [...arr].sort((a,b)=>(b.value||1)-(a.value||1)).slice(0, n);
-
+      const pickTop = (arr, n = 15) => [...arr].sort((a,b)=>(b.value||1)-(a.value||1)).slice(0, n);
       const toSeriesData = (arr, color) =>
-        pickTop(arr, 15)
-          .filter(k => k && k.name && (k.value ?? 1) > 0)
-          .map(k => ({ name: k.name, value: k.value || 1, textStyle: { color } }));
+        pickTop(arr, 15).filter(k => k && k.name && (k.value ?? 1) > 0)
+                        .map(k => ({ name: k.name, value: k.value || 1, textStyle: { color } }));
 
-      // === 자리 부족 방지: 글자/격자 축소 ===
       const base = (data, fontFamily) => ({
-        type: 'wordCloud',
-        left: '6%', right: '6%', top: '8%', bottom: '8%', // 여백 증가
-        gridSize: 20,            // 간격 키움 (겹침 방지)
-        sizeRange: [12, 24],     // 글자 크기 낮춤
-        rotationRange: [0, 0],
-        layoutAnimation: false,
-        shape: 'circle',
-        drawOutOfBound: false,
-        textStyle: { fontFamily },
-        emphasis: { focus: 'self', textStyle: { fontWeight: 900 } },
-        data
+        type: 'wordCloud', left: '6%', right: '6%', top: '8%', bottom: '8%',
+        gridSize: 20, sizeRange: [12, 24],
+        rotationRange: [0, 0], layoutAnimation: false, shape: 'circle', drawOutOfBound: false,
+        textStyle: { fontFamily }, emphasis: { focus: 'self', textStyle: { fontWeight: 900 } }, data
       });
-      if (posChart) {
-        posChart.setOption({
-          tooltip: {},
-          series: [ base(toSeriesData(positive, '#2563eb'), 'SUIT Variable, Pretendard, system-ui, sans-serif') ]
-        });
-      }
-      if (negChart) {
-        negChart.setOption({
-          tooltip: {},
-          series: [ base(toSeriesData(negative, '#ef4444'), 'Pretendard, SUIT Variable, system-ui, sans-serif') ]
-        });
-      }
+      if (posChart) posChart.setOption({ tooltip: {}, series: [ base(toSeriesData(positive, '#2563eb'), 'SUIT Variable, Pretendard, system-ui, sans-serif') ] });
+      if (negChart) negChart.setOption({ tooltip: {}, series: [ base(toSeriesData(negative, '#ef4444'), 'Pretendard, SUIT Variable, system-ui, sans-serif') ] });
 
-      // 둘 다 데이터 없으면 메시지
       if ((!positive.length) && (!negative.length)) {
-        const setEmpty = (inst) => {
-          const dom = inst?.getDom?.(); if (!dom) return;
-          dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">표시할 키워드가 없습니다.</div>';
-        };
+        const setEmpty = (inst) => { const dom = inst?.getDom?.(); if (!dom) return;
+          dom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b">표시할 키워드가 없습니다.</div>'; };
         setEmpty(posChart); setEmpty(negChart);
       }
     } catch (e) {
@@ -251,7 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const items = Array.isArray(data) ? data : (data.items || []);
       tbody.innerHTML = items.length
         ? items.map(r => {
-            const date = r.rvdate ?? r.rvDate ?? r.date ?? r.createdAt ?? '';
+            const rawDate = r.rvdate ?? r.rvDate ?? r.date ?? r.createdAt ?? '';
+            const date = (()=>{  // 2025-08-21 10:23:33 -> 2025-08-21
+              if(!rawDate) return '';
+              const m = String(rawDate).match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/);
+              return m ? m[1] : String(rawDate).slice(0,10);
+            })();
             const nick = r.nickname ?? r.nick ?? r.userName ?? r.uid ?? '';
             const rate = r.rating ?? r.rvscore ?? r.score ?? r.rvScore ?? '';
             const text = r.content ?? r.rvcontent ?? r.review ?? r.text ?? '';
@@ -277,8 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
     'chart-daily','chart-monthly','chart-quarterly',
     'age-bar','gender-pie',
     'review-count-bar','rating-line',
-    'krw-area','currency-pie','interest-bar',
-    'kw-pos','kw-neg'
+    'currency-pie','interest-bar',
+    'kw-pos','kw-neg',
+    'fx-daily-stacked','krw-daily-line'
   ];
   setTimeout(()=>resizeCharts(ALL_CHART_IDS), 0);
   window.addEventListener('resize', ()=>resizeCharts(ALL_CHART_IDS));
@@ -292,17 +319,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const s = (opt.series && opt.series[seriesIndex]) ? opt.series[seriesIndex] : null;
     let rawData = Array.isArray(s?.data) ? s.data : [];
 
-    // 라벨: xAxis->yAxis 순서로 시도, 없으면 series의 name 사용
     let labels = [];
     if (opt.xAxis?.[0]?.data?.length) labels = opt.xAxis[0].data;
     else if (opt.yAxis?.[0]?.data?.length) labels = opt.yAxis[0].data;
     else if (rawData.length && typeof rawData[0] === 'object' && 'name' in rawData[0]) {
       labels = rawData.map(d => d.name);
     }
-
-    // 값: 객체면 value, 아니면 원시값
     const data = rawData.map(v => (typeof v === 'object' && v !== null && 'value' in v) ? v.value : v);
-
     return { labels, data };
   }
   function extractPieAsObject(domId){
@@ -310,15 +333,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const inst = el && echarts.getInstanceByDom(el);
     if (!inst) return null;
     const data = inst.getOption()?.series?.[0]?.data || [];
-    const out = {};
-    data.forEach(d => out[d.name] = d.value);
-    return out;
+    const out = {}; data.forEach(d => out[d.name] = d.value); return out;
+  }
+  function extractMultiSeriesByDomId(domId){
+    const el = document.getElementById(domId);
+    const inst = el && echarts.getInstanceByDom(el);
+    if (!inst) return null;
+    const opt = inst.getOption() || {};
+    const labels = (opt.xAxis?.[0]?.data) || (opt.yAxis?.[0]?.data) || [];
+    const series = (opt.series || []).map(s => ({
+      name: s.name || '',
+      data: (s.data || []).map(v => (typeof v === 'object' && v !== null && 'value' in v) ? v.value : v)
+    }));
+    return { labels, series };
   }
 
   async function buildStatsJson() {
+    // 리뷰 시계열 확보(미초기화 대비 서버에서 재조회)
     let reviewsCountMonthly = extractSeriesDataByDomId('review-count-bar');
     let ratingMonthly       = extractSeriesDataByDomId('rating-line');
-
     if (!reviewsCountMonthly?.labels?.length || !ratingMonthly?.labels?.length) {
       try {
         const res = await fetch('/api/reviews/statsMonthly?months=6');
@@ -328,13 +361,14 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch(_) {}
     }
 
+    // 가입자
     const subscribers = {
       daily:     extractSeriesDataByDomId('chart-daily'),
       monthly:   extractSeriesDataByDomId('chart-monthly'),
       quarterly: extractSeriesDataByDomId('chart-quarterly')
     };
 
-    // 연령/성별
+    // 인구통계
     let ageStats = null;
     try { const res = await fetch('/api/ageStats'); if (res.ok) ageStats = await res.json(); } catch (_) {}
     let gender = null;
@@ -344,12 +378,9 @@ document.addEventListener('DOMContentLoaded', () => {
       gender = arr.reduce((acc, cur) => (acc[cur.name] = cur.value, acc), {});
     }
 
-    // 누적 사용액
-    const krwCumulative = extractSeriesDataByDomId('krw-area');
-
-    // 관심 지표
-    const currencyDist = extractPieAsObject('currency-pie');      // { USD: n, ... }
-    const topicSeries  = extractSeriesDataByDomId('interest-bar'); // { labels:[...], data:[...] }
+    // 관심
+    const currencyDist = extractPieAsObject('currency-pie');
+    const topicSeries  = extractSeriesDataByDomId('interest-bar');
     const topicMap = (() => {
       const m = {};
       if (topicSeries?.labels?.length) {
@@ -358,23 +389,37 @@ document.addEventListener('DOMContentLoaded', () => {
       return m;
     })();
 
-    // 최근 리뷰 테이블
+    // 최근 리뷰(표 렌더링 데이터 그대로 긁음)
     const recentReviews = Array.from(document.querySelectorAll('#review-list tr')).map(tr => {
       const tds = tr.querySelectorAll('td');
       return { date: tds[0]?.textContent?.trim(), nick: tds[1]?.textContent?.trim(),
                rate: tds[2]?.textContent?.trim(), text: tds[3]?.textContent?.trim() };
     });
 
+    // 신규 사용액 지표
+    const krwTotal = (() => {
+      const el = document.getElementById('krw-total');
+      if (!el) return null;
+      const m = el.textContent.match(/([\d,]+)/);
+      return m ? Number(m[1].replace(/,/g, '')) : null;
+    })();
+    const krwDaily = extractSeriesDataByDomId('krw-daily-line');   // {labels,data}
+    const fxDaily  = extractMultiSeriesByDomId('fx-daily-stacked');// {labels,series:[{name,data}]}
+
     return {
       generatedAt: new Date().toISOString(),
       subscribers,
       demographics: { age: ageStats, gender },
       reviews: { countMonthly: reviewsCountMonthly, ratingMonthly, recentReviews, keywords: null },
-      usage: { krwCumulative },
+      usage: {
+        krwTotal,               // 총 원화 누적사용액(숫자)
+        krwDaily,               // 일자별 환전금액(원화사용액)
+        fxDaily                 // 일자별 통화별 환전금액(외화)
+      },
       affinity: {
         currency: currencyDist,
         topic: { labels: topicSeries?.labels || [], data: topicSeries?.data || [] },
-        topicMap // { TRAVEL: n, STUDY: n, ... }
+        topicMap
       }
     };
   }
@@ -407,9 +452,10 @@ document.addEventListener('DOMContentLoaded', () => {
     'gender-pie':       { label:'성별 비율' },
     'review-count-bar': { label:'월별 리뷰 수' },
     'rating-line':      { label:'월별 평균 평점' },
-    'krw-area':         { label:'누적 원화 사용액' },
     'currency-pie':     { label:'관심 통화 분포' },
     'interest-bar':     { label:'관심 분야 분포' },
+    'fx-daily-stacked': { label:'일자별 통화별 환전금액(외화)' },
+    'krw-daily-line':   { label:'일자별 환전금액(원화사용액)' }
   };
   function getChartIdsForTitle(title='') {
     const t = title.toLowerCase();
@@ -417,7 +463,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (t.includes('가입자')) { ids.add('chart-daily'); ids.add('chart-monthly'); ids.add('chart-quarterly'); }
     if (t.includes('연령') || t.includes('성별')) { ids.add('age-bar'); ids.add('gender-pie'); }
     if (t.includes('리뷰') || t.includes('평점')) { ids.add('review-count-bar'); ids.add('rating-line'); }
-    if (t.includes('사용액') || t.includes('누적') || t.includes('원화')) { ids.add('krw-area'); }
+    if (t.includes('환전') || t.includes('사용액') || t.includes('원화')) {
+      ids.add('fx-daily-stacked'); ids.add('krw-daily-line');
+    }
     if (t.includes('관심') || t.includes('통화') || t.includes('분야')) { ids.add('currency-pie'); ids.add('interest-bar'); }
     return [...ids];
   }
@@ -480,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
     body.innerHTML=html||'(빈 리포트)';
     modal.style.display='block';
     document.body.style.overflow='hidden';
-    bindReportActions(); // 모달 열릴 때마다 버튼 바인딩 보강
+    bindReportActions();
   }
   function closeReportModal(){
     const m=document.getElementById('ai-report-modal');
@@ -520,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* ================== 동의 모달 (매번 요구) ================== */
+  /* ================== 동의 모달 ================== */
   const consentModal  = document.getElementById('consent-modal');
   const consentForm   = document.getElementById('consent-form');
   const nameEl        = document.getElementById('consent-name');
@@ -533,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openConsentModal() {
     if (!consentModal) return;
-    consentForm?.reset();                  // 매번 새로 입력
+    consentForm?.reset();
     btnConfirm?.setAttribute('disabled','');
     consentModal.style.display = 'block';
     document.body.style.overflow = 'hidden';
@@ -552,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnClose   ?.addEventListener('click', closeConsentModal);
   btnCancel  ?.addEventListener('click', closeConsentModal);
   document.querySelector('#consent-modal .ai-modal__backdrop')?.addEventListener('click', closeConsentModal);
-  // 확인 → 동의값 검증 후 분석 시작(저장 안 함)
+
   btnConfirm?.addEventListener('click', (e) => {
     e.preventDefault();
     validateConsent();
@@ -560,13 +608,11 @@ document.addEventListener('DOMContentLoaded', () => {
     closeConsentModal();
     startReportAnalysis();
   });
-  // "리포트 분석" 버튼을 누를 때는 무조건 모달을 띄움
   generateBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     if (generateBtn.disabled) return;
     openConsentModal();
   });
-  // (선택) 저장값 미사용 → 안전하게 null 반환하는 스텁
   function getStoredConsent(){ return null; }
   (function prefillConsentForm() {
     const c = getStoredConsent(); if (!c) return;
@@ -668,16 +714,28 @@ document.addEventListener('DOMContentLoaded', () => {
           addTable('성별', Object.entries(lastStatsJson.demographics.gender).map(([k,v])=>[k,Number(v)]), '명', '#,##0');
         addTable('리뷰-월별갯수', toPairs(lastStatsJson.reviews?.countMonthly),   '건', '#,##0');
         addTable('평점-월별평균', toPairs(lastStatsJson.reviews?.ratingMonthly), '점', '0.0');
-        addTable('누적 원화 사용액', toPairs(lastStatsJson.usage?.krwCumulative), '원', '#,##0');
 
-        // 관심 통화/분야
-        if (lastStatsJson.affinity?.currency) {
-          const rows = Object.entries(lastStatsJson.affinity.currency).map(([k,v]) => [k, Number(v)]);
-          addTable('관심 통화 분포', rows, '명', '#,##0');
-        }
-        if (lastStatsJson.affinity?.topic?.labels && lastStatsJson.affinity?.topic?.data) {
-          const rows = lastStatsJson.affinity.topic.labels.map((lab, i) => [lab, Number(lastStatsJson.affinity.topic.data[i])]);
-          addTable('관심 분야 분포', rows, '명', '#,##0');
+        // 신규 지표
+        addTable('일자별 환전금액(원화사용액)', toPairs(lastStatsJson.usage?.krwDaily), '원', '#,##0');
+
+        // fxDaily: 날짜×통화 테이블로 평탄화
+        if (lastStatsJson.usage?.fxDaily?.labels?.length && Array.isArray(lastStatsJson.usage.fxDaily.series)) {
+          const rowsFx = [];
+          const labels = lastStatsJson.usage.fxDaily.labels;
+          lastStatsJson.usage.fxDaily.series.forEach(s => {
+            labels.forEach((lab, i) => rowsFx.push([lab, s.name, Number(s.data?.[i] || 0)]));
+          });
+          cur = addTitle(cur, '일자별 통화별 환전금액(외화)');
+          const refFx = `A${cur}`;
+          ws.addTable({
+            name:`T_FX_${cur}`, ref: refFx, headerRow:true,
+            style:{ theme:'TableStyleMedium3', showRowStripes:true },
+            columns:[{name:'날짜'},{name:'통화'},{name:'금액'}],
+            rows: rowsFx
+          });
+          const start = cur + 1, end = cur + rowsFx.length;
+          for (let rr=start; rr<=end; rr++) ws.getCell(rr,3).numFmt = '#,##0.####';
+          cur = end + 3;
         }
 
         const buf = await wb.xlsx.writeBuffer();
@@ -694,15 +752,19 @@ document.addEventListener('DOMContentLoaded', () => {
       pushSeries('가입자-일별',   lastStatsJson.subscribers?.daily,     '명');
       pushSeries('가입자-월별',   lastStatsJson.subscribers?.monthly,   '명');
       pushSeries('가입자-분기별', lastStatsJson.subscribers?.quarterly, '명');
-      if (lastStatsJson.demographics?.age) Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v, '명']));
-      if (lastStatsJson.demographics?.gender) Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v, '명']));
-      pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly, '건');
+      if (lastStatsJson.demographics?.age)     Object.entries(lastStatsJson.demographics.age).forEach(([k,v])=> rows.push(['연령대', k, v, '명']));
+      if (lastStatsJson.demographics?.gender)  Object.entries(lastStatsJson.demographics.gender).forEach(([k,v])=> rows.push(['성별', k, v, '명']));
+      pushSeries('리뷰-월별갯수', lastStatsJson.reviews?.countMonthly,  '건');
       pushSeries('평점-월별평균', lastStatsJson.reviews?.ratingMonthly, '점');
-      pushSeries('누적원화',      lastStatsJson.usage?.krwCumulative,  '원');
-      if (lastStatsJson.affinity?.currency)
-        Object.entries(lastStatsJson.affinity.currency).forEach(([k,v]) => rows.push(['관심 통화 분포', k, v, '명']));
-      if (lastStatsJson.affinity?.topic?.labels && lastStatsJson.affinity?.topic?.data)
-        lastStatsJson.affinity.topic.labels.forEach((lab,i)=> rows.push(['관심 분야 분포', lab, lastStatsJson.affinity.topic.data[i], '명']));
+
+      // 신규 지표 CSV
+      pushSeries('일자별 환전금액(원화사용액)', lastStatsJson.usage?.krwDaily, '원');
+      if (lastStatsJson.usage?.fxDaily?.labels?.length && Array.isArray(lastStatsJson.usage.fxDaily.series)) {
+        const labels = lastStatsJson.usage.fxDaily.labels;
+        lastStatsJson.usage.fxDaily.series.forEach(s => {
+          labels.forEach((lab, i) => rows.push(['일자별 통화별 환전금액(외화)', `${lab} / ${s.name}`, s.data?.[i] || 0, '통화단위']));
+        });
+      }
 
       const csv = '\uFEFF' + rows.map(r => r.map(v => `"${(v ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
