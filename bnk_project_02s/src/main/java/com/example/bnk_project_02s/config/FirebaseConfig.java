@@ -17,7 +17,7 @@ public class FirebaseConfig {
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(
-                    new ClassPathResource("bnk-push-notification-firebase-adminsdk-fbsvc-e89e21535e.json").getInputStream()))
+                    new ClassPathResource("bnk-push-notification-6a8fb-firebase-adminsdk-fbsvc-9066f0cbe8.json").getInputStream()))
                 .build();
             
             FirebaseApp.initializeApp(options);

@@ -74,7 +74,7 @@ public class ShoppingLogService {
         if (!"Y".equals(card.getCardstatus())) {
             ShoppingLog failedLog = saveFailedLog(user, product, card, slamount, slcurrency, "CC45");
             
-            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, product.getSpname());
+            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, "CC45");
             
             return createFailResponse("CC45", "카드가 정지 상태입니다.", failedLog, Map.of("cardstatus", card.getCardstatus()));
         }
@@ -92,7 +92,7 @@ public class ShoppingLogService {
         if (currentBalance.compareTo(paymentAmount) < 0) {
             ShoppingLog failedLog = saveFailedLog(user, product, card, slamount, slcurrency, "CC10");
             
-            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, product.getSpname());
+            fcmService.sendPaymentNotificationToUser(user.getUid(), "N", slamount, "CC10");
             
             return createFailResponse("CC10", "잔액이 부족합니다.", failedLog, 
                 Map.of("currentBalance", currentBalance.toString(), "requiredAmount", paymentAmount.toString()));
@@ -117,7 +117,7 @@ public class ShoppingLogService {
         
         historyRepository.save(history);
         
-        fcmService.sendPaymentNotificationToUser(user.getUid(), "Y", slamount, product.getSpname());
+        fcmService.sendPaymentNotificationToUser(user.getUid(), "Y", slamount, null);
         
         result.put("success", true);
         result.put("message", "결제가 성공적으로 완료되었습니다.");
