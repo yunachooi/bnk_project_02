@@ -20,6 +20,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.bnk_project_02s.repository.ParentAccountRepository;
+import com.example.bnk_project_02s.repository.ChildAccountRepository;
+import com.example.bnk_project_02s.repository.CardRepository;
 
 @Controller
 public class RateController {
@@ -34,6 +37,15 @@ public class RateController {
     private ObjectMapper objectMapper;
 
     private static final String LOGIN_USER = "LOGIN_USER"; // UserController와 동일 키 사용
+    
+    @Autowired
+    private ParentAccountRepository parentAccountRepository;
+
+    @Autowired
+    private ChildAccountRepository childAccountRepository;
+
+    @Autowired
+    private CardRepository cardRepository;
 
     @GetMapping("/forex")
     public String showRates(Model model) {
@@ -56,14 +68,46 @@ public class RateController {
                                  HttpSession session) throws JsonProcessingException {
         System.out.println("📄 [상세 환율] /forex/detail?currency=" + currencyCode);
 
-        // 1) 로그인/가입 상태 플래그 계산 (리다이렉트 없이 화면에서 모달 처리)
+     // --- 가입/로그인 상태 계산 (실데이터 기반) : 교체 시작 ---
         User loginUser = (User) session.getAttribute(LOGIN_USER);
-        boolean loginRequired    = (loginUser == null);
-        boolean needSubscription = (!loginRequired) && !"Y".equalsIgnoreCase(loginUser.getUcheck());
+        boolean loginRequired = (loginUser == null);
 
+        // 통화코드 정규화: "JPY(100)" -> "JPY"
+        // ✅ final로 한 번만 할당 (람다에서 사용 가능)
+        final String alpha = (
+                currencyCode.contains("(")
+                    ? currencyCode.substring(0, currencyCode.indexOf('('))
+                    : currencyCode
+            ).trim().toUpperCase();
+
+        boolean hasParentAccount = false;
+        boolean hasChildAccount  = false;
+        boolean needSubscription = false;
+
+        if (!loginRequired) {
+            final String uid = loginUser.getUid();
+
+            // 1) 부모계좌(외화통장) 보유 여부
+            hasParentAccount = parentAccountRepository.existsByUser_Uid(uid);
+
+            // 2) 자식계좌(해당 통화) 보유 여부 (✅ CUNAME 기준)
+            hasChildAccount = childAccountRepository
+                    .findByParentAccount_User_Uid(uid)  // 유저의 모든 자식계좌
+                    .stream()
+                    .anyMatch(ca ->
+                            ca.getCurrency() != null
+                         && alpha.equalsIgnoreCase(ca.getCurrency().getCuname())
+                    );
+
+            // 환전 진입 조건: Parent + 해당 통화 Child 보유 시 통과
+            needSubscription = !(hasParentAccount && hasChildAccount);
+        }
+
+        // 뷰로 내려줌
         model.addAttribute("loginRequired", loginRequired);
         model.addAttribute("needSubscription", needSubscription);
-
+        model.addAttribute("hasParentAccount", hasParentAccount);
+        model.addAttribute("hasChildAccount", hasChildAccount);
         // 2) 상세 데이터 구성
         Rate today = rateService.getTodayRate(currencyCode);
         Rate yesterday = rateService.getYesterdayRate(currencyCode);

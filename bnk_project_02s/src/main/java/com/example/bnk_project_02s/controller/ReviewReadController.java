@@ -19,7 +19,7 @@ public class ReviewReadController {
     private final ReviewStatsService reviewStatsService;
 
     @GetMapping("/recent2")
-    public Map<String, Object> recent(@RequestParam(defaultValue = "10") int limit) {
+    public Map<String, Object> recent(@RequestParam(name = "limit", defaultValue = "10") int limit) {
         int n = clamp(limit);
         var items = reviewStatsService.recent(n);
         return Map.of("items", items);

@@ -39,7 +39,7 @@ public class InitRateService {
 
     public void fetchInitialRates() {
         LocalDate start = LocalDate.of(2025, 5, 8);
-        LocalDate end = LocalDate.of(2025, 8, 8);
+        LocalDate end = LocalDate.of(2025, 8, 20);
         DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
 
         CODE_TO_RCODE.forEach((itemCode, rcode) -> {

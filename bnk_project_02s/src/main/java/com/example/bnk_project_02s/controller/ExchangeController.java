@@ -1,19 +1,27 @@
 package com.example.bnk_project_02s.controller;
 
+import java.util.Optional;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import com.example.bnk_project_02s.entity.CustomerRate;
 import com.example.bnk_project_02s.entity.ParentAccount;
 import com.example.bnk_project_02s.entity.User;
+import com.example.bnk_project_02s.repository.ChildAccountRepository;
+import com.example.bnk_project_02s.repository.CurrencyRepository;
 import com.example.bnk_project_02s.repository.ParentAccountRepository;
-import com.example.bnk_project_02s.service.EximRateService;
 import com.example.bnk_project_02s.service.ExchangeHistoryService;
+import com.example.bnk_project_02s.service.EximRateService;
+
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -25,10 +33,34 @@ public class ExchangeController {
     private final EximRateService eximRateService;
     private final ParentAccountRepository parentRepo;
     private final ExchangeHistoryService exchangeHistoryService;
-
+    private final ChildAccountRepository childRepo;
+    private final CurrencyRepository currencyRepo;
     /** 1단계: 구매 실행 화면 */
     @GetMapping("/buy/{code}")
-    public String buyCurrency(@PathVariable("code") String code, Model model) {
+    public String buyCurrency(@PathVariable("code") String code,
+            Model model,
+            HttpSession session,
+            RedirectAttributes ra) {
+			User me = (User) session.getAttribute(LOGIN_USER);
+			if (me == null) return "redirect:/user/login";
+			
+			final String alpha = normalizeCode(code); // code=USD, JPY(100) 등 → USD
+			var currency = currencyRepo.findByCunameIgnoreCase(alpha)
+			.orElseThrow(() -> new IllegalArgumentException("통화가 존재하지 않습니다: " + alpha));
+			
+			var parent = parentRepo.findByUser_Uid(me.getUid())
+			.orElseThrow(() -> new IllegalStateException("부모계좌(외화통장)가 없습니다."));
+			
+			boolean hasChild = childRepo
+			.findByParentAccount_PanoAndCurrency_Cuname(parent.getPano(), currency.getCuname())
+			.isPresent();
+			
+			if (!hasChild) {
+			// ★ 플래시로 에러 메시지 전달 후 상세 페이지로 되돌림
+			ra.addFlashAttribute("error", "해당 통화(" + currency.getCuname() + ") 계좌가 없어 구매할 수 없습니다.");
+			return "redirect:/forex/detail?currency=" + code;
+			}
+
         CustomerRate rate = eximRateService.fetchAndSaveSingleRate(code);
         if (rate == null) {
             model.addAttribute("error", "환율 정보를 불러올 수 없습니다.");
@@ -136,5 +168,11 @@ public class ExchangeController {
     @GetMapping("/complete")
     public String completeView() {
         return "forexExchange3"; // 완료 페이지 템플릿
+    }
+    private static String normalizeCode(String s) {
+        if (s == null) return "";
+        String t = s.split("\\(")[0];       // 괄호 이후 제거
+        t = t.replaceAll("[^A-Za-z]", "");  // 영문자만
+        return t.trim().toUpperCase();
     }
 }
