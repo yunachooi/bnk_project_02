@@ -172,8 +172,26 @@ class _AccountMainPageState extends State<AccountMainPage> {
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('BNK 쇼핑환전'),
-          actions: [IconButton(onPressed: _reload, icon: const Icon(Icons.refresh))],
+          backgroundColor: Colors.white,
+          elevation: 1,
+          shadowColor: Colors.grey.withOpacity(0.3),
+          leading: IconButton(
+            icon: const Icon(Icons.home, color: Colors.black),
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => AccountMainPage(uid: widget.uid),
+                ),
+              );
+            },
+          ),
+          automaticallyImplyLeading: false, // 기본 뒤로가기 버튼 제거
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.black),
+              onPressed: _reload,
+            ),
+          ],
         ),
         body: Stack(
           children: [
