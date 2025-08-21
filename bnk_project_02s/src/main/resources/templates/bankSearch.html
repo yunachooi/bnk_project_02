@@ -3,242 +3,373 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="origin-when-cross-origin">
   <title>BNK 지점/디지털 지도</title>
 
   <style>
     :root{
       --ink:#1f2937; --muted:#6b7280; --border:#e5e7eb; --bg:#fff;
       --bar:#f3f4f6;
-      --branch:#d81b60;   /* 일반 지점 */
-      --digital:#14b8a6;  /* 디지털 지점 */
-      --card:#ffffff; --wash:#fafafa;
-      --accent:#111827;   /* 활성 탭 테두리 */
-      --radius:12px;
-      --shadow:0 1px 0 rgba(0,0,0,.04);
-      --shadow-lg:0 8px 18px rgba(0,0,0,.08);
+      --branch:#d81b60; --digital:#14b8a6;
+      --card:#ffffff; --wash:#fafafa; --accent:#111827;
+      --radius:12px; --shadow:0 1px 0 rgba(0,0,0,.04); --shadow-lg:0 8px 18px rgba(0,0,0,.08);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;color:var(--ink);background:var(--bg)}
-
-    /* 레이아웃 */
     .wrap{max-width:min(1200px, 100vw);margin:0 auto;padding:12px 16px 28px}
-    .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:800;margin-bottom:16px}
-
+    .bar{background:var(--bar);text-align:center;border-radius:8px;padding:10px 0;font-weight:800;margin-bottom:10px}
+    .lang-bar{display:flex;gap:8px;justify-content:flex-end;margin:0 0 10px 0}
     .layout{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (min-width: 768px){ /* 태블릿 이상: 2단 레이아웃 */
-      .layout{grid-template-columns: minmax(420px, 1.15fr) minmax(360px, .85fr)}
-    }
-
-    /* 카드 공통 */
+    @media (min-width: 768px){ .layout{grid-template-columns: minmax(420px, 1.15fr) minmax(360px, .85fr)} }
     .card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow)}
-
-    /* 지도 */
     #map{height:clamp(320px, 40vh, 520px);width:100%}
     @media (min-width: 768px){
-      #map{height:clamp(520px, 70vh, 760px)}
-      .map-card{position:sticky; top:12px}  /* 사이드 스크롤 시 지도 고정 */
+      #map{height:clamp(520px, 70vh, 760px)} .map-card{position:sticky; top:12px}
     }
-
     .legend{display:flex;gap:10px;padding:8px 12px;color:var(--muted);font-size:13px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
-    .chip{display:inline-flex;align-items:center;gap:6px}
-    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
-
-    /* 컨트롤(검색/탭/카운트) */
+    .chip{display:inline-flex;align-items:center;gap:6px}.dot{width:12px;height:12px;border-radius:999px;display:inline-block}
     .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
     .cta{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#fff;cursor:pointer;border:1px solid var(--border);font-weight:800;transition:.2s ease;text-align:center}
-    .cta.active{outline:2px solid var(--accent)}
-    .cta:hover{box-shadow:var(--shadow-lg)}
+    .cta.active{outline:2px solid var(--accent)} .cta:hover{box-shadow:var(--shadow-lg)}
     .sub{display:block;font-size:12px;color:var(--muted);font-weight:600}
     .search{grid-column:1/-1;display:flex;gap:8px}
     .search input{flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px}
-
-    /* 리스트 */
     .list-card{border-top:1px solid var(--border);background:#fff}
     .list-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);background:#fff}
     .list{display:flex;flex-direction:column}
     .item{border-bottom:1px solid var(--border);padding:12px;background:#fff;transition:background .15s ease}
-    .item:last-child{border-bottom:none}
-    .item:hover{background:#fcfcfc}
+    .item:last-child{border-bottom:none}.item:hover{background:#fcfcfc}
     .i-name{font-weight:800;display:flex;align-items:center;gap:6px;justify-content:space-between}
     .i-addr,.i-phone{font-size:13px;color:var(--muted);margin-top:3px}
     .badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--digital);color:#fff;margin-left:6px}
     .badge.hq{background:#111827}
-    .empty{padding:20px;color:var(--muted);text-align:center;background:#fafafa}
-
+    .empty{padding:20px;color:var(--muted);text-align:center;background:#fafafa;white-space:pre-line}
     .row-actions{display:flex;gap:8px;margin-top:8px}
     .btn{border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:700;font-size:13px}
     .btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
-
-    /* 페이지네이션 */
     .pager{display:flex;gap:6px;justify-content:center;align-items:center;padding:12px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap}
     .pg-btn{border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:14px}
     .pg-btn[disabled]{opacity:.4;cursor:not-allowed}
     .pg-info{font-size:13px;color:var(--muted);padding:0 6px}
-
-     @media (prefers-color-scheme: dark){
+    @media (prefers-color-scheme: dark){
       :root{ --bg:#0b0f14; --ink:#e5e7eb; --muted:#9aa3af; --border:#242a33; --bar:#0f1720; }
-      .card{background:#0e141b}
-      .item:hover{background:#0d131a}
+      .card{background:#0e141b}.item:hover{background:#0d131a}
     }
   </style>
 
   <script>
-    const DEFAULT_CENTER = { lat: 35.1454909, lng: 129.0658220 };
-
-    let map;
-    let all = [];
-    let filtered = [];
-    let markers = [];
-    let infoWindows = [];
-    let filter = 'branch';
-    let currentPage = 1;
-    let PAGE_SIZE = window.matchMedia('(min-width: 768px)').matches ? 25 : 15; // 화면에 따라 페이지 크기 가변
-    let searchTerm = '';
-
-    /* ✅ 본점 전용 마커/인포윈도우 */
-    let hqMarker = null, hqInfo = null;
-    const iconHtmlHQ = `
-      <div style="transform:translate(-50%,-50%);display:grid;place-items:center">
-        <div style="
-          width:40px;height:40px;border-radius:999px;
-          background:#111827;
-          border:2px solid #fff; box-shadow:0 2px 10px rgba(0,0,0,.2);
-          color:#fff; font-weight:900; font-size:11px;
-          display:flex; align-items:center; justify-content:center;">BNK
-        </div>
-      </div>`;
-
-    window.navermap_authFailure = function () {
-      alert('네이버 지도 인증 실패: ncpKeyId 및 Web 서비스 URL(리퍼러) 등록을 확인하세요.');
+    /* ========== i18n 사전 ========== */
+    const I18N = {
+      ko: {
+        title: '영업점 찾기',
+        tabBranch: '🏦 지점',
+        tabBranchSub: '모든 부산은행 지점',
+        tabDigital: '💻 디지털 데스크 지점',
+        tabDigitalSub: '영상연결로 업무 가능',
+        legendBranch: '지점',
+        legendDigital: '디지털',
+        searchPH: '지점명·주소·전화로 검색',
+        listTitle: '지점 리스트',
+        badgeDigital: '디지털',
+        badgeHQ: '본점',
+        btnViewOnMap: '지도에서 보기',
+        btnDirections: '네이버 길찾기',
+        empty: '표시할 지점이 없습니다.',
+        pageFirst: '« 처음', pagePrev: '‹ 이전', pageNext: '다음 ›', pageLast: '끝 »',
+        pageInfo: (cur,pages)=>`${cur} / ${pages} 페이지`,
+        countLabel: (s,e,t)=>`표시: ${s}-${e} / ${t}개`,
+        hqTitle: 'BNK 본점',
+        centerCoord: (lat,lng)=>`중심 좌표: ${lat}, ${lng}`
+      },
+      en: {
+        title: 'Find Branches',
+        tabBranch: '🏦 Branches',
+        tabBranchSub: 'All BNK branches',
+        tabDigital: '💻 Digital Desk',
+        tabDigitalSub: 'Video-assisted services',
+        legendBranch: 'Branch',
+        legendDigital: 'Digital',
+        searchPH: 'Search by name, address, phone',
+        listTitle: 'Branch List',
+        badgeDigital: 'Digital',
+        badgeHQ: 'HQ',
+        btnViewOnMap: 'Show on Map',
+        btnDirections: 'Directions (Naver)',
+        empty: 'No branches to display.',
+        pageFirst: '« First', pagePrev: '‹ Prev', pageNext: 'Next ›', pageLast: 'Last »',
+        pageInfo: (cur,pages)=>`${cur} / ${pages} pages`,
+        countLabel: (s,e,t)=>`Showing: ${s}-${e} of ${t}`,
+        hqTitle: 'BNK Headquarters',
+        centerCoord: (lat,lng)=>`Center: ${lat}, ${lng}`
+      },
+      ja: {
+        title: '支店検索',
+        tabBranch: '🏦 支店',
+        tabBranchSub: 'BNK全支店',
+        tabDigital: '💻 デジタルデスク',
+        tabDigitalSub: 'ビデオ相談対応',
+        legendBranch: '支店',
+        legendDigital: 'デジタル',
+        searchPH: '支店名・住所・電話で検索',
+        listTitle: '支店リスト',
+        badgeDigital: 'デジタル',
+        badgeHQ: '本店',
+        btnViewOnMap: '地図で表示',
+        btnDirections: '経路案内（NAVER）',
+        empty: '表示する支店がありません。',
+        pageFirst: '« 最初', pagePrev: '‹ 前', pageNext: '次 ›', pageLast: '最後 »',
+        pageInfo: (cur,pages)=>`${cur} / ${pages} ページ`,
+        countLabel: (s,e,t)=>`表示：${s}-${e} / ${t}`,
+        hqTitle: 'BNK 本店',
+        centerCoord: (lat,lng)=>`中心座標：${lat}, ${lng}`
+      },
+      zh: {
+        title: '网点查询',
+        tabBranch: '🏦 网点',
+        tabBranchSub: 'BNK全部网点',
+        tabDigital: '💻 数字柜台',
+        tabDigitalSub: '支持视频服务',
+        legendBranch: '网点',
+        legendDigital: '数字',
+        searchPH: '按名称/地址/电话搜索',
+        listTitle: '网点列表',
+        badgeDigital: '数字',
+        badgeHQ: '总行',
+        btnViewOnMap: '在地图上查看',
+        btnDirections: '路线（NAVER）',
+        empty: '暂无可显示的网点。',
+        pageFirst: '« 首页', pagePrev: '‹ 上一页', pageNext: '下一页 ›', pageLast: '末页 »',
+        pageInfo: (cur,pages)=>`${cur} / ${pages} 页`,
+        countLabel: (s,e,t)=>`显示：${s}-${e} / 共${t}`,
+        hqTitle: 'BNK 总行',
+        centerCoord: (lat,lng)=>`中心坐标：${lat}, ${lng}`
+      }
     };
 
+    // 현재 언어
+    const DEFAULT_LANG = (() => {
+      try{
+        const saved = localStorage.getItem('bnk.lang');
+        if (saved && I18N[saved]) return saved;
+      }catch(e){}
+      const n = (navigator.language||'ko').slice(0,2).toLowerCase();
+      return (n==='en'||n==='ja'||n==='zh') ? n : 'ko';
+    })();
+    let CUR_LANG = DEFAULT_LANG;
+
+    // ✅ 항상 "문자열"을 반환하는 t()
+    const t = (key, ...args) => {
+      const pack = I18N[CUR_LANG] || I18N.ko || {};
+      let val = pack[key];
+      if (val === undefined && I18N.ko) val = I18N.ko[key]; // ko 폴백
+      if (typeof val === 'function') return val(...args);
+      return (val ?? String(key));
+    };
+
+    /* ===== 유틸 ===== */
+    function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[c])); }
+    function jsStr(s){ return String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+    function num(v){ const n = parseFloat(v); return Number.isFinite(n) ? n : null; }
+
+    /* ===== API_BASE 결정 =====
+       - 서버/브라우저 배포: same-origin('')
+       - WebView 파일 실행: 안드 에뮬레이터 기본 10.0.2.2:8093
+       - 강제 지정: index.html?api=http://192.168.0.10:8093
+    */
+    const API_BASE = (() => {
+      const p = new URLSearchParams(location.search).get('api');
+      if (p) return p.replace(/\/+$/,'');
+      if (/^https?:/i.test(location.protocol)) return '';
+      return 'http://10.0.2.2:8093';
+    })();
+
+    /* ===== 상태 ===== */
+    const DEFAULT_CENTER = { lat: 35.1454909, lng: 129.0658220 };
+    let map, all = [], filtered = [], markers = [], infoWindows = [];
+    let filter = 'branch', currentPage = 1, PAGE_SIZE = 15, searchTerm = '';
+
+    /* ===== 인증 실패 콜백 ===== */
+    window.navermap_authFailure = function () {
+      alert('네이버 지도 인증 실패\n- Web 서비스 URL에 이 오리진 등록 필요: ' + location.origin +
+            '\n- 에뮬레이터/실기기 오리진이 다르면 각자 등록\n- 키는 ncpKeyId 사용 중');
+    };
+
+    /* ===== 아이콘 ===== */
+    const iconHtmlHQ = `
+      <div style="transform:translate(-50%,-50%);display:grid;place-items:center">
+        <div style="width:40px;height:40px;border-radius:999px;background:#111827;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.2);color:#fff;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;">BNK</div>
+      </div>`;
     const iconHtml = (isDigital) => `
       <div style="transform:translate(-50%,-50%);display:grid;place-items:center">
-        <div style="
-          width:36px;height:36px;border-radius:999px;
-          background:${isDigital ? 'var(--digital)' : 'var(--branch)'};
-          border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.18);
-          color:#fff;font-weight:900;font-size:11px;
-          display:flex;align-items:center;justify-content:center;">BNK
-        </div>
+        <div style="width:36px;height:36px;border-radius:999px;background:${isDigital ? 'var(--digital)' : 'var(--branch)'};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.18);color:#fff;font-weight:900;font-size:11px;display:flex;align-items:center;justify-content:center;">BNK</div>
       </div>`;
 
-    function escapeHtml(str){
-      return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[c]));
-    }
-
-    /* ✅ 네이버 길찾기 열기 (앱 우선 → 웹 폴백) */
+    /* ===== 길찾기 ===== */
     function openNaverDirections(name, lat, lng){
       const dname = encodeURIComponent(name || '목적지');
       const appUrl = `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${dname}&appname=bnk.forex`;
-      const webUrl = `https://map.naver.com/v5/directions/-/${lng},${lat}`; // 경도,위도 순서
+      const webUrl = `https://map.naver.com/v5/directions/-/${lng},${lat}`;
+      try{
+        if (window.NAVER && typeof window.NAVER.postMessage === 'function') {
+          window.NAVER.postMessage(JSON.stringify({ type: 'openUrl', url: appUrl, fallback: webUrl }));
+          return;
+        }
+      }catch(e){}
       const timer = setTimeout(()=>{ window.open(webUrl, '_blank'); }, 700);
       window.location.href = appUrl;
       window.addEventListener('pagehide', ()=>clearTimeout(timer), { once:true });
     }
 
-    /* ✅ 본점 마커를 항상 보장 */
+    /* ===== 본점 마커 ===== */
+    let hqMarker=null, hqInfo=null;
     function ensureHQMarker(){
       if (!map) return;
       if (!hqMarker) {
         const pos = new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
-        hqMarker = new naver.maps.Marker({
-          position: pos, map, icon: { content: iconHtmlHQ }, zIndex: 500
-        });
-        const hqContentHtml = `
-          <div style="min-width:230px;padding:2px 0">
-            <div class="i-name">부산은행 본점 <span class="badge hq">본점</span></div>
-            <div class="i-addr">중심 좌표: ${DEFAULT_CENTER.lat}, ${DEFAULT_CENTER.lng}</div>
-            <div class="row-actions">
-              <button class="btn primary" onclick="openNaverDirections('부산은행 본점', ${DEFAULT_CENTER.lat}, ${DEFAULT_CENTER.lng})">네이버 길찾기</button>
-            </div>
-          </div>`;
-        hqInfo = new naver.maps.InfoWindow({ content: hqContentHtml });
-        naver.maps.Event.addListener(hqMarker, 'click', () => {
-          infoWindows.forEach(w => w.close());
-          hqInfo.open(map, hqMarker);
-        });
+        hqMarker = new naver.maps.Marker({ position: pos, map, icon: { content: iconHtmlHQ }, zIndex: 500 });
+        updateHQInfoWindow();
+        naver.maps.Event.addListener(hqMarker, 'click', () => { infoWindows.forEach(w => w.close()); hqInfo.open(map, hqMarker); });
       } else {
-        hqMarker.setMap(map); // 탭/페이지 전환 시에도 유지
+        updateHQInfoWindow();
+        hqMarker.setMap(map);
       }
     }
+    function updateHQInfoWindow(){
+      const html = `
+        <div style="min-width:230px;padding:2px 0">
+          <div class="i-name">${t('hqTitle')} <span class="badge hq">${t('badgeHQ')}</span></div>
+          <div class="i-addr">${t('centerCoord', DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)}</div>
+          <div class="row-actions">
+            <button class="btn primary" onclick="openNaverDirections('${jsStr(t('hqTitle'))}', ${DEFAULT_CENTER.lat}, ${DEFAULT_CENTER.lng})">${t('btnDirections')}</button>
+          </div>
+        </div>`;
+      if (!hqInfo) hqInfo = new naver.maps.InfoWindow({ content: html });
+      else hqInfo.setContent(html);
+    }
 
-    async function initMap(){
-      // DOM 준비 보장
-      if (!document.getElementById('map')) {
-        document.addEventListener('DOMContentLoaded', initMap, { once:true });
-        return;
-      }
-      if (!window.naver || !naver.maps) { setTimeout(initMap, 50); return; }
-
-      map = new naver.maps.Map('map', {
-        center: new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng),
-        zoom: 15, zoomControl: true
-      });
-
-      /* 요소 바인딩 */
-      const btnBranch  = document.getElementById('btn-branch');
+    /* ===== 다국어 UI 반영 ===== */
+    function applyLangToStaticUI(){
+      const bar = document.querySelector('.bar'); if (bar) bar.textContent = t('title');
+      const btnBranch = document.getElementById('btn-branch');
       const btnDigital = document.getElementById('btn-digital');
-      const qInput     = document.getElementById('q');
-
-      btnBranch  && btnBranch.addEventListener('click', () => setFilter('branch'));
-      btnDigital && btnDigital.addEventListener('click', () => setFilter('digital'));
-
-      if (qInput){
-        let t;
-        qInput.addEventListener('input', () => {
-          clearTimeout(t);
-          t = setTimeout(() => {
-            searchTerm = qInput.value.trim();
-            currentPage = 1;
+      if (btnBranch) btnBranch.innerHTML = `${t('tabBranch')} <span class="sub">${t('tabBranchSub')}</span>`;
+      if (btnDigital) btnDigital.innerHTML = `${t('tabDigital')} <span class="sub">${t('tabDigitalSub')}</span>`;
+      const q = document.getElementById('q'); if (q) q.placeholder = t('searchPH');
+      const listTitle = document.querySelector('.list-title'); if (listTitle) listTitle.textContent = t('listTitle');
+      const legendBranch = document.getElementById('legend-branch');
+      const legendDigital = document.getElementById('legend-digital');
+      if (legendBranch) legendBranch.textContent = t('legendBranch');
+      if (legendDigital) legendDigital.textContent = t('legendDigital');
+    }
+    function bindLangSwitcher(){
+      document.querySelectorAll('.lang-bar .btn').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const lang = b.getAttribute('data-lang');
+          if (I18N[lang]){
+            CUR_LANG = lang;
+            try{ localStorage.setItem('bnk.lang', lang); }catch(e){}
+            applyLangToStaticUI();
             applySearch();
             renderMapAndList();
-          }, 150);
+            ensureHQMarker();
+          }
         });
-      }
+      });
+    }
 
-      // 화면 크기에 따라 PAGE_SIZE 재설정
-      const mq = window.matchMedia('(min-width: 768px)');
-      const onMQ = () => { PAGE_SIZE = mq.matches ? 25 : 15; currentPage = 1; renderMapAndList(); };
-      mq.addEventListener ? mq.addEventListener('change', onMQ) : mq.addListener(onMQ);
+    /* ===== 데이터 정규화/로드 ===== */
+    function normalizeRows(json){
+      const arr = Array.isArray(json) ? json
+                : (json?.data ?? json?.items ?? json?.content ?? json?.rows ?? []);
+      return (arr || []).map(r => ({
+        name:    r.name ?? r.branchName ?? r.bname ?? '',
+        name_en: r.name_en ?? r.nameEn,
+        name_ja: r.name_ja ?? r.nameJa,
+        name_zh: r.name_zh ?? r.nameZh,
+        addr:    r.addr ?? r.address ?? '',
+        addr_en: r.addr_en ?? r.addrEn,
+        addr_ja: r.addr_ja ?? r.addrJa,
+        addr_zh: r.addr_zh ?? r.addrZh,
+        phone:   r.phone ?? r.tel ?? r.telephone ?? '',
+        lat:     num(r.lat ?? r.latitude ?? r.latY ?? r.y),
+        lng:     num(r.lng ?? r.longitude ?? r.lonX  ?? r.x),
+        digital: r.digital ?? r.isDigital ?? (r.type==='digital' ? 'Y' : 'N'),
+      })).filter(r => r.lat!=null && r.lng!=null);
+    }
 
-      await loadBranches(false);
-      applySearch();
-      renderMapAndList();
-      ensureHQMarker();
+    // 샘플 폴백 사용 여부 (원하면 false로 꺼도 됨)
+    const USE_SAMPLE_ON_ERROR = true;
+    const SAMPLE_BRANCHES = [
+      { name:'가야동지점', addr:'부산 부산진구 ...', phone:'051-111-2222', lat:35.1547247, lng:129.0384844, digital:'N' },
+      { name:'서면디지털데스크', addr:'부산 부산진구 ...', phone:'051-333-4444', lat:35.1577, lng:129.0591, digital:'Y' }
+    ];
+
+    function showListError(msg){
+      const list = document.getElementById('branchList');
+      if (list) list.innerHTML = `<div class="empty">${msg}</div>`;
     }
 
     async function loadBranches(digitalOnly){
       try{
-        const url = digitalOnly ? '/api/branches?digital=true' : '/api/branches';
-        const res = await fetch(url);
-        const rows = await res.json();
-        all = (rows||[]).filter(r => Number.isFinite(parseFloat(r.lat)) && Number.isFinite(parseFloat(r.lng)));
-      }catch(e){
-        console.error('지점 데이터를 불러오지 못했습니다.', e);
-        all = [];
+        const url = `${API_BASE}/api/branches${digitalOnly ? '?digital=true' : ''}`;
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        if (!res.ok) {
+          showListError(`지점 API 호출 실패\nURL: ${url}\nHTTP: ${res.status} ${res.statusText}\n※ 실기기는 ?api=http://<PC-IP>:8093 로 접속 / CORS·혼합콘텐츠 확인`);
+          all = USE_SAMPLE_ON_ERROR ? normalizeRows(SAMPLE_BRANCHES) : [];
+          return;
+        }
+        const json = await res.json();
+        all = normalizeRows(json);
+        if (!all.length) {
+          showListError(`지점 목록 0건\nURL: ${url}\n※ 좌표 키 불일치 가능(lat/lng, latitude/longitude 등)`);
+          if (USE_SAMPLE_ON_ERROR) all = normalizeRows(SAMPLE_BRANCHES);
+        }
+      } catch (e) {
+        showListError(`네트워크 오류: ${e?.message||e}\nURL: ${API_BASE}/api/branches`);
+        all = USE_SAMPLE_ON_ERROR ? normalizeRows(SAMPLE_BRANCHES) : [];
       }
     }
 
+    /* ===== 검색/필터/페이지 ===== */
+    function pickName(r){
+      return (
+        (CUR_LANG==='en' && (r.name_en||r.nameEn)) ||
+        (CUR_LANG==='ja' && (r.name_ja||r.nameJa)) ||
+        (CUR_LANG==='zh' && (r.name_zh||r.nameZh)) ||
+        r.name || '지점'
+      );
+    }
+    function pickAddr(r){
+      return (
+        (CUR_LANG==='en' && (r.addr_en||r.addrEn)) ||
+        (CUR_LANG==='ja' && (r.addr_ja||r.addrJa)) ||
+        (CUR_LANG==='zh' && (r.addr_zh||r.addrZh)) ||
+        r.addr || ''
+      );
+    }
     function applySearch(){
       const q = (searchTerm||'').toLowerCase();
-      filtered = !q ? all.slice() : all.filter(r => {
-        const name = (r.name||'').toLowerCase();
-        const addr = (r.addr||'').toLowerCase();
-        const phone = (r.phone||'').toLowerCase();
-        return name.includes(q) || addr.includes(q) || phone.includes(q);
-      });
+      if (!q){
+        filtered = all.slice();
+      } else {
+        filtered = all.filter(r => {
+          const fields = [
+            r.name || '', r.addr || '', r.phone || '',
+            r.name_en||r.nameEn||'', r.addr_en||r.addrEn||'',
+            r.name_ja||r.nameJa||'', r.addr_ja||r.addrJa||'',
+            r.name_zh||r.nameZh||'', r.addr_zh||r.addrZh||'',
+          ].map(s=>String(s).toLowerCase());
+          return fields.some(s => s.includes(q));
+        });
+      }
       const maxPage = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
       if (currentPage > maxPage) currentPage = maxPage;
     }
-
     function setFilter(type){
       filter = type;
-      const btnBranch  = document.getElementById('btn-branch');
-      const btnDigital = document.getElementById('btn-digital');
-      btnBranch  && btnBranch.classList.toggle('active', type==='branch');
-      btnDigital && btnDigital.classList.toggle('active', type==='digital');
+      document.getElementById('btn-branch')?.classList.toggle('active', type==='branch');
+      document.getElementById('btn-digital')?.classList.toggle('active', type==='digital');
       currentPage = 1; searchTerm = '';
       const q = document.getElementById('q'); if (q) q.value = '';
       loadBranches(type==='digital').then(() => {
@@ -249,187 +380,182 @@
         ensureHQMarker();
       });
     }
+    function clearMarkers(){ markers.forEach(m => { try{ m.setMap(null);}catch{} }); markers = []; infoWindows = []; }
+    function pagedData(){ const start=(currentPage-1)*PAGE_SIZE, end=start+PAGE_SIZE; return filtered.slice(start, end); }
 
-    function clearMarkers(){
-      markers.forEach(m => { try{ m.setMap(null);}catch{} });
-      markers = [];
-      infoWindows = [];
-    }
-
-    function pagedData(){
-      const start = (currentPage - 1) * PAGE_SIZE;
-      const end = start + PAGE_SIZE;
-      return filtered.slice(start, end);
-    }
-
+    /* ===== 렌더링 ===== */
     function buildInfoHtml(r){
       const isDigitalBadge = (String(r.digital ?? '').toUpperCase() === 'Y') || (filter==='digital');
+      const nm = pickName(r), nmEsc = escapeHtml(nm), nmJS = jsStr(nm);
+      const ad = escapeHtml(pickAddr(r));
+      const ph = escapeHtml(r.phone||'');
+      const lat = Number(r.lat), lng = Number(r.lng);
+
       return `
         <div style="min-width:230px;padding:2px 0">
-          <div class="i-name">
-            <span>${escapeHtml(r.name||'지점')}${isDigitalBadge?'<span class="badge">디지털</span>':''}</span>
-          </div>
-          <div class="i-addr">${escapeHtml(r.addr||'')}</div>
-          ${r.phone?`<div class="i-phone">${escapeHtml(r.phone)}</div>`:''}
+          <div class="i-name"><span>${nmEsc}${isDigitalBadge?`<span class="badge">${t('badgeDigital')}</span>`:''}</span></div>
+          <div class="i-addr">${ad}</div>
+          ${ph?`<div class="i-phone">${ph}</div>`:''}
           <div class="row-actions">
-            <button class="btn" onclick="window.__openOnMap(${Number(r.lat)}, ${Number(r.lng)})">지도에서 보기</button>
-            <button class="btn primary" onclick="openNaverDirections('${escapeHtml(r.name||'지점')}', ${Number(r.lat)}, ${Number(r.lng)})">네이버 길찾기</button>
+            <button class="btn" onclick="window.__openOnMap(${lat}, ${lng})">${t('btnViewOnMap')}</button>
+            <button class="btn primary" onclick="openNaverDirections('${nmJS}', ${lat}, ${lng})">${t('btnDirections')}</button>
           </div>
         </div>`;
     }
 
-    // 말풍선에서 지도 이동을 위해 전역 함수로 노출
     window.__openOnMap = (lat, lng) => {
       const pos = new naver.maps.LatLng(lat, lng);
-      map.panTo(pos);
-      map.setZoom(16);
+      map.panTo(pos); map.setZoom(16);
     };
 
     function renderMapAndList(){
       clearMarkers();
       const pageRows = pagedData();
 
-      pageRows.forEach((r, idxOnPage) => {
+      pageRows.forEach((r) => {
         const lat = parseFloat(r.lat), lng = parseFloat(r.lng);
         const isDigitalMarker = (filter === 'digital') || (String(r.digital ?? '').toUpperCase() === 'Y');
         const pos = new naver.maps.LatLng(lat, lng);
-
-        const marker = new naver.maps.Marker({
-          position: pos, map, icon:{ content: iconHtml(isDigitalMarker) }, zIndex:200
-        });
-
+        const marker = new naver.maps.Marker({ position: pos, map, icon:{ content: iconHtml(isDigitalMarker) }, zIndex:200 });
         const iw = new naver.maps.InfoWindow({ content: buildInfoHtml(r) });
-
-        naver.maps.Event.addListener(marker, 'click', () => {
-          infoWindows.forEach(w => w.close());
-          iw.open(map, marker);
-        });
-
-        markers.push(marker);
-        infoWindows.push(iw);
+        naver.maps.Event.addListener(marker, 'click', () => { infoWindows.forEach(w => w.close()); iw.open(map, marker); });
+        markers.push(marker); infoWindows.push(iw);
       });
 
       const total = filtered.length;
-      const startN = total ? ( (currentPage-1)*PAGE_SIZE + 1 ) : 0;
+      const startN = total ? ((currentPage-1)*PAGE_SIZE + 1) : 0;
       const endN = Math.min(currentPage*PAGE_SIZE, total);
       const countLabel = document.getElementById('countLabel');
-      if (countLabel) countLabel.textContent = `표시: ${startN}-${endN} / ${total}개`;
+      if (countLabel) countLabel.textContent = t('countLabel', startN, endN, total);
 
-      const list = document.getElementById('branchList');
-      if (!list) return;
-
+      const list = document.getElementById('branchList'); if (!list) return;
       if (!pageRows.length) {
-        list.innerHTML = `<div class="empty">표시할 지점이 없습니다.</div>`;
+        list.innerHTML = `<div class="empty">${t('empty')}</div>`;
       } else {
         list.innerHTML = pageRows.map((r, i) => {
           const isDigital = (String(r.digital ?? '').toUpperCase() === 'Y') || (filter==='digital');
+          const nmEsc = escapeHtml(pickName(r));
+          const ad = escapeHtml(pickAddr(r));
+          const ph = escapeHtml(r.phone||'');
           return `
             <div class="item" data-idx="${i}">
               <div class="i-name">
-                <span>${escapeHtml(r.name||'지점')}${isDigital?'<span class="badge">디지털</span>':''}</span>
+                <span>${nmEsc}${isDigital?`<span class="badge">${t('badgeDigital')}</span>`:''}</span>
                 <span class="row-actions">
-                  <button class="btn js-focus">지도에서 보기</button>
-                  <button class="btn primary js-nav">길찾기</button>
+                  <button class="btn js-focus">${t('btnViewOnMap')}</button>
+                  <button class="btn primary js-nav">${t('btnDirections')}</button>
                 </span>
               </div>
-              <div class="i-addr">${escapeHtml(r.addr||'')}</div>
-              ${r.phone?`<div class="i-phone">${escapeHtml(r.phone)}</div>`:''}
+              <div class="i-addr">${ad}</div>
+              ${ph?`<div class="i-phone">${ph}</div>`:''}
             </div>`;
         }).join('');
       }
 
-      // 리스트 액션: "지도에서 보기" → 말풍선 열기, "길찾기" → 말풍선 먼저 띄우고 버튼 통해 이동
       list.querySelectorAll('.item').forEach(el => {
-        const idxOnPage = Number(el.getAttribute('data-idx'));
-        const m = markers[idxOnPage], iw = infoWindows[idxOnPage];
-        el.querySelector('.js-focus')?.addEventListener('click', (ev)=>{
-          ev.stopPropagation();
-          if (m && iw){
-            map.panTo(m.getPosition());
-            map.setZoom(16);
-            infoWindows.forEach(w => w.close());
-            iw.open(map, m);
-          }
-        });
-        el.querySelector('.js-nav')?.addEventListener('click', (ev)=>{
-          ev.stopPropagation();
-          if (m && iw){
-            map.panTo(m.getPosition());
-            map.setZoom(16);
-            infoWindows.forEach(w => w.close());
-            iw.open(map, m); // 사용자가 말풍선 내 "네이버 길찾기" 버튼을 눌러 이동
-          }
-        });
-        // 전체 아이템 클릭 시에도 말풍선 오픈(기존 동작 유지)
-        el.addEventListener('click', () => {
-          if (m && iw){
-            map.panTo(m.getPosition());
-            map.setZoom(16);
-            infoWindows.forEach(w => w.close());
-            iw.open(map, m);
-          }
-        });
+        const idx = Number(el.getAttribute('data-idx'));
+        const m = markers[idx], iw = infoWindows[idx];
+        const focus = ()=>{ if(m&&iw){ map.panTo(m.getPosition()); map.setZoom(16); infoWindows.forEach(w => w.close()); iw.open(map, m); } };
+        el.querySelector('.js-focus')?.addEventListener('click', ev=>{ ev.stopPropagation(); focus(); });
+        el.querySelector('.js-nav')?.addEventListener('click', ev=>{ ev.stopPropagation(); focus(); });
+        el.addEventListener('click', focus);
       });
 
-      renderPager();
-      ensureHQMarker();
+      renderPager(); ensureHQMarker();
     }
 
     function renderPager(){
-      const pager = document.getElementById('pager');
-      if (!pager) return;
-
-      const total = filtered.length;
-      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      const prevDisabled = currentPage <= 1;
-      const nextDisabled = currentPage >= pages;
-
+      const pager = document.getElementById('pager'); if (!pager) return;
+      const total = filtered.length; const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      const prevDisabled = currentPage <= 1; const nextDisabled = currentPage >= pages;
+      const pageInfoText = t('pageInfo', currentPage, pages);
       pager.innerHTML = `
-        <button class="pg-btn" ${prevDisabled?'disabled':''} data-act="first">« 처음</button>
-        <button class="pg-btn" ${prevDisabled?'disabled':''} data-act="prev">‹ 이전</button>
-        <span class="pg-info">${currentPage} / ${pages} 페이지</span>
-        <button class="pg-btn" ${nextDisabled?'disabled':''} data-act="next">다음 ›</button>
-        <button class="pg-btn" ${nextDisabled?'disabled':''} data-act="last">끝 »</button>
-      `;
-
+        <button class="pg-btn" ${prevDisabled?'disabled':''} data-act="first">${t('pageFirst')}</button>
+        <button class="pg-btn" ${prevDisabled?'disabled':''} data-act="prev">${t('pagePrev')}</button>
+        <span class="pg-info">${pageInfoText}</span>
+        <button class="pg-btn" ${nextDisabled?'disabled':''} data-act="next">${t('pageNext')}</button>
+        <button class="pg-btn" ${nextDisabled?'disabled':''} data-act="last">${t('pageLast')}</button>`;
       pager.querySelectorAll('.pg-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const act = btn.getAttribute('data-act');
           const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-          if (act === 'first' && currentPage !== 1){ currentPage = 1; }
-          if (act === 'prev' && currentPage > 1){ currentPage--; }
-          if (act === 'next' && currentPage < pages){ currentPage++; }
-          if (act === 'last' && currentPage !== pages){ currentPage = pages; }
+          if (act === 'first' && currentPage !== 1) currentPage = 1;
+          if (act === 'prev' && currentPage > 1)    currentPage--;
+          if (act === 'next' && currentPage < pages) currentPage++;
+          if (act === 'last' && currentPage !== pages) currentPage = pages;
           renderMapAndList();
-          map.setCenter(new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng));
-          map.setZoom(13);
+          map.setCenter(new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)); map.setZoom(13);
         });
       });
     }
 
-    // 전역 콜백으로 등록 (네이버 스크립트에서 호출)
+    /* ===== 초기화 ===== */
+    function initMap(){
+      const deadline = Date.now() + 8000;
+      (function boot(){
+        if (window.naver && naver.maps && document.getElementById('map')) {
+          map = new naver.maps.Map('map', {
+            center: new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng),
+            zoom: 15, zoomControl: true
+          });
+
+          const mq = window.matchMedia('(min-width: 768px)');
+          const onMQ = () => { PAGE_SIZE = mq.matches ? 25 : 15; currentPage = 1; renderMapAndList(); };
+          mq.addEventListener ? mq.addEventListener('change', onMQ) : mq.addListener(onMQ);
+
+          document.getElementById('btn-branch')?.addEventListener('click', () => setFilter('branch'));
+          document.getElementById('btn-digital')?.addEventListener('click', () => setFilter('digital'));
+          const qInput = document.getElementById('q');
+          if (qInput){
+            let tmo;
+            qInput.addEventListener('input', () => {
+              clearTimeout(tmo);
+              tmo = setTimeout(()=>{ searchTerm=qInput.value.trim(); currentPage=1; applySearch(); renderMapAndList(); },150);
+            });
+          }
+
+          applyLangToStaticUI();
+          bindLangSwitcher();
+
+          loadBranches(false).then(()=>{ applySearch(); renderMapAndList(); ensureHQMarker(); });
+        } else if (Date.now() < deadline) {
+          setTimeout(boot, 50);
+        } else {
+          alert('NAVER Maps SDK가 준비되지 않았습니다.');
+        }
+      })();
+    }
+
+    // 전역 콜백
     window.initMap = initMap;
   </script>
 
-  <!-- 실제 키로 교체하세요 (ncpKeyId) -->
-  <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=t4sef40746&callback=initMap"></script>
+  <!-- 개발·테스트용: http 스킴 (HTTPS 미사용 환경에서도 동작) -->
+  <script src="http://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=t4sef40746&callback=initMap&_v=bnk_http_001"></script>
 </head>
+
 <body>
   <div class="wrap">
     <div class="bar">영업점 찾기</div>
 
+    <!-- 언어 스위처 -->
+    <div class="lang-bar">
+      <button class="btn" data-lang="ko" title="한국어">🇰🇷 한국어</button>
+      <button class="btn" data-lang="en" title="English">EN</button>
+      <button class="btn" data-lang="ja" title="日本語">日本語</button>
+      <button class="btn" data-lang="zh" title="简体中文">简体中文</button>
+    </div>
+
     <div class="layout">
-      <!-- Left: Map -->
       <div class="card map-card">
         <div id="map"></div>
         <div class="legend">
-          <span class="chip"><span class="dot" style="background:var(--branch)"></span>지점</span>
-          <span class="chip"><span class="dot" style="background:var(--digital)"></span>디지털</span>
+          <span class="chip"><span class="dot" style="background:var(--branch)"></span><span id="legend-branch">지점</span></span>
+          <span class="chip"><span class="dot" style="background:var(--digital)"></span><span id="legend-digital">디지털</span></span>
           <span style="margin-left:auto" id="countLabel"></span>
         </div>
       </div>
 
-      <!-- Right: Controls + List -->
       <div class="card">
         <div class="controls">
           <button class="cta active" id="btn-branch">🏦 지점 <span class="sub">모든 부산은행 지점</span></button>
@@ -440,9 +566,7 @@
         </div>
 
         <div class="list-card">
-          <div class="list-head">
-            <div class="list-title" style="font-weight:800">지점 리스트</div>
-          </div>
+          <div class="list-head"><div class="list-title" style="font-weight:800">지점 리스트</div></div>
           <div id="branchList" class="list"></div>
           <div id="pager" class="pager"></div>
         </div>

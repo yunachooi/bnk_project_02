@@ -1,7 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.bnk_project_02f">
 
-    <!-- 필수 권한 -->
+    <!-- 인터넷 접근 -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 네이버지도 패키지 가시성 설정 -->
+
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- FCM 관련 권한 추가 -->
@@ -11,39 +15,13 @@
 
     <!-- ✅ Android 11+ 패키지 가시성 설정 -->
     <queries>
-        <!-- 카카오톡 설치 여부 점검 -->
-        <package android:name="com.kakao.talk" />
-
-        <!-- kakaolink 스킴을 외부 앱으로 열 수 있게 -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="kakaolink" />
-        </intent>
-
-        <!-- (선택) 웹 공유 시 브라우저로 열기 -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="http" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
-        </intent>
-
-        <!-- (기존에 쓰던) WebView PROCESS_TEXT 허용 유지 -->
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
+        <package android:name="com.nhn.android.nmap" />
     </queries>
 
     <application
         android:label="bnk_project_02f"
-        android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/network_security_config"
-        android:hardwareAccelerated="true">
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
@@ -51,15 +29,12 @@
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:windowSoftInputMode="stateVisible|adjustResize">
-
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
@@ -88,6 +63,9 @@
             android:name="firebase_analytics_collection_enabled"
             android:value="false" />
 
+        <meta-data
+            android:name="io.flutter.embedding.android.NormalTheme"
+            android:resource="@style/NormalTheme" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

@@ -6,153 +6,101 @@
   <title>환율/환전</title>
   <style>
     body {
-      font-family: 'Noto Sans KR', sans-serif;
+      font-family: 'Noto Sans KR', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       margin: 0;
       padding: 0;
       background-color: #fff;
       color: #222;
     }
-
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    .container { max-width: 500px; margin: 0 auto; padding: 20px; }
 
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      padding: 12px 0;
-      border-bottom: 2px solid #ccc;
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: bold; padding: 12px 0; border-bottom: 2px solid #ccc;
     }
+    .header .center { flex-grow: 1; text-align: center; }
 
-    .header .center {
-      flex-grow: 1;
-      text-align: center;
-    }
+    .title-area { display: flex; justify-content: space-between; align-items: flex-end; margin: 20px 0 10px; }
+    .title { font-size: 1.1rem; font-weight: bold; }
+    .subtitle { font-size: 0.85rem; color: #666; }
 
-    .title-area {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin: 20px 0 10px;
-    }
+    .empty { padding: 16px; border: 1px dashed #ddd; border-radius: 8px; color:#666; background:#fafafa; }
 
-    .title {
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
+    /* 카드 자체를 세로 중앙 정렬 컨테이너로 */
+	.rate-card {
+	  border: 1px solid #ddd;
+	  border-radius: 12px;
+	  padding: 20px 16px;
+	  margin: 20px 12px;
+	  background-color: #fff;
+	  box-shadow: 0 2px 6px rgba(0,0,0,.06);
+	  min-height: 120px;
+	
+	  display: flex;                 /* ← flex */
+	  align-items: center;           /* ← 카드 세로 가운데 */
+	  justify-content: space-between;/* ← 좌/우로 벌리기 */
+	
+	  transition: background-color .2s, border .2s, box-shadow .2s;
+	  cursor: pointer;
+	}
+	.rate-card:hover {
+	  background-color: #f9fbff;
+	  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+	}
+	.rate-card.selected { border: 2px solid #2563eb; background-color: rgba(37,99,235,.12); }
+	
+	/* 좌우 블록 */
+	.rate-row{
+	  display:flex;
+	  align-items:center;  /* ← 내부도 세로 가운데 */
+	  justify-content:space-between;
+	  width:100%;          /* 카드 너비 꽉 채우기 */
+	  gap:12px;
+	}
+	.rate-left{
+	  display:flex;
+	  align-items:center;  /* ← 국기/텍스트 수직 정렬 */
+	  gap:10px;
+	  min-width:0;
+	}
+	.rate-right{
+	  display:flex;
+	  flex-direction:column;
+	  align-items:flex-end;
+	  justify-content:center; /* ← 오른쪽(기준율+전일대비) 묶음을 카드 높이 중앙에 */
+	  text-align:right;
+	  gap:6px;                /* 기준율 ↔ 전일대비 간격 */
+	}
+	
+	.rate-left img { width: 38px; height: 28px; object-fit: cover; border-radius: 3px; flex-shrink:0; }
+	.rate-code { font-size: 1.25rem; font-weight: bold; }
+	.rate-name { font-size: 1rem; color: #555; margin-top: 4px; }
+	
+	/* 텍스트 간 여백 조정(중앙정렬 느낌 강화) */
+	.rate-mid { margin: 0; font-size: 0.95rem; }
+	.rate-bottom { margin: 0; font-size: 0.95rem; }
+	
+	.rate-mid-label { color: #333; }
+	.rate-mid-value { font-size: 1.8rem; font-weight: 700; vertical-align: baseline; }
+	.rate-mid-value.up { color: #d32f2f; }
+	.rate-mid-value.down { color: #1976d2; }
+	
+	.diff-up { color: #d32f2f; font-weight: bold; }
+	.diff-down { color: #1976d2; font-weight: bold; }
 
-    .subtitle {
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    .rate-card {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      background-color: #fafafa;
-      transition: background-color 0.3s, border 0.3s;
-      cursor: pointer;
-    }
-
-    .rate-card:hover {
-      background-color: #f0f8ff;
-    }
-
-    .rate-card.selected {
-      border: 2px solid #2563eb;
-      background-color: rgba(37,99,235,.12);
-    }
-
-    .rate-top {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .rate-top img {
-      width: 30px;
-      height: 22px;
-    }
-
-    .rate-code {
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-
-    .rate-name {
-      font-size: 0.8rem;
-      color: #777;
-      margin-top: 2px;
-    }
-
-    .rate-mid {
-      font-size: 1rem;
-      margin: 6px 0;
-      font-weight: 500;
-      text-align: right;
-    }
-
-    .rate-bottom {
-      font-size: 0.95rem;
-      text-align: right;
-    }
-
-    .diff-up {
-      color: #d32f2f;
-      font-weight: bold;
-    }
-
-    .diff-down {
-      color: #1976d2;
-      font-weight: bold;
-    }
 
     .exchange-button {
-      margin-top: 30px;
-      width: 100%;
-      padding: 14px;
-      background-color: #ccc;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: not-allowed;
+      margin-top: 30px; width: 100%; padding: 14px; background-color: #ccc; color: #fff;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: not-allowed;
     }
-
-    .exchange-button.active {
-      background-color: #2563eb;
-      cursor: pointer;
-    }
+    .exchange-button.active { background-color: #2563eb; cursor: pointer; }
 
     @media (max-width: 480px) {
-      .title {
-        font-size: 1rem;
-      }
-
-      .subtitle {
-        font-size: 0.8rem;
-      }
-
-      .rate-code {
-        font-size: 1rem;
-      }
-
-      .rate-mid, .rate-bottom {
-        font-size: 0.9rem;
-      }
-
-      .exchange-button {
-        font-size: 0.95rem;
-        padding: 12px;
-      }
+      .title { font-size: 1rem; }
+      .subtitle { font-size: 0.8rem; }
+      .rate-code { font-size: 1rem; }
+      .rate-mid, .rate-bottom { font-size: 0.9rem; }
+      .exchange-button { font-size: 0.95rem; padding: 12px; }
     }
   </style>
 </head>
@@ -160,7 +108,7 @@
 <div class="container">
   <!-- 헤더 -->
   <div class="header">
-    <div style="color: #2563eb;">&lt;뒤로가기</div>
+    <div style="color:#2563eb; cursor:pointer" onclick="window.location.href='/foreign'">&lt;뒤로가기</div>
     <div class="center">환율 / 환전</div>
     <div style="width: 60px;"></div>
   </div>
@@ -168,42 +116,78 @@
   <!-- 제목 & 날짜 -->
   <div class="title-area">
     <div class="title">고시 환율 정보</div>
-    <div class="subtitle" th:text="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy.MM.dd')} + ' 1회차 고시'"></div>
+    <div class="subtitle"
+         th:text="${#temporals.format(T(java.time.LocalDate).now(), 'yyyy.MM.dd')} + ' 1회차 고시'">
+      2025.08.20 1회차 고시
+    </div>
+  </div>
+
+  <!-- 비어있을 때 안내 -->
+  <div th:if="${rates == null or #lists.isEmpty(rates)}" class="empty">
+    현재 표시할 환율이 없습니다. 잠시 후 다시 시도해 주세요.
   </div>
 
   <!-- 카드형 환율 정보 -->
-  <div th:each="rate : ${rates}" class="rate-card" onclick="selectCurrency(this)" th:attr="data-code=${rate.rcode}">
-    <div class="rate-top">
-      <img th:src="@{'/images/flags/' + ${rate.rcode.toLowerCase().replace('(100)', '').trim()} + '.png'}" alt="flag">
-      <div>
-        <div class="rate-code" th:text="${rate.rcode}">USD</div>
-        <div class="rate-name" th:switch="${rate.rcode}">
-          <span th:case="'USD'">미국 달러</span>
-          <span th:case="'JPY(100)'">일본 엔</span>
-          <span th:case="'EUR'">유로</span>
-          <span th:case="'CNH'">중국 위안</span>
-          <span th:case="'GBP'">영국 파운드</span>
-          <span th:case="'CHF'">스위스 프랑</span>
-          <span th:case="*"></span>
+  <div th:each="rate : ${rates}"
+       class="rate-card"
+       onclick="selectCurrency(this)"
+       th:attr="data-code=${rate.rcode}"
+       th:with="diff=${rate.rvalue != null and rate.ryesterday != null ? rate.rvalue.subtract(rate.ryesterday) : null}">
+    <div class="rate-row">
+
+      <!-- 왼쪽: 국기/코드/통화명 -->
+      <div class="rate-left">
+        <img th:src="@{'/images/flags/' + ${#strings.toLowerCase(#strings.replace(rate.rcode, '(100)', ''))} + '.png'}"
+             alt=""
+             onerror="this.onerror=null;this.src='/images/flags/_default.png';">
+        <div>
+          <div class="rate-code" th:text="${rate.rcode}">USD</div>
+          <div class="rate-name" th:switch="${rate.rcode}">
+            <span th:case="'USD'">미국 달러</span>
+            <span th:case="'JPY(100)'">일본 엔(100)</span>
+            <span th:case="'EUR'">유로</span>
+            <span th:case="'CNH'">중국 위안</span>
+            <span th:case="'GBP'">영국 파운드</span>
+            <span th:case="'CHF'">스위스 프랑</span>
+            <span th:case="*" th:text="${rate.rcode}">기타 통화</span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="rate-mid">
-      금일 매매 기준율: <span th:text="${#numbers.formatDecimal(rate.rvalue, 1, 2)}">1384.20</span> 원
-    </div>
-    <div class="rate-bottom">
-      <span th:if="${rate.diffFlag > 0}" class="diff-up">
-        <small>전일 대비 : </small>▲ <span th:text="${#numbers.formatDecimal(rate.rvalue.subtract(rate.ryesterday), 1, 2)}"></span> 원
-      </span>
-      <span th:if="${rate.diffFlag < 0}" class="diff-down">
-        <small>전일 대비 : </small>▼ <span th:text="${#numbers.formatDecimal(rate.ryesterday.subtract(rate.rvalue), 1, 2)}"></span> 원
-      </span>
-      <span th:if="${rate.diffFlag == 0}">-</span>
-    </div>
+
+      <!-- 오른쪽: 기준율/전일대비 -->
+      <div class="rate-right">
+        
+          <span style="display:inline-flex; align-items:baseline;">
+		    <span class="rate-mid-value"
+		          th:classappend="${diff != null and diff > 0} ? ' up' : (${diff != null and diff < 0} ? ' down' : '')"
+		          th:text="${#numbers.formatDecimal(rate.rvalue, 1, 2)}">1384.20</span>
+		    <span style="color:#000; font-weight:normal; margin-left:2px;">원</span>
+		  </span>
+        
+        <div class="rate-bottom">
+		  <!-- 상승 -->
+		  <span th:if="${diff != null and diff > 0}">
+		    <small style="color:#000;">전일 대비 : </small>
+		    <span class="diff-up">▲ <span th:text="${#numbers.formatDecimal(diff, 1, 2)}"></span> 원</span>
+		  </span>
+		
+		  <!-- 하락 -->
+		  <span th:if="${diff != null and diff < 0}">
+		    <small style="color:#000;">전일 대비 : </small>
+		    <span class="diff-down">▼ <span th:text="${#numbers.formatDecimal(diff.abs(), 1, 2)}"></span> 원</span>
+		  </span>
+		
+		  <!-- 변동 없음 -->
+		  <span th:if="${diff == null or diff == 0}">-</span>
+		</div>
+
+      </div>
+
+    </div><!-- /.rate-row -->
   </div>
 
   <!-- 환전 버튼 -->
-  <button class="exchange-button" id="exchangeBtn" disabled>환전 하기</button>
+  <button class="exchange-button" id="exchangeBtn" type="button" disabled>환전 하기</button>
 </div>
 
 <!-- 스크립트 -->
@@ -211,24 +195,22 @@
   let selectedCurrency = null;
 
   function selectCurrency(card) {
-    // 선택 초기화
     document.querySelectorAll('.rate-card').forEach(c => c.classList.remove('selected'));
-
-    // 선택된 카드 표시
     card.classList.add('selected');
     selectedCurrency = card.getAttribute('data-code');
 
-    // 버튼 활성화
     const btn = document.getElementById('exchangeBtn');
     btn.disabled = false;
     btn.classList.add('active');
+    btn.textContent = `환전 하기 (${selectedCurrency})`;
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     const btn = document.getElementById('exchangeBtn');
     btn.addEventListener('click', function () {
       if (selectedCurrency) {
-        window.location.href = `/forex/detail?currency=${selectedCurrency}`;
+        const q = encodeURIComponent(selectedCurrency);
+        window.location.href = `/forex/detail?currency=${q}`;
       }
     });
   });
