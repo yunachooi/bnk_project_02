@@ -1,16 +1,26 @@
 // ExchangeHistoryService.java
 package com.example.bnk_project_02s.service;
 
-import com.example.bnk_project_02s.entity.*;
-import com.example.bnk_project_02s.repository.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.bnk_project_02s.entity.ChildAccount;
+import com.example.bnk_project_02s.entity.Currency;
+import com.example.bnk_project_02s.entity.History;
+import com.example.bnk_project_02s.entity.ParentAccount;
+import com.example.bnk_project_02s.entity.User;
+import com.example.bnk_project_02s.repository.ChildAccountRepository;
+import com.example.bnk_project_02s.repository.CurrencyRepository;
+import com.example.bnk_project_02s.repository.HistoryRepository;
+import com.example.bnk_project_02s.repository.ParentAccountRepository;
+import com.example.bnk_project_02s.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -47,27 +57,31 @@ public class ExchangeHistoryService {
         BigDecimal krwAmt = parseKrwToInt(krwAmountStr);      // 원화(정수, 소수 버림)
 
         // --- 직전 잔액(같은 통화 기준) 조회
-        BigDecimal prevBal = historyRepo
-                .findTopByParentAccount_PanoAndCurrency_CunameOrderByHnoDesc(
-                        parent.getPano(), currency.getCuname())
-                .map(h -> parseDecimalStrict(h.getHbalance()))
-                .orElse(BigDecimal.ZERO);
+        ChildAccount child = childRepo
+        	    .findByParentAccount_PanoAndCurrency_Cuname(parent.getPano(), currency.getCuname())
+        	    .orElseThrow(() -> new IllegalStateException("해당 통화 자식계좌가 없습니다: " + currency.getCuname()));
 
-        // --- 거래 후 잔액 계산
-        BigDecimal newBal = prevBal.add(fxAmt);
+        	java.math.BigDecimal oldChildBal =
+        	        (child.getCabalance() == null) ? java.math.BigDecimal.ZERO : child.getCabalance();
 
-        // --- History 엔티티 저장
-        History hist = History.builder()
-                .parentAccount(parent)
-                .currency(currency)
-                .user(user)
-                .hwithdraw(null)                         // 출금 없음
-                .hdeposit(formatPlain2(fxAmt))           // "600.00"
-                .hbalance(formatPlain2(newBal))          // 누적 잔액
-                .hkrw(krwAmt)                            // 사용 원화(정수 의미)
-                .hdate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                .build();
+        	java.math.BigDecimal newChildBal = oldChildBal
+        	        .add(fxAmt) // 구매 → 외화 잔액 증가
+        	        .setScale(2, java.math.RoundingMode.HALF_UP);
 
+        	child.setCabalance(newChildBal);
+        	childRepo.save(child);
+
+        	// --- History 엔티티 저장 (거래 후 잔액 = 자식계좌 새 잔액으로 기록)
+        	History hist = History.builder()
+        	        .parentAccount(parent)
+        	        .currency(currency)
+        	        .user(user)
+        	        .hwithdraw(null)
+        	        .hdeposit(formatPlain2(fxAmt))           // "600.00"
+        	        .hbalance(formatPlain2(newChildBal))     // ✅ 자식계좌 새 잔액으로 기록
+        	        .hkrw(krwAmt)
+        	        .hdate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+        	        .build();
         History saved = historyRepo.save(hist);
 
         // --- 누적 KRW 테이블 업데이트 (유저별 1행 upsert)

@@ -271,9 +271,9 @@
 	  location.href = '/user/login?redirect=' + back;
 	}
   function goJoin(){
-    const next = encodeURIComponent(`/exchange/buy/${CURRENCY_CODE}`);
-    location.href = /*[[@{/account/foreign1}]]*/ '/account/foreign1' + `?next=${next}`;
-  }
+	     const next = encodeURIComponent(`/exchange/buy/${CURRENCY_CODE}`);
+	     location.href = 'http://localhost:8093/foreign1' + `?next=${next}`;
+	   }
 
   function goBuyPage(btn){
     if (LOGIN_REQUIRED) { open('#loginModal'); return; }

@@ -1,4 +1,4 @@
-package com.example.bnk_project_02s.config;
+/*package com.example.bnk_project_02s.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -23,4 +23,4 @@ public class FirebaseConfig {
             FirebaseApp.initializeApp(options);
         }
     }
-}
+}*/
