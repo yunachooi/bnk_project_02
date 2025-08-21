@@ -8,9 +8,9 @@ plugins {
 android {
     namespace = "com.example.bnk_project_02f"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    //ndkVersion = flutter.ndkVersion
     // 필요 시 아래 한 줄만 사용하거나 위의 flutter.ndkVersion만 사용하세요.
-    // ndkVersion = "27.0.12077973"
+     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.example.bnk_project_02f"
