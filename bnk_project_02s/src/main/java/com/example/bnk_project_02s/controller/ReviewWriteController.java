@@ -30,7 +30,7 @@ public class ReviewWriteController {
     @PostMapping(value = "/create", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @Transactional
     public Map<String, Object> create(@RequestParam("content") String content,
-                                      @RequestParam(value = "rating", required = false) String rating,
+                                      @RequestParam(name = "rating", value = "rating", required = false) String rating,
                                       HttpSession session) {
         Object u = session.getAttribute(LOGIN_USER);
         if (!(u instanceof User login)) {
