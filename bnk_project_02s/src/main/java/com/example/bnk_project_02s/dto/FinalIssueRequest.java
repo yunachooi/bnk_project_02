@@ -1,10 +1,16 @@
 package com.example.bnk_project_02s.dto;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.*;
-
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
@@ -27,4 +33,6 @@ public class FinalIssueRequest {
 
     /** 카드명(선택) */
     private String cardName;
+    
+    private BigDecimal amountForeign; // 선택 외화 기준 초기가입금
 }

@@ -54,6 +54,10 @@ public class ChildAccount {
 
     @PrePersist
     public void prePersist() {
+    	// 가입일 자동 세팅 (DB DATE 컬럼용)
+        if (this.cajoin == null) {
+            this.cajoin = java.time.LocalDate.now();
+        }
         if (this.cano == null && this.parentAccount != null && this.currency != null) {
             this.cano = generateChildAccountNumber();
         }

@@ -3,6 +3,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // ★ Firebase Google Services 플러그인 추가
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -11,6 +13,7 @@ android {
     //ndkVersion = flutter.ndkVersion
     // 필요 시 아래 한 줄만 사용하거나 위의 flutter.ndkVersion만 사용하세요.
      ndkVersion = "27.0.12077973"
+
 
     defaultConfig {
         applicationId = "com.example.bnk_project_02f"
@@ -47,5 +50,5 @@ flutter {
 dependencies {
     // ★ desugaring 라이브러리 추가
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-    // 다른 의존성들은 Flutter가 자동으로 주입합니다.
+    // Firebase 관련 의존성은 pubspec.yaml의 설정에 따라 Flutter가 자동으로 주입합니다.
 }

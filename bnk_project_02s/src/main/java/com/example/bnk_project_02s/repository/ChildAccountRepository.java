@@ -21,4 +21,6 @@ public interface ChildAccountRepository extends JpaRepository<ChildAccount, Stri
     List<ChildAccount> findByParentAccount_User_Uid(String uid);
     
     Optional<ChildAccount> findByParentAccount_PanoAndCurrency_Cuno(String pano, String cuno);
+    
+    Optional<ChildAccount> findByCano(String cano);
 }

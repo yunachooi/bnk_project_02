@@ -226,7 +226,7 @@ public class UserController {
 
         // 로그인 성공 → 세션 저장
         session.setAttribute(LOGIN_USER, user);
-
+        System.out.println("[LOGIN] sid=" + session.getId() + ", uid=" + user.getUid());
         // 1) 세션의 RETURN_TO(내부 경로)로 복귀 시도
         String dest = consumeSafeReturnTo(session);
 
@@ -235,7 +235,7 @@ public class UserController {
             if ("ROLE_ADMIN".equals(user.getUrole())) {
                 dest = "/admin/adminMain";   // 기존 프로젝트 흐름에 맞춤
             } else {
-                dest = "/user/userhome";
+                dest = "/foreign";
             }
         }
 
