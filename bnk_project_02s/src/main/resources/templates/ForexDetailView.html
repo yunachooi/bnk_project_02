@@ -69,7 +69,7 @@
       <p>해당 외화 구매를 이용하려면 상품 가입이 필요합니다. 가입하시겠습니까?</p>
       <div class="btns">
         <button class="btn ghost" id="joinCancelBtn" type="button">취소</button>
-        <button class="btn primary" id="joinGoBtn" type="button">가입하기</button>
+        <button class="btn primary" id="joinGoBtn" type="button" th:onclick="|goJoin('@{/foreign1}')|">가입하기</button>
       </div>
     </div>
   </div>
@@ -270,10 +270,10 @@
 	  const back = encodeURIComponent(location.pathname + location.search); // 예: /forex/detail?currency=USD
 	  location.href = '/user/login?redirect=' + back;
 	}
-  function goJoin(){
-    const next = encodeURIComponent(`/exchange/buy/${CURRENCY_CODE}`);
-    location.href = /*[[@{/account/foreign1}]]*/ '/account/foreign1' + `?next=${next}`;
-  }
+  function goJoin(baseUrl){
+	  const next = encodeURIComponent(`/exchange/buy/${CURRENCY_CODE}`);
+	  location.href = baseUrl + `?next=${next}`;
+	}
 
   function goBuyPage(btn){
     if (LOGIN_REQUIRED) { open('#loginModal'); return; }
