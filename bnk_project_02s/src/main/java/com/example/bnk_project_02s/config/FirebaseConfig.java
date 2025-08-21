@@ -1,4 +1,4 @@
-/*package com.example.bnk_project_02s.config;
+package com.example.bnk_project_02s.config;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -17,10 +17,10 @@ public class FirebaseConfig {
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(
-                    new ClassPathResource("bnk-push-notification-6a8fb-firebase-adminsdk-fbsvc-9066f0cbe8.json").getInputStream()))
+                    new ClassPathResource("bnk-push-notification-63abd-firebase-adminsdk-fbsvc-330422ef08.json").getInputStream()))
                 .build();
             
             FirebaseApp.initializeApp(options);
         }
     }
-}*/
+}

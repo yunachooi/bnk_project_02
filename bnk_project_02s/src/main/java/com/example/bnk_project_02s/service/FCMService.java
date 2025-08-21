@@ -62,7 +62,7 @@ public class FCMService {
                 body = currency + " " + formatAmount(amount, currency) + "\n";
                 icon = "success";
             } else if ("N".equals(status)) {
-                title = "[미출금] " + cardName + " | " + merchant;
+                title = "[결제실패] " + cardName + " | " + merchant;
                 if ("CC45".equals(reason)) {
                     body = currency + " " + formatAmount(amount, currency) + "\n정지된 카드입니다.";
                 } else if ("CC10".equals(reason)) {
