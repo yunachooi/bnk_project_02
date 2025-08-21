@@ -330,11 +330,16 @@ section.chart-section > h3{ margin-bottom:8px }
 /* 호버/액티브도 동일하게 */
 .ai-modal__actions button:hover{ transform:translateY(-1px); }
 .ai-modal__actions button:active{ transform:translateY(0); }
+#currency-pie, #interest-bar { height:340px; }
 </style>
 <th:block th:fragment="content">
 <div id="dashboard-capture"><!-- ⬅️ 추가 시작 -->
 <div class="dashboard-header">
   <h2>외환 상품 대시보드</h2>
+   <p id="krw-total"
+     style="margin-top:6px;font-size:18px;font-weight:700;color:#1e40af;">
+     총 원화 사용액: 0원
+  </p>
   <div class="report-toolbar">
     <button id="btn-generate-report">리포트 분석</button> 
   </div>
@@ -397,12 +402,7 @@ section.chart-section > h3{ margin-bottom:8px }
   </section>
 
   <!-- (기존) ④ 누적 원화 사용액 & 추천 클릭  섹션 전체를 교체 -->
-<section class="card grid-3">
-  <div>
-    <h3>누적 사용액(₩)</h3>
-    <div id="krw-area" class="chart-md"></div>
-  </div>
-
+<section class="card grid-2">
   <div>
     <h3>관심 통화 분포</h3>
     <div id="currency-pie" class="chart-md"></div>
@@ -411,6 +411,17 @@ section.chart-section > h3{ margin-bottom:8px }
   <div>
     <h3>관심 분야 분포</h3>
     <div id="interest-bar" class="chart-md"></div>
+  </div>
+</section>
+
+<section class="card grid-2">
+  <div>
+    <h3>일자별 통화 환전금액</h3>
+    <div id="fx-daily-stacked" class="chart-md"></div>
+  </div>
+  <div>
+    <h3>일자별 환전금액(원화사용액)</h3>
+    <div id="krw-daily-line" class="chart-md"></div>
   </div>
 </section>
 
