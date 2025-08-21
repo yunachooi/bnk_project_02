@@ -54,21 +54,21 @@ public class FCMService {
             String icon = "";
             
             String merchant = "해외직구쇼핑몰";
-            String cardName = "쇼핑환전체크카드";
+            String cardName = "환전체크";
             String currency = "USD";
             
             if ("Y".equals(status)) {
-                title = "[결제 승인] " + merchant;
-                body = currency + " " + formatAmount(amount, currency) + "\n" + cardName;
+                title = "[출금] " + cardName + " | " + merchant;
+                body = currency + " " + formatAmount(amount, currency) + "\n";
                 icon = "success";
             } else if ("N".equals(status)) {
-                title = "[결제 실패] " + merchant;
+                title = "[미출금] " + cardName + " | " + merchant;
                 if ("CC45".equals(reason)) {
-                    body = currency + " " + formatAmount(amount, currency) + "\n" + cardName + "\n정지된 카드입니다.";
+                    body = currency + " " + formatAmount(amount, currency) + "\n정지된 카드입니다.";
                 } else if ("CC10".equals(reason)) {
-                    body = currency + " " + formatAmount(amount, currency) + "\n" + cardName + "\n잔액이 부족합니다.";
+                    body = currency + " " + formatAmount(amount, currency) + "\n잔액이 부족합니다.";
                 } else {
-                    body = currency + " " + formatAmount(amount, currency) + "\n" + cardName + "\n사용할 수 없는 카드입니다.";
+                    body = currency + " " + formatAmount(amount, currency) + "\n사용할 수 없는 카드입니다.";
                 }
                 icon = "error";
             } else {
