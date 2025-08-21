@@ -56,6 +56,35 @@
       :root{ --bg:#0b0f14; --ink:#e5e7eb; --muted:#9aa3af; --border:#242a33; --bar:#0f1720; }
       .card{background:#0e141b}.item:hover{background:#0d131a}
     }
+
+    /* ===== BNK InfoWindow 카드 ===== */
+    .bnk-infowin{position:relative; min-width:260px; max-width:320px; font-size:14px; line-height:1.35}
+    .bnk-infowin .head{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+    .bnk-infowin .logo{width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
+      font-weight:900; font-size:11px; color:#fff; background:var(--branch); box-shadow:0 2px 6px rgba(0,0,0,.15)}
+    .bnk-infowin .title{font-weight:900; font-size:15px; display:flex; align-items:center; gap:6px; flex:1}
+    .bnk-infowin .badge{background:var(--digital); color:#fff; font-weight:800; font-size:11px; padding:2px 8px; border-radius:999px}
+    .bnk-infowin .badge.hq{background:#111827}
+    .bnk-infowin .meta{display:grid; gap:3px; margin:8px 0 10px; color:var(--muted)}
+    .bnk-infowin .meta-row{display:flex; gap:8px}
+    .bnk-infowin .meta .ico{width:18px; text-align:center; opacity:.75}
+    .bnk-infowin .actions{display:flex; gap:8px; margin-top:8px}
+    .bnk-infowin .btn{border:1px solid var(--border); background:#fff; border-radius:10px; padding:10px 12px;
+      cursor:pointer; font-weight:800; font-size:13px; flex:1}
+    .bnk-infowin .btn:hover{box-shadow:var(--shadow-lg)}
+    .bnk-infowin .btn.primary{background:#2563eb; color:#fff; border-color:#2563eb}
+    .bnk-infowin .close{
+      position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
+      border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:800;
+    }
+    .bnk-infowin .close:hover{box-shadow:var(--shadow-lg)}
+    .bnk-infowin{transform:translateY(2px); opacity:.98; animation:bnk-pop .14s ease-out}
+    @keyframes bnk-pop{from{transform:translateY(6px); opacity:.0} to{transform:translateY(2px); opacity:.98}}
+    @media (prefers-color-scheme: dark){
+      .bnk-infowin .btn{background:#0e141b}
+      .bnk-infowin .btn.primary{color:#fff}
+      .bnk-infowin .close{background:#0e141b}
+    }
   </style>
 
   <script>
@@ -172,11 +201,7 @@
     function jsStr(s){ return String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
     function num(v){ const n = parseFloat(v); return Number.isFinite(n) ? n : null; }
 
-    /* ===== API_BASE 결정 =====
-       - 서버/브라우저 배포: same-origin('')
-       - WebView 파일 실행: 안드 에뮬레이터 기본 10.0.2.2:8093
-       - 강제 지정: index.html?api=http://192.168.0.10:8093
-    */
+    /* ===== API_BASE 결정 ===== */
     const API_BASE = (() => {
       const p = new URLSearchParams(location.search).get('api');
       if (p) return p.replace(/\/+$/,'');
@@ -221,6 +246,12 @@
       window.addEventListener('pagehide', ()=>clearTimeout(timer), { once:true });
     }
 
+    /* ===== 공통: 모든 인포윈도우 닫기 ===== */
+    function closeAllInfo(){
+      infoWindows.forEach(w => { try{ w.close(); }catch(e){} });
+      if (hqInfo) { try{ hqInfo.close(); }catch(e){} }
+    }
+
     /* ===== 본점 마커 ===== */
     let hqMarker=null, hqInfo=null;
     function ensureHQMarker(){
@@ -229,7 +260,7 @@
         const pos = new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
         hqMarker = new naver.maps.Marker({ position: pos, map, icon: { content: iconHtmlHQ }, zIndex: 500 });
         updateHQInfoWindow();
-        naver.maps.Event.addListener(hqMarker, 'click', () => { infoWindows.forEach(w => w.close()); hqInfo.open(map, hqMarker); });
+        naver.maps.Event.addListener(hqMarker, 'click', () => { closeAllInfo(); hqInfo.open(map, hqMarker); });
       } else {
         updateHQInfoWindow();
         hqMarker.setMap(map);
@@ -237,10 +268,16 @@
     }
     function updateHQInfoWindow(){
       const html = `
-        <div style="min-width:230px;padding:2px 0">
-          <div class="i-name">${t('hqTitle')} <span class="badge hq">${t('badgeHQ')}</span></div>
-          <div class="i-addr">${t('centerCoord', DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)}</div>
-          <div class="row-actions">
+        <div class="bnk-infowin">
+          <button class="close" onclick="closeAllInfo()" aria-label="닫기">×</button>
+          <div class="head">
+            <div class="logo" style="background:#111827">BNK</div>
+            <div class="title">${t('hqTitle')} <span class="badge hq">${t('badgeHQ')}</span></div>
+          </div>
+          <div class="meta">
+            <div class="meta-row"><span class="ico">📍</span><span>${t('centerCoord', DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)}</span></div>
+          </div>
+          <div class="actions">
             <button class="btn primary" onclick="openNaverDirections('${jsStr(t('hqTitle'))}', ${DEFAULT_CENTER.lat}, ${DEFAULT_CENTER.lng})">${t('btnDirections')}</button>
           </div>
         </div>`;
@@ -298,7 +335,7 @@
       })).filter(r => r.lat!=null && r.lng!=null);
     }
 
-    // 샘플 폴백 사용 여부 (원하면 false로 꺼도 됨)
+    // 샘플 폴백 사용 여부
     const USE_SAMPLE_ON_ERROR = true;
     const SAMPLE_BRANCHES = [
       { name:'가야동지점', addr:'부산 부산진구 ...', phone:'051-111-2222', lat:35.1547247, lng:129.0384844, digital:'N' },
@@ -378,37 +415,46 @@
         map.setZoom(15);
         renderMapAndList();
         ensureHQMarker();
+        closeAllInfo();
       });
     }
     function clearMarkers(){ markers.forEach(m => { try{ m.setMap(null);}catch{} }); markers = []; infoWindows = []; }
     function pagedData(){ const start=(currentPage-1)*PAGE_SIZE, end=start+PAGE_SIZE; return filtered.slice(start, end); }
 
-    /* ===== 렌더링 ===== */
+    /* ===== 정보창 HTML 생성 ===== */
     function buildInfoHtml(r){
-      const isDigitalBadge = (String(r.digital ?? '').toUpperCase() === 'Y') || (filter==='digital');
+      const isDigital = (String(r.digital ?? '').toUpperCase() === 'Y') || (filter==='digital');
       const nm = pickName(r), nmEsc = escapeHtml(nm), nmJS = jsStr(nm);
       const ad = escapeHtml(pickAddr(r));
       const ph = escapeHtml(r.phone||'');
       const lat = Number(r.lat), lng = Number(r.lng);
 
       return `
-        <div style="min-width:230px;padding:2px 0">
-          <div class="i-name"><span>${nmEsc}${isDigitalBadge?`<span class="badge">${t('badgeDigital')}</span>`:''}</span></div>
-          <div class="i-addr">${ad}</div>
-          ${ph?`<div class="i-phone">${ph}</div>`:''}
-          <div class="row-actions">
+        <div class="bnk-infowin">
+          <button class="close" onclick="closeAllInfo()" aria-label="닫기">×</button>
+          <div class="head">
+            <div class="logo" style="background:${isDigital ? 'var(--digital)':'var(--branch)'}">BNK</div>
+            <div class="title">${nmEsc}${isDigital ? `<span class="badge">${t('badgeDigital')}</span>`:''}</div>
+          </div>
+          <div class="meta">
+            <div class="meta-row"><span class="ico">📍</span><span>${ad}</span></div>
+            ${ph ? `<div class="meta-row"><span class="ico">☎️</span><span>${ph}</span></div>` : ''}
+          </div>
+          <div class="actions">
             <button class="btn" onclick="window.__openOnMap(${lat}, ${lng})">${t('btnViewOnMap')}</button>
             <button class="btn primary" onclick="openNaverDirections('${nmJS}', ${lat}, ${lng})">${t('btnDirections')}</button>
           </div>
         </div>`;
     }
 
+    /* ===== 지도/리스트 렌더링 ===== */
     window.__openOnMap = (lat, lng) => {
       const pos = new naver.maps.LatLng(lat, lng);
       map.panTo(pos); map.setZoom(16);
     };
 
     function renderMapAndList(){
+      closeAllInfo();
       clearMarkers();
       const pageRows = pagedData();
 
@@ -418,7 +464,7 @@
         const pos = new naver.maps.LatLng(lat, lng);
         const marker = new naver.maps.Marker({ position: pos, map, icon:{ content: iconHtml(isDigitalMarker) }, zIndex:200 });
         const iw = new naver.maps.InfoWindow({ content: buildInfoHtml(r) });
-        naver.maps.Event.addListener(marker, 'click', () => { infoWindows.forEach(w => w.close()); iw.open(map, marker); });
+        naver.maps.Event.addListener(marker, 'click', () => { closeAllInfo(); iw.open(map, marker); });
         markers.push(marker); infoWindows.push(iw);
       });
 
@@ -455,7 +501,7 @@
       list.querySelectorAll('.item').forEach(el => {
         const idx = Number(el.getAttribute('data-idx'));
         const m = markers[idx], iw = infoWindows[idx];
-        const focus = ()=>{ if(m&&iw){ map.panTo(m.getPosition()); map.setZoom(16); infoWindows.forEach(w => w.close()); iw.open(map, m); } };
+        const focus = ()=>{ if(m&&iw){ map.panTo(m.getPosition()); map.setZoom(16); closeAllInfo(); iw.open(map, m); } };
         el.querySelector('.js-focus')?.addEventListener('click', ev=>{ ev.stopPropagation(); focus(); });
         el.querySelector('.js-nav')?.addEventListener('click', ev=>{ ev.stopPropagation(); focus(); });
         el.addEventListener('click', focus);
@@ -485,6 +531,7 @@
           if (act === 'last' && currentPage !== pages) currentPage = pages;
           renderMapAndList();
           map.setCenter(new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)); map.setZoom(13);
+          closeAllInfo();
         });
       });
     }
@@ -498,6 +545,9 @@
             center: new naver.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng),
             zoom: 15, zoomControl: true
           });
+
+          // 지도 빈 곳 클릭 시 정보창 닫기
+          naver.maps.Event.addListener(map, 'click', () => { closeAllInfo(); });
 
           const mq = window.matchMedia('(min-width: 768px)');
           const onMQ = () => { PAGE_SIZE = mq.matches ? 25 : 15; currentPage = 1; renderMapAndList(); };
