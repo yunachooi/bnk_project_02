@@ -102,9 +102,6 @@ class Product {
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8093';
-  // static const String sharePage = 'http://10.0.2.2:8093/user/shopping/product';
-
-  // 페이지 공유(HMAC) 링크 발급
   static Future<String?> getSharePageUrl(String path) async {
     try {
       final uri = Uri.parse('$baseUrl/api/share/page')
@@ -122,7 +119,6 @@ class ApiService {
     }
   }
 
-  // (옵션) 상품용 공유 링크 – 페이지 공유만 쓰면 이건 안 써도 됩니다
   static Future<String?> getShareUrl(String spno) async {
     try {
       final response = await http
@@ -224,17 +220,15 @@ class ProductDetailPage extends StatelessWidget {
     );
 
     const pagePath = '/user/shopping/products';
-    final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
-    final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
-    String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
+    final display  = 'http://localhost:8093$pagePath';
+    final fallback = '${ApiService.baseUrl}$pagePath';
+    String shareUrlForClipboard = display;
 
     try {
-      // 1) 서버 서명 링크(실제 클릭용)
       final raw = await ApiService.getSharePageUrl(pagePath)
           .timeout(const Duration(seconds: 2), onTimeout: () => null);
       final shareUrl = (raw != null && raw.isNotEmpty) ? raw : fallback;
 
-      // 2) 이미지 URL 보정
       final img = product.spimgurl.startsWith('http')
           ? product.spimgurl
           : 'https://via.placeholder.com/600x400.png?text=BNK+SHOP';
@@ -256,7 +250,6 @@ class ProductDetailPage extends StatelessWidget {
 
       bool opened = false;
 
-      // 3-a) 카카오톡 공유 시도
       try {
         final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
         if (installed) {
@@ -264,9 +257,8 @@ class ProductDetailPage extends StatelessWidget {
           await ShareClient.instance.launchKakaoTalk(uri);
           opened = true;
         }
-      } catch (_) {/* 카카오톡 관련 오류는 무시하고 다음 단계로 */}
+      } catch (_) {}
 
-      // 3-b) 웹 공유 시도
       if (!opened) {
         try {
           final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
@@ -282,10 +274,9 @@ class ProductDetailPage extends StatelessWidget {
           if (!opened && await launchUrl(sharerUrl, mode: LaunchMode.inAppWebView)) {
             opened = true;
           }
-        } catch (_) {/* WebSharer URL 생성 실패시 무시하고 복사 폴백 */}
+        } catch (_) {}
       }
 
-      // 4) 결과 토스트
       if (opened) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -301,7 +292,6 @@ class ProductDetailPage extends StatelessWidget {
         }
       }
     } catch (e, st) {
-      // 예상 못한 예외도 사용자에겐 성공 톤으로 안내(요구사항: 겁주는 문구 금지)
       debugPrint('[share][detail][error] $e\n$st');
       await Clipboard.setData(ClipboardData(text: shareUrlForClipboard));
       if (context.mounted) {
@@ -360,19 +350,12 @@ class ProductDetailPage extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1976D2)),
+          icon: const Icon(Icons.home, color: Colors.black),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
-        title: const Text(
-          '뒤로가기',
-          style: TextStyle(
-            color: Color(0xFF1976D2),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: null,
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.black),
@@ -812,9 +795,9 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
   // ✅ 홈 화면에서 첫 상품 공유 (공유 버튼용)
   Future<void> _shareFromHome(BuildContext context) async {
     const pagePath = '/user/shopping/products';
-    final display  = 'http://localhost:8093$pagePath';        // 화면에 보일 텍스트(항상 예쁘게)
-    final fallback = '${ApiService.baseUrl}$pagePath';         // 서명 실패 시 클릭용 폴백
-    String shareUrlForClipboard = display;                     // 복사/표시용은 항상 display
+    final display  = 'http://localhost:8093$pagePath';
+    final fallback = '${ApiService.baseUrl}$pagePath';
+    String shareUrlForClipboard = display;
 
     if (filteredProducts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -854,7 +837,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
 
       bool opened = false;
 
-      // 1) 카카오톡 공유
       try {
         final installed = await ShareClient.instance.isKakaoTalkSharingAvailable();
         if (installed) {
@@ -864,7 +846,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         }
       } catch (_) {}
 
-      // 2) 웹 공유
       if (!opened) {
         try {
           final sharerUrl = await WebSharerClient.instance.makeDefaultUrl(template: template);
@@ -883,7 +864,6 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         } catch (_) {}
       }
 
-      // 3) 결과 토스트
       if (opened) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -918,7 +898,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
         elevation: 1,
         shadowColor: Colors.grey.withOpacity(0.3),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.home, color: Colors.black),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -928,14 +908,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
             );
           },
         ),
-        title: const Text(
-          '뒤로가기',
-          style: TextStyle(
-            color: Color(0xFF1976D2),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: null,
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.black),
@@ -945,7 +918,7 @@ class _ShoppingHomePageState extends State<ShoppingHomePage> {
             icon: const Icon(Icons.share, color: Colors.black),
             onPressed: () {
               HapticFeedback.selectionClick();
-              _shareFromHome(context); // ✅ 실제 공유 수행
+              _shareFromHome(context);
             },
           ),
         ],
