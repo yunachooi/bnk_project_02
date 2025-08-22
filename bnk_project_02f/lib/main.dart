@@ -3,6 +3,7 @@ import 'package:bnk_project_02f/login/signin.dart';
 import 'package:bnk_project_02f/notify.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:bnk_project_02f/services/push_notification_service.dart';
+import 'package:bnk_project_02f/account/accountMain.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'BNK WebView',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
-      home: const SignInWebViewPage(),
+      home: const AccountMainPage(),
     );
   }
 }
