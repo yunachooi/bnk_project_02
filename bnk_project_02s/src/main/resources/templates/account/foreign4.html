@@ -671,14 +671,15 @@
             window.location.href = '/foreign3';
         });
 
-        nextButton.addEventListener('click', function() {
-            if (phoneAuthenticated && accountAuthenticated) {
-                Voice.cancel();
-                window.location.href = '/foreign5';
-            } else {
-                alert('모든 본인 확인 절차(휴대폰, 계좌)를 완료해야 다음 단계로 진행할 수 있습니다.');
-            }
-        });
+        nextButton.addEventListener('click', async function() {
+        	  if (phoneAuthenticated && accountAuthenticated) {
+        	    try { await saveAccountToSession(); } catch (e) { console.warn(e); }
+        	    Voice.cancel();
+        	    window.location.href = '/foreign5';
+        	  } else {
+        	    alert('모든 본인 확인 절차(휴대폰, 계좌)를 완료해야 다음 단계로 진행할 수 있습니다.');
+        	  }
+        	});
 
         // 섹션 제목 클릭 시 아코디언 토글
         phoneAuthTitle.addEventListener('click', () => {
@@ -794,6 +795,50 @@
 
         document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
         window.addEventListener('pagehide', ()=> Voice.cancel());
+        
+        async function getAutofill(){
+        	  const r = await fetch('/api/autofill', { credentials: 'include' });
+        	  if (r.status === 401) return {};
+        	  if (!r.ok) throw new Error('autofill api failed');
+        	  return r.json(); // { name, phone, residentMasked }
+        	}
+
+        	function formatPhone(p){
+        	  const d = String(p || '').replace(/\D/g, '');
+        	  if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3'); // 010-1234-5678
+        	  if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3'); // 010-123-4567
+        	  return p || '';
+        	}
+        	async function saveAccountToSession(){
+        		  const bankEl = document.getElementById('bankName');      // foreign4에 있음
+        		  const acctEl = document.getElementById('accountNumber'); // foreign4에 있음
+        		  const bank = bankEl?.value?.trim() ?? '';
+        		  const acct = (acctEl?.value ?? '').replace(/\D/g, '').trim(); // 숫자만
+        		  if (!bank || !acct) return; // 비어있으면 저장 안 함
+        		  await fetch('/api/session/account', {
+        		    method: 'POST',
+        		    headers: {'Content-Type':'application/json'},
+        		    credentials: 'include',
+        		    body: JSON.stringify({ bankName: bank, accountNumber: acct })
+        		  });
+        		}
+
+        	async function applyForeign4Phone(){
+        	  try{
+        	    const d = await getAutofill();
+        	    const phoneEl = document.getElementById('phoneNumber');
+        	    if (!phoneEl || !d.phone) return;
+
+        	    phoneEl.value = formatPhone(d.phone);
+        	    // 입력 마스크/검증 라이브러리 연동이 있으면 이벤트 한 번 발생시켜줌
+        	    phoneEl.dispatchEvent(new Event('input', { bubbles: true }));
+        	    phoneEl.dispatchEvent(new Event('change', { bubbles: true }));
+        	  }catch(e){
+        	    console.warn('autofill(phone) 실패', e);
+        	  }
+        	}
+
+        	document.addEventListener('DOMContentLoaded', applyForeign4Phone);
     </script>
 </body>
 </html>
