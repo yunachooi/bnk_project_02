@@ -52,22 +52,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const lastNQuarters=n=>Array.from({length:n},(_,i)=>{const d=new Date(today);d.setMonth(today.getMonth()-3*(n-1-i));const q=Math.floor(d.getMonth()/3)+1;return `${d.getFullYear()} Q${q}`;});
   const dailyLabels=lastNDays(7), quarterlyLabels=lastNQuarters(6);
 
-  // 가입자수 (더미)
-  getOrInitChart('chart-daily')?.setOption({
-    xAxis:{type:'category',data:dailyLabels}, yAxis:{type:'value'},
-    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
-    series:[{type:'line',data:[5,9,6,7,10,8,12],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
-  });
-  getOrInitChart('chart-monthly')?.setOption({
-    xAxis:{type:'category',data:['3월','4월','5월','6월','7월','8월']}, yAxis:{type:'value'},
-    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
-    series:[{type:'line',data:[30,50,60,80,120,140],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
-  });
-  getOrInitChart('chart-quarterly')?.setOption({
-    xAxis:{type:'category',data:quarterlyLabels}, yAxis:{type:'value'},
-    tooltip:{trigger:'axis',formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명`},
-    series:[{type:'line',data:[100,180,240,300,380,460],areaStyle:blueArea(),itemStyle:{shadowBlur:6,shadowColor:'rgba(37,99,235,.25)'}}]
-  });
+  // 가입자수
+  (async function renderSubscribers(){
+    const API_BASE = '/api/subscribers'; // 관리자 경로에 맞춤
+    const chDaily     = getOrInitChart('chart-daily');
+    const chMonthly   = getOrInitChart('chart-monthly');
+    const chQuarterly = getOrInitChart('chart-quarterly');
+
+    const render = (chart, payload) => chart?.setOption({
+      xAxis:{ type:'category', data: payload.labels },
+      yAxis:{ type:'value' },
+      tooltip:{ trigger:'axis', formatter:p=>`${p[0].axisValue}<br/>가입자수: <b>${p[0].data}</b>명` },
+      series:[{ type:'line', data: payload.data, smooth:true,
+        areaStyle: blueArea(),
+        lineStyle:{ width:3 },
+        itemStyle:{ shadowBlur:6, shadowColor:'rgba(37,99,235,.25)' }
+      }]
+    });
+
+    try {
+      const d = await fetch(`${API_BASE}/daily?days=7`).then(r=>r.json());
+      render(chDaily, d);
+    } catch (e) { console.warn('가입자 일별 로드 실패', e); }
+
+    try {
+      const m = await fetch(`${API_BASE}/monthly?months=6`).then(r=>r.json());
+      render(chMonthly, m);
+    } catch (e) { console.warn('가입자 월별 로드 실패', e); }
+
+    try {
+      const q = await fetch(`${API_BASE}/quarterly?quarters=6`).then(r=>r.json());
+      render(chQuarterly, q);
+    } catch (e) { console.warn('가입자 분기별 로드 실패', e); }
+  })();
 
   // 연령/성별
   fetch('/api/ageStats').then(r=>r.json()).then(data=>{
@@ -120,11 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* === 통화 코드/ISO → 한글 이름 매핑 === */
   const CURRENCY_NAME = {
     USD:'미국 달러', JPY:'일본 엔',
-    CNH:'중국 위안(CNH)', CNY:'중국 위안',
-    EUR:'유로', CHF:'스위스 프랑', VND:'베트남 동',
+    CNH:'중국 위안(CNH)', CNY:'중국 위안', KRW:'한국 원화',
+    EUR:'유로', CHF:'스위스 프랑', VND:'베트남 동', GBP:'영국 파운드',
     '840':'미국 달러(USD)', '392':'일본 엔(JPY)',
     '156':'중국 위안(CNY/CNH)', '978':'유로(EUR)',
-    '756':'스위스 프랑(CHF)', '704':'베트남 동(VND)'
+    '756':'스위스 프랑(CHF)', '704':'베트남 동(VND)', '410': '원화(KRW)', '826': '영국 파운드(GBP)' 
   };
   const toCurName = k => CURRENCY_NAME[String(k).trim()] || String(k);
 
@@ -138,32 +155,37 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) { console.warn('총 원화 사용액 로드 실패', e); }
   })();
 
-  // ====== 2) 일자별 통화별 환전금액(외화) – 스택 막대 ======
+  // ====== 2) 일자별 통화별 환전금액(외화) – 그룹 막대 ======
   (async function renderFxDaily(){
     try{
       const { labels, series } = await fetch('/api/usage/fx/daily?days=14').then(r=>r.json());
-      const inst = getOrInitChart('fx-daily-stacked');
+      const inst = getOrInitChart('fx-daily-stacked'); // 같은 DOM을 재사용
       if(!inst) return;
 
       inst.setOption({
         tooltip:{
           trigger:'axis',
+          axisPointer:{ type:'shadow' },
           formatter: (items=[]) => {
             const date = items[0]?.axisValue || '';
             const lines = items.map(it => `${toCurName(it.seriesName)}: <b>${it.data}</b>`);
             return `${date}<br/>` + lines.join('<br/>');
           }
         },
-        legend:{ top:0, formatter: (name)=>toCurName(name) },
-        grid:{left:40,right:20,top:30,bottom:28,containLabel:true},
-        xAxis:{type:'category',data:labels},
-        yAxis:{type:'value'},
-        series:(series||[]).map(s=>({
+        legend:{ top:0, type:'scroll', formatter: (name)=>toCurName(name) },
+        grid:{left:40,right:20,top:36,bottom:28,containLabel:true},
+        xAxis:{ type:'category', data:labels },
+        yAxis:{ type:'value' },
+        // ★ stack 제거 → 통화별 막대가 하루 기준으로 나란히 표시
+        series:(series||[]).map((s,idx)=>({
           type:'bar',
           name: toCurName(s.name),
-          stack:'fx',
-          data:s.data,
-          itemStyle: blueBar(),
+          data: s.data,
+          // 보기 좋게 간격 조절
+          barGap: '10%',
+          barCategoryGap: '38%',
+          // 테마 팔레트 색을 쓰도록 itemStyle은 최소화
+          itemStyle:{ borderRadius:[8,8,0,0] },
           emphasis:{ itemStyle:{ shadowBlur:12, shadowColor:'rgba(37,99,235,.28)'} }
         }))
       });
