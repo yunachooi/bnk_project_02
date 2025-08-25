@@ -63,6 +63,10 @@
           <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
           <span id="notification-badge" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center -mt-1 -mr-1 hidden"></span>
         </button>
+            <button id="auth-button"
+            class="px-3 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+      		로그인
+    		</button>
       </div>
     </header>
 
@@ -123,7 +127,7 @@
       </section>
     </main>
 
-    <!-- Bottom Nav -->
+<!--     Bottom Nav
     <nav class="nav-bar">
       <a class="nav-button" href="/user/shopping/products" aria-label="해외직구">
         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
@@ -138,7 +142,7 @@
         <span>환전</span>
       </a>
     </nav>
-  </div>
+  </div> -->
 
   <!-- Alert Modal -->
   <div id="payment-modal-overlay" class="modal-overlay">
@@ -226,31 +230,49 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
-  /* ---------- Tag local store (front-only) ---------- */
-  function getTagStore(){
-    try { return JSON.parse(localStorage.getItem('bnk_review_tags') || '{}'); }
-    catch { return {}; }
-  }
-  function setTagStore(s){ localStorage.setItem('bnk_review_tags', JSON.stringify(s)); }
+  /* ---------------- auth helpers ---------------- */
+  let isLoggedInGlobal = false; // 헤더 토글 표시용
 
-  // 리뷰 식별 키: id가 있으면 id로, 없으면 (uidMasked | date | content 일부)로
-  function reviewKey(obj, fallbackContent){
-    const id = obj?.id ?? 0;
-    if (id) return `id:${id}`;
-    const u = (obj?.uidMasked || '').trim();
-    const d = (obj?.date || '').trim();
-    const c = (obj?.content || fallbackContent || '').slice(0, 80);
-    return `sig:${u}|${d}|${c}`;
+  function renderAuthButton() {
+    const btn = document.getElementById('auth-button');
+    if (!btn) return;
+
+    // 상태에 따라 라벨과 핸들러 바꿈
+    if (isLoggedInGlobal) {
+      btn.textContent = '로그아웃';
+      btn.onclick = async () => {
+        // 1) 서버 로그아웃 시도 (프로젝트에 맞게 경로 변경 가능)
+        //    보통 /user/logout 혹은 /logout 을 씀
+        const tryLogout = async (url, method='GET') => {
+          try {
+            const res = await fetch(url, { method, credentials: 'include' });
+            return res.ok;
+          } catch { return false; }
+        };
+
+        let ok = await tryLogout('/user/logout', 'GET');
+        if (!ok) ok = await tryLogout('/user/logout', 'POST');
+        if (!ok) ok = await tryLogout('/logout', 'POST'); // 스프링 시큐리티 기본값 fallback
+
+        // 2) 클라이언트 상태 리셋
+        isLoggedInGlobal = false;
+        inboxNotifications.length = 0;
+        updateInboxBadge();
+
+        // 3) 메인으로 이동(로그아웃된 상태로 재로딩)
+        //    네 구성에 맞춰 홈이 /foreign 이면 그대로 사용
+        location.href = '/foreign';
+      };
+    } else {
+      btn.textContent = '로그인';
+      btn.onclick = () => {
+        // 네 로그인 페이지 경로로 이동
+        location.href = '/user/login';
+      };
+    }
   }
-  function maskUid(uid){
-	  if(!uid) return '익명';
-	  return uid.length <= 2 ? uid + '***' : uid.slice(0, 2) + '***';
-	}
-	// 동일 내용 매칭용: 내용 앞 80자 기준 키
-	function contentKey(text){
-	  const c = (text || '').trim().replace(/\s+/g, ' ').slice(0, 80);
-	  return `txt:${c}`;
-	}
+  
+  
     /* ---------------- core state ---------------- */
     let currentReviews = [];               // 최신 리뷰 캐시
     let isLoadingReviews = false;          // 동시 로드 방지
@@ -327,50 +349,17 @@
         content: x.content ?? x.rvcontent ?? '',
         tags: x.tags ?? []
       }));
-      const store = getTagStore();
-      currentReviews.forEach(it => {
-        const kId  = reviewKey(it);            // id가 있으면 id 기반
-        const kSig = reviewKey({ ...it, id:0 });// 혹시 id가 없을 경우 시그니처 기반
-        const saved = store[kId] || store[kSig] || store[contentKey(it.content)];
-        if (saved && (!it.tags || it.tags.length === 0)) it.tags = saved;
-      });
       return { items: currentReviews };
     }
 
-    async function submitReviewToApi(content, rating, tags){
-    	  const body = new URLSearchParams({
-    	    content: content ?? '',
-    	    rating: String(rating ?? 5),
-    	    // 백엔드가 무시해도 됨(추가 필드는 @RequestParam 미선언이면 자동 무시)
-    	    tags: JSON.stringify(tags || [])
-    	  });
-
-    	  const res  = await fetch('/api/reviews/create', {
-    	    method:'POST',
-    	    headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
-    	    credentials:'include',
-    	    body
-    	  });
-    	  const data = await res.json().catch(()=>({ ok:false }));
-
-    	  // OK면 로컬에도 태그 저장 (id가 오면 id키로, 그래도 안전하게 시그니처키도 같이 저장)
-    	  if (data.ok) {
-    		  const store = getTagStore();
-    		  const uidRaw = document.querySelector('meta[name="uid"]')?.content || '';
-    		  const uidMaskedGuess = maskUid(uidRaw);               // 목록에서 쓰는 포맷에 맞춤
-    		  const base = { id: data.id ?? 0, uidMasked: uidMaskedGuess, date: '', content };
-    		  const k1 = reviewKey(base, content);                  // id 있으면 id 기반
-    		  const k2 = reviewKey({ ...base, id: 0 }, content);    // id 없을 때 시그니처
-    		  const kTxt = contentKey(content);                     // 내용 기반(최후의 보루)
-    		  if (tags && tags.length){
-    		    store[k1] = tags;
-    		    store[k2] = tags;
-    		    store[kTxt] = tags;
-    		    setTagStore(store);
-    		  }
-    	  }
-    	  return data;
-    	}
+    async function submitReviewToApi(content, rating){
+      const body = new URLSearchParams({ content: content ?? '', rating: String(rating ?? 5) });
+      const res = await fetch('/api/reviews/create', {
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
+        credentials:'include', body
+      });
+      return await res.json().catch(()=>({ ok:false }));
+    }
 
     /* ---------------- reviews rendering ---------------- */
     const reviewList = document.getElementById('reviewList');
@@ -563,7 +552,9 @@
     function renderReviewInputSection(isLoggedIn){ const s=document.getElementById('review-input-section'); const p=document.getElementById('review-login-prompt'); if(isLoggedIn){ s.innerHTML=''; p.style.display='none'; } else { s.innerHTML=''; p.style.display='block'; } }
     function getCardDesignStyle(){ return { backgroundImage:'none', textColor:'#111827' }; }
     function renderContent(isLoggedIn, hasProducts, accountData){
-      globalAccountData=accountData;
+    	isLoggedInGlobal = !!isLoggedIn;  // ✅ 전역 상태 업데이트
+    	renderAuthButton();               // ✅ 헤더 버튼 그리기
+    	globalAccountData=accountData;
       const contentArea=document.getElementById('content-area');
       if(!isLoggedIn){
         contentArea.innerHTML = `
@@ -723,7 +714,7 @@
           return;
         }
 
-        const res = await submitReviewToApi(content, rating, tags);
+        const res = await submitReviewToApi(content, rating /*, tags - 서버 미저장*/);
         if(res.ok){
           closeReviewModal();
           inboxNotifications.unshift({type:'review', message:'후기가 등록되었습니다. 감사합니다!', at:Date.now()});
