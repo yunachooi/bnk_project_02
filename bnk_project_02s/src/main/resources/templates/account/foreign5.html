@@ -531,6 +531,39 @@
 
   <script>
     /* ===== 스크립트 ===== */
+    
+    function formatAccount(bank, acct){
+	  const d = String(acct||'').replace(/\D/g,'');
+	  if(!d) return '';
+	
+	  // BNK(부산/경남) 흔한 패턴: 3-4-4-2 (예: 112-4567-7890-01)
+	  if (/(BNK|부산|경남)/i.test(String(bank)) && d.length >= 13) {
+	    return d.replace(/(\d{3})(\d{4})(\d{4})(\d{2}).*/, '$1-$2-$3-$4');
+	  }
+	
+	  // 길이별 기본 포맷 (fallback)
+	  if (d.length === 13) return d.replace(/(\d{3})(\d{4})(\d{4})(\d{2})/, '$1-$2-$3-$4');
+	  if (d.length === 12) return d.replace(/(\d{3})(\d{4})(\d{5})/, '$1-$2-$3');
+	  if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+	  if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+	
+	  // 그 외는 3-4-나머지
+	  return d.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3');
+	}
+	
+	// (있으면 기존 getAutofill/formatPhone 그대로 사용)
+	async function getAutofill(){
+	  const r = await fetch('/api/autofill', { credentials:'include' });
+	  if (r.status === 401) return {};
+	  if (!r.ok) throw new Error('autofill failed');
+	  return r.json(); // { name, phone, residentMasked, bankName?, accountNumber? }
+	}
+	function formatPhone(p){
+	  const d = String(p||'').replace(/\D/g,'');
+	  if (d.length===11) return d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+	  if (d.length===10) return d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');
+	  return p||'';
+	}
 
     const homeButton = document.querySelector('header a');
     const prevButton = document.getElementById('prevButton');
@@ -565,7 +598,7 @@
     const customerCheckModalPart2 = document.getElementById('customerCheckModalPart2');
     const customerCheckAgreeBtnPart2 = document.getElementById('customerCheckAgreeBtnPart2');
 
-    const sendDocumentsModal = document.getElementById('sendDocumentsModal');
+    //const sendDocumentsModal = document.getElementById('sendDocumentsModal');
     const smsNumberInput = document.getElementById('smsNumberInput');
     const emailAddressInput = document.getElementById('emailAddressInput');
     const sendBySmsBtn = document.getElementById('sendBySmsBtn');
@@ -1132,6 +1165,85 @@
 
     document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
     window.addEventListener('pagehide', ()=> Voice.cancel());
+    
+    async function getAutofill(){
+    	  const r = await fetch('/api/autofill', { credentials: 'include' });
+    	  if (r.status === 401) return {};
+    	  if (!r.ok) throw new Error('autofill failed');
+    	  return r.json(); // { name, phone, residentMasked, (opt) bankName, accountMasked }
+    	}
+
+    	function formatPhone(p){
+    	  const d = String(p || '').replace(/\D/g, '');
+    	  if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    	  if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    	  return p || '';
+    	}
+
+    	  async function getAutofill(){
+    		    const r = await fetch('/api/autofill', { credentials: 'include' });
+    		    if (r.status === 401) return {};
+    		    if (!r.ok) throw new Error('autofill failed');
+    		    const d = await r.json();
+    		    console.debug('[foreign5] autofill payload:', d); // 디버깅용
+    		    return d; // { name, phone, residentMasked, (opt) bankName, accountNumber/accountMasked }
+    		  }
+
+    		  // --- 휴대폰 포맷
+    		  function formatPhone(p){
+    		    const d = String(p || '').replace(/\D/g, '');
+    		    if (d.length === 11) return d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    		    if (d.length === 10) return d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    		    return p || '';
+    		  }
+
+    		  // --- 화면에 꽂기
+    		  async function applyForeign5(){
+    		    try{
+    		      const d = await getAutofill();
+
+    		      // (1) 모달 휴대폰 입력
+    		      const smsEl = document.getElementById('smsNumberInput'); // 모달 input
+    		      if (smsEl && d.phone){
+    		        // 모달 placeholder가 숫자-only라 숫자만 투입
+    		        smsEl.value = String(d.phone).replace(/\D/g,'');
+    		        smsEl.dispatchEvent(new Event('input', {bubbles:true}));
+    		        smsEl.dispatchEvent(new Event('change', {bubbles:true}));
+    		      }
+
+    		      // (2) 본문에 휴대폰 input이 있으면 같이 채움(없으면 무시)
+    		      const phoneEl = document.getElementById('phoneNumber');
+    		      if (phoneEl && d.phone){
+    		        phoneEl.value = formatPhone(d.phone);
+    		        phoneEl.dispatchEvent(new Event('input', {bubbles:true}));
+    		        phoneEl.dispatchEvent(new Event('change', {bubbles:true}));
+    		      }
+
+    		      // (3) 출금계좌: 은행 + 하이픈 포함 실계좌
+    		      const withdrawEl = document.getElementById('withdrawalAccount');
+    		      if (withdrawEl && d.bankName){
+    		        const acctRaw = d.accountNumber || d.accountMasked || '';
+    		        if (acctRaw){
+    		          withdrawEl.value = `${d.bankName} ${formatAccount(d.bankName, acctRaw)}`;
+    		        }
+    		      }
+    		    }catch(e){
+    		      console.warn('foreign5 autofill 실패', e);
+    		    }
+    		  }
+
+    		  // 초기 진입 때 1회
+    		  document.addEventListener('DOMContentLoaded', applyForeign5);
+
+    		  // 모달이 "열릴 때"도 한 번 더 주입 (열림 타이밍 문제 대비)
+    		  const sendDocumentsModal = document.getElementById('sendDocumentsModal');
+    		  if (sendDocumentsModal) {
+    		    const obs = new MutationObserver(() => {
+    		      const isOpen = !sendDocumentsModal.classList.contains('hidden');
+    		      if (isOpen) applyForeign5().catch(()=>{});
+    		    });
+    		    obs.observe(sendDocumentsModal, { attributes:true, attributeFilter:['class'] });
+    		  }
   </script>
 </body>
 </html>

@@ -268,7 +268,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container">
-        <!-- Header: 3열 그리드로 가운데 정렬 보장 -->
+        <!-- Header -->
         <header class="grid grid-cols-3 items-center p-4 bg-white border-b border-gray-200">
             <a href="/foreign" class="justify-self-start flex items-center text-blue-700 font-medium text-base hover:text-blue-800 transition-colors duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -279,33 +279,30 @@
 
             <h1 class="justify-self-center text-xl font-bold text-gray-800 text-center">신분증 제출</h1>
 
-            <!-- 우측 상단: 음성 안내 버튼 + 패널 -->
+            <!-- 우측 상단: 음성 안내 -->
             <div class="relative justify-self-end">
                 <button id="voiceGuideBtn"
                         class="px-2 py-1 rounded-full text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-1"
                         aria-pressed="false"
                         aria-label="음성 안내 켜기"
                         title="음성 안내 켜기">
-                    <!-- Play -->
                     <svg id="voiceIconPlay" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M3 10v4a1 1 0 001 1h3l3.293 3.293A1 1 0 0011 18v-12a1 1 0 00-1.707-.707L7 8H4a1 1 0 00-1 1zm13.586-3.414a1 1 0 10-1.414 1.414A5.969 5.969 0 0117 12c0 1.657-.672 3.157-1.828 4.243a1 1 0 101.414 1.414A7.968 7.968 0 0019 12a7.968 7.968 0 00-2.414-5.414z"/>
                     </svg>
-                    <!-- Stop -->
                     <svg id="voiceIconStop" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M6 6h12v12H6z"/>
                     </svg>
                     <span id="voiceLabel" class="text-xs font-semibold">음성 안내 켜기</span>
                 </button>
 
-                <!-- 패널: 도움말 + 다시 듣기 + 닫기 -->
                 <div id="voicePanel" class="voice-panel" role="dialog" aria-label="음성 안내 설정">
                     <div class="mb-2 flex items-center justify-between">
                         <p class="text-sm font-semibold text-gray-800">음성 안내</p>
                         <button id="voiceCloseBtn" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded" aria-label="설정 닫기">닫기</button>
                     </div>
                     <div class="mb-3 text-xs text-gray-700 leading-5">
-                        <p class="mb-1">시작/정지: 우측 상단 ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요.</p>
-                        <p class="mb-1">촬영 안내: <span class="font-semibold">주민등록증을 네모 칸에 맞춘 뒤 촬영</span>해 주세요. 사진을 확인하고 정보가 맞으면 <span class="font-semibold">정보 확인</span> 버튼을 누르면 됩니다.</p>
+                        <p class="mb-1">시작/정지: ‘<span class="font-semibold">음성 안내 켜기·끄기</span>’ 버튼을 누르세요.</p>
+                        <p class="mb-1"><span class="font-semibold">주민등록증을 네모 칸에 맞춘 뒤 촬영</span>해 주세요. 사진을 확인하고 정보가 맞으면 <span class="font-semibold">정보 확인</span> 버튼을 누르세요.</p>
                     </div>
                     <div class="flex">
                         <button id="voiceReplayBtn" class="flex-1 bg-blue-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-blue-700">다시 듣기</button>
@@ -319,7 +316,7 @@
             <div class="step-indicator-progress"></div>
         </div>
 
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main class="main-content">
             <!-- 신분증 촬영 섹션 -->
             <div id="idCardSection" class="section-block collapsible">
@@ -344,7 +341,6 @@
                                 <span class="photo-placeholder-icon">📸</span>
                                 <span class="photo-placeholder-text">신분증을 촬영해주세요</span>
                             </div>
-                            <!-- Hidden canvas for capturing frames -->
                             <canvas id="hiddenCanvas" style="display: none;"></canvas>
                         </div>
                         <div id="actionButtons" class="action-buttons">
@@ -356,7 +352,7 @@
                 </div>
             </div>
 
-            <!-- 추출된 정보 섹션 (숨겨져 있다가 촬영 완료 시 나타남) -->
+            <!-- 추출된 정보 섹션 -->
             <div id="extractedInfoSection" class="section-block collapsible hidden">
                 <h2 id="extractedInfoTitle" class="section-title">
                     <span class="title-text">
@@ -385,7 +381,7 @@
             </div>
         </main>
 
-        <!-- Fixed Bottom Bar -->
+        <!-- Footer -->
         <footer class="bottom-bar">
             <button id="prevButton" class="bg-gray-200 text-gray-700 hover:bg-gray-300">이전</button>
             <button id="nextButton" class="bg-gray-400 text-white cursor-not-allowed" disabled>다음으로</button>
@@ -397,7 +393,58 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script>
-        // --- DOM 요소 정의 ---
+        /* =========================
+         *  🔧 설정
+         * ========================= */
+        // /api/ocr 엔드포인트가 없으면 false 유지(기본값). 있으면 true로 전환.
+        const USE_OCR = false;
+
+        /* =========================
+         *  공통: 자동채움(/api/autofill)
+         * ========================= */
+        let __AUTOFILL_CACHE__ = null;
+        async function getAutofill(){
+            if (__AUTOFILL_CACHE__) return __AUTOFILL_CACHE__;
+            const r = await fetch('/api/autofill', { credentials:'include' });
+            if (!r.ok) throw new Error('autofill api failed');
+            __AUTOFILL_CACHE__ = await r.json(); // { name, phone, residentMasked, bankName, accountMasked }
+            return __AUTOFILL_CACHE__;
+        }
+
+        async function applyAutofillToForeign3(){
+            try{
+                const d = await getAutofill();
+                const nameEl = document.getElementById('extractedName');
+                const rrnEl  = document.getElementById('extractedResidentId');
+
+                if (nameEl && d.name) nameEl.value = d.name;
+
+                // 주민번호는 마스킹만 보여주고 제출 금지
+                if (rrnEl && d.residentMasked){
+                    rrnEl.value = d.residentMasked;
+                    rrnEl.readOnly = true;
+                    rrnEl.disabled = true;       // form 제출 차단
+                    rrnEl.removeAttribute('name');
+                    rrnEl.setAttribute('autocomplete','off');
+                }
+
+                // 정보 섹션 노출(촬영 전에도 사용자 확인 가능)
+                const section  = document.getElementById('extractedInfoSection');
+                const content  = document.getElementById('extractedInfoContent');
+                const titleHdr = document.getElementById('extractedInfoTitle');
+                if (section && content && titleHdr){
+                    section.classList.remove('hidden');
+                    content.classList.remove('collapsed');
+                    titleHdr.classList.add('rotated');
+                }
+            }catch(e){
+                console.warn('autofill 실패', e);
+            }
+        }
+
+        /* =========================
+         *  원본 스크립트 (필요 변수)
+         * ========================= */
         const homeButton = document.querySelector('header a');
         const prevButton = document.getElementById('prevButton');
         const nextButton = document.getElementById('nextButton');
@@ -423,7 +470,7 @@
         // 추출된 정보 섹션 관련 요소
         const extractedInfoSection = document.getElementById('extractedInfoSection');
         const extractedInfoTitle = document.getElementById('extractedInfoTitle');
-        const theExtractedInfoCheckmark = document.getElementById('extractedInfoCheckmark'); // ← const 로 수정
+        const theExtractedInfoCheckmark = document.getElementById('extractedInfoCheckmark');
         const extractedInfoToggleIcon = document.getElementById('extractedInfoToggleIcon');
         const extractedInfoContent = document.getElementById('extractedInfoContent');
 
@@ -431,7 +478,7 @@
         const extractedResidentIdInput = document.getElementById('extractedResidentId'); 
         const confirmInfoButton = document.getElementById('confirmInfoButton'); 
 
-        // ===== 음성 안내 요소
+        // 음성 안내 요소
         const voiceBtn = document.getElementById('voiceGuideBtn');
         const voiceIconPlay = document.getElementById('voiceIconPlay');
         const voiceIconStop = document.getElementById('voiceIconStop');
@@ -446,12 +493,12 @@
         function showLoading(on){ loadingOverlay.classList.toggle('open', !!on); }
         function showToast(msg){ toast.textContent = msg; toast.classList.add('open'); setTimeout(()=>toast.classList.remove('open'), 2500); }
 
-        // --- 상태 변수 ---
+        // 상태 변수
         let idCardPhotoConfirmed = false;
         let extractedInfoConfirmed = false;
         let cameraStream = null;
 
-        // --- 카메라 시작 함수 ---
+        // 카메라 시작
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }});
@@ -468,7 +515,7 @@
             }
         }
 
-        // --- 스냅샷 촬영 함수 ---
+        // 스냅샷
         function takeSnapshot() {
             if (!cameraStream || cameraFeed.style.display === 'none') {
                 alert('카메라 스트림이 활성화되지 않았습니다. 잠시 후 다시 시도하거나 권한을 확인해주세요.');
@@ -494,7 +541,7 @@
             idCardPhotoConfirmed = false;
             updateNextButtonState();
 
-            // 버튼 상태 전환
+            // 버튼 전환
             captureButton.classList.add('hidden');
             confirmButton.classList.remove('hidden');
             retakeButton.classList.remove('hidden');
@@ -502,11 +549,18 @@
             confirmButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
             confirmButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
 
-            // --- (변경) 촬영 직후 OCR 시작 ---
-            ocrViaServer(previewImage.src);
+            // 🔁 OCR 사용 여부
+            if (USE_OCR) {
+                ocrViaServer(previewImage.src);
+            } else {
+                // OCR 미사용: 정보 섹션만 열어주고, 자동채움 재적용(혹시 촬영 전 미적용 대비)
+                applyAutofillToForeign3().then(()=>{
+                    showToast('촬영 완료: 정보를 확인해 주세요.');
+                });
+            }
         }
 
-        // --- 초기 UI 설정 함수 ---
+        // 초기 UI
         function initializeUI() {
             idCardContent.classList.remove('collapsed');
             idCardTitle.classList.add('rotated');
@@ -524,7 +578,7 @@
             updateNextButtonState(); 
         }
 
-        // --- 아코디언 토글 함수 ---
+        // 아코디언 토글
         function toggleAccordion(contentElement, titleElement, toggleIconElement, sectionBlockElement) {
             if (sectionBlockElement.classList.contains('confirmed')) return;
             contentElement.classList.toggle('collapsed');
@@ -533,7 +587,7 @@
             else toggleIconElement.classList.add('rotated');
         }
 
-        // --- 이벤트 핸들러 ---
+        // 이벤트
         idCardFrame.addEventListener('click', () => {
             if (cameraFeed.style.display === 'block') takeSnapshot();
         });
@@ -570,9 +624,11 @@
             idCardSection.classList.remove('confirmed'); 
 
             startCamera();
+            // 재촬영 시에도 자동채움 다시 적용
+            applyAutofillToForeign3();
         });
 
-        // "확인" 클릭 시: 촬영 완료 처리 + 정보 섹션 오픈
+        // "확인" 클릭: 촬영 완료 처리 + 정보 섹션 오픈
         confirmButton.addEventListener('click', () => {
             idCardPhotoConfirmed = true; 
             updateNextButtonState(); 
@@ -598,7 +654,7 @@
         // 정보 확인 버튼
         confirmInfoButton.addEventListener('click', () => {
             if (!extractedNameInput.value.trim() || !extractedResidentIdInput.value.trim()) {
-                alert('성명과 주민등록번호를 모두 입력해주세요.');
+                alert('성명과 주민등록번호를 모두 확인해 주세요.');
                 return;
             }
             extractedInfoConfirmed = true; 
@@ -616,11 +672,10 @@
             }, 600);
         });
 
-        // === (신규) 서버 OCR 호출 ===
+        // === (선택) 서버 OCR 호출 ===
         async function ocrViaServer(dataUrl){
             try{
                 showLoading(true);
-                // dataUrl: "data:image/png;base64,......"
                 const res = await fetch('/api/ocr', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -631,23 +686,19 @@
                     throw new Error(t || 'OCR 요청 실패');
                 }
                 const json = await res.json();
-                // 추출값 반영
                 if(json.name){ extractedNameInput.value = json.name; }
                 if(json.residentId){ extractedResidentIdInput.value = json.residentId; }
 
-                // 정보 섹션 열어주기
                 extractedInfoSection.classList.remove('hidden');
                 extractedInfoContent.classList.remove('collapsed');
                 extractedInfoTitle.classList.add('rotated');
 
-                // 안내
                 if(!json.name && !json.residentId){
                     showToast('인식률이 낮아요. 값을 확인/수정해 주세요.');
                 }else{
                     showToast('OCR 완료: 값이 채워졌어요. 확인을 눌러주세요.');
                 }
 
-                // 로컬 스토리지 저장(옵션)
                 try{
                     localStorage.setItem('extractedUserInfo', JSON.stringify({
                         name: extractedNameInput.value || '',
@@ -700,7 +751,12 @@
         extractedInfoTitle.addEventListener('click', () => {
             toggleAccordion(extractedInfoContent, extractedInfoTitle, extractedInfoToggleIcon, extractedInfoSection);
         });
-        document.addEventListener('DOMContentLoaded', initializeUI);
+
+        // 초기화 + 자동채움 적용
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeUI();
+            applyAutofillToForeign3();
+        });
 
         /* ===== 음성 안내 (Web Speech + 네이티브 브릿지) ===== */
         const Voice = (function(){
@@ -805,6 +861,46 @@
 
         document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
         window.addEventListener('pagehide', ()=> Voice.cancel());
+        
+        async function getAutofill(){
+        	  const r = await fetch('/api/autofill', { credentials: 'include' });
+        	  if (r.status === 401) return {};        // 비로그인/세션없음
+        	  if (!r.ok) throw new Error('autofill api failed');
+        	  return r.json();                         // {name, phone, residentMasked}
+        	}
+
+        	// foreign3 채우기: 이름 + 주민번호(마스킹만, 제출 차단)
+        	async function applyAutofillToForeign3(){
+        	  try {
+        	    const d = await getAutofill();
+
+        	    const nameEl = document.getElementById('extractedName');
+        	    if (nameEl && d.name) nameEl.value = d.name;
+
+        	    const rrnEl  = document.getElementById('extractedResidentId');
+        	    if (rrnEl && d.residentMasked){
+        	      rrnEl.value = d.residentMasked;
+        	      rrnEl.readOnly = true;          // 수정 불가
+        	      rrnEl.disabled = true;          // 폼 제출 차단
+        	      rrnEl.removeAttribute('name');  // 혹시 name 있으면 제거
+        	      rrnEl.setAttribute('autocomplete','off');
+        	    }
+
+        	    // 아코디언/섹션이 접혀 있으면 보여주기(있을 때만)
+        	    const sec = document.getElementById('extractedInfoSection');
+        	    const cont= document.getElementById('extractedInfoContent');
+        	    const ttl = document.getElementById('extractedInfoTitle');
+        	    if (sec && cont && ttl){
+        	      sec.classList.remove('hidden');
+        	      cont.classList.remove('collapsed');
+        	      ttl.classList.add('rotated');
+        	    }
+        	  } catch(e){
+        	    console.warn('autofill 실패', e);
+        	  }
+        	}
+
+        	document.addEventListener('DOMContentLoaded', applyAutofillToForeign3);
     </script>
 </body>
 </html>

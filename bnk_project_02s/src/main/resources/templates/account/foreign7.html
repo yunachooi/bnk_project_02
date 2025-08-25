@@ -989,6 +989,41 @@
     // 페이지를 떠날 때 정지
     document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ Voice.cancel(); } });
     window.addEventListener('pagehide', ()=> Voice.cancel());
+    
+    async function getAutofill(){
+    	  const r = await fetch('/api/autofill', { credentials:'include' });
+    	  if (r.status === 401) return {};
+    	  if (!r.ok) throw new Error('autofill failed');
+    	  return r.json();
+    	}
+
+    	// 모달 열릴 때 휴대폰 숫자만 채우기
+    	document.addEventListener('DOMContentLoaded', () => {
+    	  const modal = document.getElementById('sendDocumentsModal');
+    	  const fill = async () => {
+    	    try{
+    	      const d = await getAutofill();
+    	      const smsEl = document.getElementById('smsNumberInput');
+    	      if (smsEl && d.phone){
+    	        smsEl.value = String(d.phone).replace(/\D/g,''); // 01012345678
+    	        smsEl.dispatchEvent(new Event('input', {bubbles:true}));
+    	        smsEl.dispatchEvent(new Event('change', {bubbles:true}));
+    	      }
+    	    }catch(e){ console.warn(e); }
+    	  };
+
+    	  if (modal){
+    	    // 이미 열려있을 수도 있으니 한번 시도
+    	    fill();
+
+    	    // 이후 열림 감지
+    	    const obs = new MutationObserver(() => {
+    	      const open = !modal.classList.contains('hidden');
+    	      if (open) fill();
+    	    });
+    	    obs.observe(modal, { attributes:true, attributeFilter:['class'] });
+    	  }
+    	});
   </script>
 </body>
 </html>
