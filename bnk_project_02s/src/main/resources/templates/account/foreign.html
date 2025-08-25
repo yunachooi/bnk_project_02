@@ -232,6 +232,31 @@
   <script>
   /* ---------------- auth helpers ---------------- */
   let isLoggedInGlobal = false; // 헤더 토글 표시용
+  
+//---------- Tag local store (front-only) ----------
+  function getTagStore(){ try { return JSON.parse(localStorage.getItem('bnk_review_tags') || '{}'); } catch { return {}; } }
+  function setTagStore(s){ localStorage.setItem('bnk_review_tags', JSON.stringify(s)); }
+  
+  function contentKey(text){
+	  const c = (text || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+	  return `txt:${c}`;
+	}
+
+  // 리뷰 식별 키: id 우선, 없으면 (uid마스크 + 날짜 + 내용80자)
+  function reviewKey(obj, fallbackContent){
+    const id = obj?.id ?? 0;
+    if (id) return `id:${id}`;
+    const u = (obj?.uidMasked || '').trim();
+    const d = (obj?.date || '').trim();
+    const c = (obj?.content || fallbackContent || '').slice(0, 80);
+    return `sig:${u}|${d}|${c}`;
+  }
+  // 날짜 제외 키(백엔드가 날짜 안 내려줄 때 대비)
+  function reviewKeyNoDate(obj, fallbackContent){
+    const u = (obj?.uidMasked || '').trim();
+    const c = (obj?.content || fallbackContent || '').slice(0, 80);
+    return `sigND:${u}|${c}`;
+  }
 
   function renderAuthButton() {
     const btn = document.getElementById('auth-button');
@@ -338,28 +363,77 @@
 
     /* ---------------- API: reviews ---------------- */
     async function fetchReviewsFromApi(){
-      const res = await fetch('/api/reviews/recent2?limit=50', { headers:{'Accept':'application/json'}, credentials:'include' });
-      if(!res.ok){ currentReviews = []; return { items:[] }; }
-      const data = await res.json().catch(()=>({ items:[] }));
-      currentReviews = (data.items||[]).map(x=>({
-        id: x.id ?? x.rvno ?? 0,
-        uidMasked: x.uidMasked ?? (x.uid ? (x.uid.length<=2 ? x.uid+'***' : x.uid.slice(0,2)+'***') : '익명'),
-        date: x.date ?? x.rvdate ?? '',
-        rating: Number(x.rating ?? x.rvrating ?? 0),
-        content: x.content ?? x.rvcontent ?? '',
-        tags: x.tags ?? []
-      }));
-      return { items: currentReviews };
-    }
+	  const res = await fetch('/api/reviews/recent2?limit=50', { headers:{'Accept':'application/json'}, credentials:'include' });
+	  if(!res.ok){ currentReviews = []; return { items:[] }; }
+	  const data = await res.json().catch(()=>({ items:[] }));
+	
+	  currentReviews = (data.items||[]).map(x=>({
+	    id: x.id ?? x.rvno ?? 0,
+	    uidMasked: x.uidMasked ?? (x.uid ? (x.uid.length<=3 ? x.uid+'***' : x.uid.slice(0,3)+'***') : '익명'),
+	    date: x.date ?? x.rvdate ?? '',
+	    rating: Number(x.rating ?? x.rvrating ?? 0),
+	    content: x.content ?? x.rvcontent ?? '',
+	    tags: x.tags ?? []
+	  }));
+	
+	  // 로컬에 저장된 태그와 머지
+	  const store = getTagStore();
+	  currentReviews.forEach(it => {
+	    const kId  = reviewKey(it);
+	    const kSig = reviewKey({ ...it, id:0 });
+	    const kND  = reviewKeyNoDate(it);
+	    const saved = store[kId] || store[kSig] || store[kND] || store[contentKey(it.content)];
+	    if (saved && (!it.tags || it.tags.length === 0)) it.tags = saved;
+	  });
+	
+	  return { items: currentReviews };
+	}
 
-    async function submitReviewToApi(content, rating){
-      const body = new URLSearchParams({ content: content ?? '', rating: String(rating ?? 5) });
-      const res = await fetch('/api/reviews/create', {
-        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
-        credentials:'include', body
-      });
-      return await res.json().catch(()=>({ ok:false }));
-    }
+    async function submitReviewToApi(content, rating, tags){
+    	  const body = new URLSearchParams({
+    	    content: content ?? '',
+    	    rating: String(rating ?? 5),
+    	    // 백엔드에서 @RequestParam 미선언이면 무시돼도 괜찮음
+    	    tags: JSON.stringify(tags || [])
+    	  });
+
+    	  let httpOk = false, data = null;
+    	  try {
+    	    const res = await fetch('/api/reviews/create', {
+    	      method:'POST',
+    	      headers:{ 'Content-Type':'application/x-www-form-urlencoded', 'Accept':'application/json' },
+    	      credentials:'include',
+    	      body
+    	    });
+    	    httpOk = res.ok;
+    	    const txt = await res.text();
+    	    try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
+    	  } catch {
+    	    return { ok:false, error:'NETWORK' };
+    	  }
+
+    	  const ok = httpOk && (data?.ok !== false);
+
+    	  // 성공 시 로컬스토리지에 태그 저장 (id/시그니처 2종 + 날짜없는 시그니처 1종)
+    	  if (ok && Array.isArray(tags) && tags.length) {
+    	    const store = getTagStore();
+    	    const uidMeta = (document.querySelector('meta[name="uid"]')?.content || '');
+    	    const uidMasked = uidMeta ? (uidMeta.length<=2 ? uidMeta+'***' : uidMeta.slice(0,2)+'***') : '익명';
+
+    	    const tmp = { id:(data?.id ?? data?.rvno ?? 0), uidMasked, date:'', content };
+    	    const kId  = reviewKey(tmp, content);
+    	    const kSig = reviewKey({ ...tmp, id:0 }, content);
+    	    const kND  = reviewKeyNoDate(tmp, content);
+    	    const kTxt = contentKey(content);
+    	    store[kId]  = tags;
+    	    store[kSig] = tags;
+    	    store[kND]  = tags;
+    	    store[kTxt] = tags;
+    	    setTagStore(store);
+    	  }
+
+    	  return { ok, id:(data?.id ?? data?.rvno ?? null), error:data?.error };
+    	}
 
     /* ---------------- reviews rendering ---------------- */
     const reviewList = document.getElementById('reviewList');
@@ -714,7 +788,7 @@
           return;
         }
 
-        const res = await submitReviewToApi(content, rating /*, tags - 서버 미저장*/);
+        const res = await submitReviewToApi(content, rating, tags);
         if(res.ok){
           closeReviewModal();
           inboxNotifications.unshift({type:'review', message:'후기가 등록되었습니다. 감사합니다!', at:Date.now()});
