@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.bnk_project_02s.entity.ParentAccount;
 
@@ -27,4 +29,6 @@ public interface ParentAccountRepository extends JpaRepository<ParentAccount, St
 
     /** 유저 소유의 특정 pano 검증이 필요할 때 */
     Optional<ParentAccount> findByPanoAndUser_Uid(String pano, String uid);
+    
+    @Modifying @Transactional void deleteByUser_Uid(String uid);
 }

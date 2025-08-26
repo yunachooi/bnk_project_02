@@ -443,19 +443,6 @@
       </div>
     </div>
   </div>
-  <!-- 우편번호(다음) 임베드 레이어: WebView에서도 동작 -->
-  <div id="postcodeLayer" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,.4);">
-    <div id="postcodeWrap"
-         style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-                width:96vw; max-width:420px; height:72vh; background:#fff; border-radius:12px; overflow:hidden;">
-    </div>
-    <button type="button" onclick="closePostcodeLayer()"
-            style="position:absolute; top:10px; right:12px; background:#111827; color:#fff; border:none; border-radius:8px; padding:.45rem .7rem; font-weight:800;">
-      닫기
-    </button>
-  </div>
-
-
 
   <script>
     /* ===== 공통 ===== */
@@ -648,40 +635,18 @@
     ownFundsRadios.forEach(r=> r.addEventListener('change', scheduleSave));
     detailAddressInput.addEventListener('input', scheduleSave);
 
-    
-    // === (Patched) 다음 우편번호: 팝업 대신 임베드 사용 ===
-    function openPostcodeLayer(){
-      const layer = document.getElementById('postcodeLayer');
-      const wrap  = document.getElementById('postcodeWrap');
-
-      // 임베드 렌더링
+    findAddressBtn.addEventListener('click', ()=>{
       new daum.Postcode({
         oncomplete: function(data){
           postalCodeInput.value = data.zonecode || '';
-          baseAddressInput.value = data.roadAddress || data.jibunAddress || '';
-          // 닫고 포커스 이동
-          closePostcodeLayer();
-          try { setTimeout(()=> detailAddressInput && detailAddressInput.focus(), 50); } catch(e){}
+          baseAddressInput.value = (data.roadAddress || data.jibunAddress || '');
+          detailAddressInput.focus();
           scheduleSave();
-        },
-        width: '100%',
-        height:'100%',
-        maxSuggestItems: 5
-      }).embed(wrap);
+        }
+      }).open();
+    });
 
-      layer.style.display = 'block';
-    }
-    function closePostcodeLayer(){
-      const el = document.getElementById('postcodeLayer');
-      if(el) el.style.display = 'none';
-    }
-    // 버튼 이벤트 재연결
-    try {
-      findAddressBtn.replaceWith(findAddressBtn.cloneNode(true));
-    } catch(e) {}
-    const _findBtn = document.getElementById('findAddressBtn');
-    _findBtn.addEventListener('click', openPostcodeLayer);
-addressDoneBtn.addEventListener('click', ()=>{
+    addressDoneBtn.addEventListener('click', ()=>{
       const v=validCustomerInfo();
       if(!v.all){
         customerInfoWarning.style.display='block';

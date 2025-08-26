@@ -1,10 +1,13 @@
 package com.example.bnk_project_02s.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.bnk_project_02s.entity.ChildAccount;
 
@@ -23,4 +26,6 @@ public interface ChildAccountRepository extends JpaRepository<ChildAccount, Stri
     Optional<ChildAccount> findByParentAccount_PanoAndCurrency_Cuno(String pano, String cuno);
     
     Optional<ChildAccount> findByCano(String cano);
+    
+    @Modifying @Transactional void deleteByParentAccount_PanoIn(Collection<String> panos);
 }

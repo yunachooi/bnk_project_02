@@ -26,7 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.bnk_project_02s.auth.CryptoBeans;
 import com.example.bnk_project_02s.entity.User;
+import com.example.bnk_project_02s.entity.ParentAccount;
 import com.example.bnk_project_02s.repository.UserRepository;
+import com.example.bnk_project_02s.repository.CardRepository;
+import com.example.bnk_project_02s.repository.ParentAccountRepository;
 import com.example.bnk_project_02s.util.UserUtil;
 
 import lombok.Data;
@@ -42,6 +45,10 @@ public class AdminUserApiController {
     private final UserRepository userRepository; // 쓰기용(JPA)
     private final UserUtil userUtil;             // 정규화 유틸
     private final JdbcTemplate jdbc;             // 조회 전용(컨버터 우회)
+
+    // 🔧 추가: 보유 상품 존재 여부 확인용
+    private final CardRepository cardRepository;
+    private final ParentAccountRepository parentAccountRepository;
 
     /* ===== 내부 헬퍼: 평문이면 BCrypt 해시로 변환 ===== */
     private String bcryptIfNeeded(String pw) {
@@ -246,10 +253,18 @@ public class AdminUserApiController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    /* 삭제 */
+    /* 삭제: 보유 상품/계좌가 있으면 409로 차단 */
     @DeleteMapping("/{uid}")
-    public ResponseEntity<Void> delete(@PathVariable("uid") String uid){
+    public ResponseEntity<?> delete(@PathVariable("uid") String uid){
         if (!userRepository.existsById(uid)) return ResponseEntity.notFound().build();
+
+        boolean hasCard     = cardRepository.existsByUser_Uid(uid);
+        boolean hasAccounts = parentAccountRepository.existsByUser_Uid(uid); // ✅ 존재만 체크
+
+        if (hasCard || hasAccounts) {
+            return ResponseEntity.status(409).body("보유 카드/계좌가 있어 삭제할 수 없습니다. 먼저 해지 후 다시 시도하세요.");
+        }
+
         userRepository.deleteById(uid);
         return ResponseEntity.noContent().build();
     }

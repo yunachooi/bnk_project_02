@@ -196,9 +196,9 @@
       <div class="w-full mb-4">
         <label for="currency-select" class="block text-left text-sm font-medium text-gray-700 mb-1">통화 선택</label>
         <select id="currency-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-          <option value="USD">USD (미국 달러)</option>
-          <option value="JPY">JPY (일본 엔)</option>
-          <option value="EUR">EUR (유럽 유로)</option>
+          <option value="840" data-alpha="USD">USD (미국 달러)</option>
+		  <option value="392" data-alpha="JPY">JPY (일본 엔)</option>
+		  <option value="978" data-alpha="EUR">EUR (유럽 유로)</option>
         </select>
       </div>
 
@@ -702,12 +702,34 @@
 
     /* ---------------- create child account (mock UI) ---------------- */
     const mockExchangeRates={'USD':1350,'JPY':9.2,'EUR':1480};
+    const numToAlpha = {
+    		  '840':'USD','392':'JPY','978':'EUR','756':'CHF','156':'CNH','826':'GBP','410':'KRW'
+    		};
     const createAccountModalOverlay=document.getElementById('create-account-modal-overlay');
     const currencySelect=document.getElementById('currency-select');
     const amountInput=document.getElementById('amount-input');
     const krwEquivalentDisplay=document.getElementById('krw-equivalent-display');
-    function updateKrwEquivalent(){ const c=currencySelect.value; const amt=parseFloat(amountInput.value); if(!isNaN(amt)&&amt>0&&mockExchangeRates[c]){ const krw=amt*mockExchangeRates[c]; krwEquivalentDisplay.textContent=`(약 ${krw.toLocaleString('ko-KR')}원)`; } else { krwEquivalentDisplay.textContent=''; } }
-    function showCreateAccountModal(){ createAccountModalOverlay.classList.add('show'); document.body.style.overflow='hidden'; currencySelect.value='USD'; amountInput.value=''; krwEquivalentDisplay.textContent=''; }
+    function updateKrwEquivalent() {
+    	  const numCode = currencySelect.value;               // e.g. "840"
+    	  const alpha    = numToAlpha[numCode] || '';         // e.g. "USD"
+    	  const amt      = parseFloat(amountInput.value);
+    	  const rate     = mockExchangeRates[alpha];
+
+    	  if (!isNaN(amt) && amt > 0 && rate) {
+    	    const krw = amt * rate;
+    	    krwEquivalentDisplay.textContent = `(약 ${krw.toLocaleString('ko-KR')}원)`;
+    	  } else {
+    	    krwEquivalentDisplay.textContent = '';
+    	  }
+    	}
+
+    function showCreateAccountModal() {
+    	  createAccountModalOverlay.classList.add('show');
+    	  document.body.style.overflow = 'hidden';
+    	  currencySelect.value = '840'; // USD
+    	  amountInput.value = '';
+    	  krwEquivalentDisplay.textContent = '';
+    	}
     function hideCreateAccountModal(){ createAccountModalOverlay.classList.remove('show'); document.body.style.overflow=''; }
     async function createChildAccount(currencyCode, amount){
       return new Promise(resolve=>{ setTimeout(()=>{ if(globalAccountData && globalAccountData.childAccounts){ const idx=globalAccountData.childAccounts.findIndex(a=>a.currencyCode===currencyCode);
@@ -820,16 +842,79 @@
       createAccountModalOverlay.addEventListener('click',e=>{ if(e.target===createAccountModalOverlay) hideCreateAccountModal(); });
       currencySel.addEventListener('change', updateKrwEquivalent);
       amountInp.addEventListener('input', updateKrwEquivalent);
-      createChildAccountSubmitButton.addEventListener('click', async ()=>{
-        const c=currencySel.value; const a=parseFloat(amountInp.value);
-        if(isNaN(a)||a<=0){ showPaymentModal('알림','금액을 입력하세요.'); return; }
-        const { success } = await createChildAccount(c,a);
-        if(success){ hideCreateAccountModal(); renderContent(true,true,globalAccountData); showToast('계좌가 추가/갱신되었습니다.'); }
-        else { showPaymentModal('알림','계좌 생성 실패'); }
-      });
+      //createChildAccountSubmitButton.addEventListener('click', async ()=>{
+        //const c=currencySel.value; const a=parseFloat(amountInp.value);
+        //if(isNaN(a)||a<=0){ showPaymentModal('알림','금액을 입력하세요.'); return; }
+        //const { success } = await createChildAccount(c,a);
+        //if(success){ hideCreateAccountModal(); renderContent(true,true,globalAccountData); showToast('계좌가 추가/갱신되었습니다.'); }
+        // else { showPaymentModal('알림','계좌 생성 실패'); }
+      //});
 
     });
+    (function () {
+    	  const $ = (id) => document.getElementById(id);
 
+    	  function getUid() {
+    	    return document.querySelector('meta[name="uid"]')?.content?.trim()
+    	        || localStorage.getItem('uid')
+    	        || sessionStorage.getItem('uid');
+    	  }
+
+    	  const btn = $('create-child-account-submit');
+    	  if (!btn) return;
+
+    	  btn.addEventListener('click', async () => {
+    	    const uid = getUid();
+    	    if (!uid) { showPaymentModal('오류', '로그인 정보(uid)가 없습니다.'); return; }
+
+    	    const cuno = $('currency-select').value;
+    	    const amt  = Number($('amount-input').value || 0);
+
+    	    const url = `/api/foreign/child-accounts?uid=${encodeURIComponent(uid)}`;
+
+    	    try {
+    	      const res = await fetch(url, {
+    	        method: 'POST',
+    	        headers: {
+    	          'Content-Type': 'application/json',
+    	          'Accept': 'application/json',
+    	          'X-UID': uid                 // ✅ 헤더로도 전달
+    	        },
+    	        credentials: 'include',
+    	        body: JSON.stringify({
+    	          uid,                         // ✅ 바디에도 전달(서버에서 읽을 수 있게)
+    	          cuno,
+    	          amount: isFinite(amt) && amt > 0 ? amt : null
+    	        })
+    	      });
+
+    	      if (res.status === 201) {
+    	        await refreshSummary();        // ✅ 밑에 정의
+    	        hideCreateAccountModal();      // 파일에 이미 있는 모달 닫기 함수 사용
+    	        showToast('새 통화 계좌가 생성되었습니다.');
+    	      } else if (res.status === 409) {
+    	        showPaymentModal('안내', '이미 가입된 통화입니다.');
+    	      } else {
+    	        const txt = await res.text();
+    	        showPaymentModal('오류', txt || `요청 실패 (${res.status})`);
+    	      }
+    	    } catch {
+    	      showPaymentModal('오류', '네트워크 오류입니다.');
+    	    }
+    	  });
+
+    	  async function refreshSummary() {
+    	    // 백엔드 요약 API로 다시 끌어와서 화면 재렌더
+    	    const res = await fetch('/api/foreign/summary', {
+    	      headers: { 'Accept': 'application/json' },
+    	      credentials: 'include'
+    	    });
+    	    if (!res.ok) return;
+    	    const data = await res.json();
+    	    // 파일에 이미 있는 렌더 함수 사용
+    	    renderContent(data.isLoggedIn, data.hasProducts, data.accountData);
+    	  }
+    	})();
   </script>
 </body>
 </html>

@@ -941,27 +941,47 @@
     const DISCOUNT_RATE = 0.5;     // 우대율 50%
     const EFFECTIVE_SPREAD = BASE_SPREAD * (1 - DISCOUNT_RATE); // 0.012
 
-    const unitFactorByOption = { 'JPY100': 100, 'IDR100': 100 }; // 100단위 표기
-    const codeFromOption = (opt) => opt.replace('100','');
-
+    // JPY/IDR은 100단위 옵션(JPY100/IDR100)을 쓰는 UI를 그대로 지원
+    const unitFactorByOption = {
+  // UI에서 value가 'JPY'여도 "JPY100"로 계산되도록 100단위로 취급
+	  JPY: 100,
+	  JPY100: 100,
+	  IDR100: 100,
+	  IDR: 100
+	};
+	const codeFromOption = (opt) => opt.replace('100',''); // 'JPY100' → 'JPY'
     const fallbackRatesToKRW = { // 비-USD는 임시 고정치(대략값)
-      'USD': 1350, 'JPY': 13.5, 'TWD': 45, 'SGD': 1000, 'IDR': 0.09, 'CNY': 180,
+      'USD': 1350, 'JPY': 9.5, 'TWD': 45, 'SGD': 1000, 'IDR': 0.09, 'CNY': 180,
       'THB': 38, 'PHP': 25, 'HKD': 170, 'MYR': 290, 'NZD': 850, 'AUD': 900,
       'CAD': 980, 'CHF': 1500, 'GBP': 1600, 'EUR': 1450
     };
 
-    async function getUsdKrwMid() {
-      try {
-        const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=KRW', { cache:'no-store' });
-        if(!res.ok) throw new Error('rate fetch failed');
-        const data = await res.json();
-        const mid = data?.rates?.KRW;
-        if (typeof mid !== 'number') throw new Error('invalid rate');
-        return mid;
-      } catch(e) {
-        return fallbackRatesToKRW['USD'];
-      }
-    }
+    async function getMidToKRW(code) {
+    	  if (code === 'KRW') return 1;
+
+    	  // 1) CORS 잘 되는 공개 API
+    	  try {
+    	    const r1 = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(code)}`, { cache: 'no-store' });
+    	    if (r1.ok) {
+    	      const j1 = await r1.json();
+    	      const v = j1?.rates?.KRW;
+    	      if (typeof v === 'number' && isFinite(v)) return v; // 1단위→KRW
+    	    }
+    	  } catch (_) {}
+
+    	  // 2) 보조(기존에 쓰던) API
+    	  try {
+    	    const r2 = await fetch(`https://api.exchangerate.host/latest?base=${encodeURIComponent(code)}&symbols=KRW`, { cache: 'no-store' });
+    	    if (r2.ok) {
+    	      const j2 = await r2.json();
+    	      const v = j2?.rates?.KRW;
+    	      if (typeof v === 'number' && isFinite(v)) return v;
+    	    }
+    	  } catch (_) {}
+
+    	  // ✅ 폴백(고정값) 사용 안 함 — 명시적으로 실패 처리
+    	  throw new Error('FX_API_FAILED');
+    	}
 
     async function lookupEstimate() {
       const amount = parseInt(enrollmentAmountInput.value);
@@ -971,31 +991,20 @@
         krwDisplayAmount.textContent = '0 원';
         isWithdrawalEstimateLookedUp = false;
         showInfoModal('가입 금액과 통화를 모두 입력(선택)하고 0보다 큰 값을 입력해주세요.');
-        updateEnrollmentContentStatus();
+        updateEnrollmentContentStatus();const code = codeFromOption(optionValue);
         return;
       }
 
       const code = codeFromOption(optionValue);
 
-      // USD만 정확 계산
-      if (code === 'USD') {
-        const mid = await getUsdKrwMid();                 // 1 USD의 중간환율(KRW)
-        const applied = mid * (1 + EFFECTIVE_SPREAD);     // 우대 50% 반영된 매입환율
-        const estimatedKRW = Math.round(amount * applied);
-        krwDisplayAmount.textContent = `${estimatedKRW.toLocaleString()} 원`;
-        isWithdrawalEstimateLookedUp = true;
-        updateEnrollmentContentStatus();
-        return;
-      }
-
-      // 그 외 통화는 목록만 – 간단 안내 및 대략치(고정) 표시
-      const unit = unitFactorByOption[optionValue] || 1;
-      const perUnit = (fallbackRatesToKRW[code] || 0) * unit;
-      const approx = Math.round(amount * perUnit);
-      krwDisplayAmount.textContent = `${approx.toLocaleString()} 원`;
-      isWithdrawalEstimateLookedUp = false; // 정확 계산 아님 → 다음으로 진행 막음
+      // ✅ 모든 통화 정확 계산
+      const mid = await getMidToKRW(code);            // 1 단위(기본)당 KRW 중간가
+      const applied = mid * (1 + EFFECTIVE_SPREAD);   // 우대 50% 반영한 매입환율
+      const unit = unitFactorByOption[optionValue] || 1; // JPY100/IDR100 대응
+      const estimatedKRW = Math.round(amount * unit * applied);
+      krwDisplayAmount.textContent = `${estimatedKRW.toLocaleString()} 원`;
+      isWithdrawalEstimateLookedUp = true;            // ✅ 이제 ‘다음으로’ 활성화
       updateEnrollmentContentStatus();
-      showInfoModal('현재 USD만 실시간/정확 계산을 지원합니다.\n다른 통화는 목록 선택만 가능합니다.');
     }
 
     // 이벤트 바인딩
