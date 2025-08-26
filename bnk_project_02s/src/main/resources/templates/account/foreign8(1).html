@@ -39,25 +39,6 @@
     .bottom-bar button:active{ transform:scale(.98); }
     @media (max-width:420px){ .summary-box img{ width:340px; height:212px; } }
   </style>
-
-  <style>
-    /* === WebView 스크롤 고정 문제 해결 ===
-       - body 전체는 고정(overflow:hidden) 유지
-       - 실제 스크롤 컨테이너를 main-content로 지정
-       - 하단 고정 바 높이만큼 padding-bottom 추가
-    */
-    .main-content{
-      flex: 1 1 auto !important;
-      overflow: auto !important;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      padding-bottom: calc(1rem + var(--bottom-bar-h, 72px));
-    }
-    /* 스크롤 충돌 방지(이미 선언되어 있더라도 유지) */
-    html, body{ height:100%; overflow:hidden; }
-    .container{ overflow:hidden; }
-  </style>
-
 </head>
 <body>
   <div class="container">
