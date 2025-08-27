@@ -370,8 +370,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return { labels, series };
   }
 
-  async function buildStatsJson() {
-    // 리뷰 시계열 확보(미초기화 대비 서버에서 재조회)
+  async function buildStatsJson() { //현재 차트 상태를 JSON으로 수집
+    // 차트 역 추출
+	//extractSeriesDataByDomId(id) = 라인 / 바 (labels, data)
+	//extractPieAsObject(id) = 파이 {name : value} 맵
+	//extractMultiSeriesByDomId(id) = 그룹 막대 {labels[], series:[{name,data[]}]}
+	//이를 이용해 가입자/리뷰/관심/사용액 등 현재의 그래프 데이터를 그대로 뽑음.
     let reviewsCountMonthly = extractSeriesDataByDomId('review-count-bar');
     let ratingMonthly       = extractSeriesDataByDomId('rating-line');
     if (!reviewsCountMonthly?.labels?.length || !ratingMonthly?.labels?.length) {

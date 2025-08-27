@@ -24,7 +24,7 @@ public class OpenAiReportService {
 
     public String generateDashBoardReport(String statsJson) {
         try {
-        	ChatMessage systemMessage = new ChatMessage(
+        	ChatMessage systemMessage = new ChatMessage( //규칙 생성
         		    "system",
         		    String.join("\n",
         		        "당신은 한국어를 사용하는 시니어 프로덕트 애널리스트다.",
@@ -78,7 +78,7 @@ public class OpenAiReportService {
         		    )
         		);
 
-            ChatMessage userMessage = new ChatMessage(
+            ChatMessage userMessage = new ChatMessage( //front JSON데이터 전송
                 "user",
                 String.join("\n",
                     "아래는 대시보드 원시 데이터(JSON)입니다.",
@@ -92,7 +92,7 @@ public class OpenAiReportService {
                 .model(model)
                 .messages(List.of(systemMessage, userMessage))
                 .maxTokens(1800)   // 리포트 길이(불릿 위주) 확보
-                .temperature(0.2)  // 수치/일관성 위주
+                .temperature(0.2)  // 수치/일관성 위주 
                 .build();
 
             return service.createChatCompletion(request)
